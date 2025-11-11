@@ -6,7 +6,7 @@ namespace CliCarProject.Controllers
     {
         public IActionResult CarSearch()
         {
-            return View();
+            return View("CarSearch");
         }
     }
 }
