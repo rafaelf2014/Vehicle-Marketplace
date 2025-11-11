@@ -1,0 +1,71 @@
+@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Ano)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Quilometragem)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Condicao)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdClasseNavigation)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdCombustivelNavigation)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdModeloNavigation)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdVendedorNavigation)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Ano)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Quilometragem)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Condicao)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IdClasseNavigation.IdClasse)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IdCombustivelNavigation.IdCombustivel)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IdModeloNavigation.IdModelo)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IdVendedorNavigation.IdUtilizador)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.IdVeiculo">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.IdVeiculo">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.IdVeiculo">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

@@ -1,0 +1,64 @@
+@model CliCarProject.Models.Classes.Veiculo
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Veiculo</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="IdVeiculo" />
+            <div class="form-group">
+                <label asp-for="IdVendedor" class="control-label"></label>
+                <select asp-for="IdVendedor" class="form-control" asp-items="ViewBag.IdVendedor"></select>
+                <span asp-validation-for="IdVendedor" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Ano" class="control-label"></label>
+                <input asp-for="Ano" class="form-control" />
+                <span asp-validation-for="Ano" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Quilometragem" class="control-label"></label>
+                <input asp-for="Quilometragem" class="form-control" />
+                <span asp-validation-for="Quilometragem" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Condicao" class="control-label"></label>
+                <input asp-for="Condicao" class="form-control" />
+                <span asp-validation-for="Condicao" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IdModelo" class="control-label"></label>
+                <select asp-for="IdModelo" class="form-control" asp-items="ViewBag.IdModelo"></select>
+                <span asp-validation-for="IdModelo" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IdCombustivel" class="control-label"></label>
+                <select asp-for="IdCombustivel" class="form-control" asp-items="ViewBag.IdCombustivel"></select>
+                <span asp-validation-for="IdCombustivel" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IdClasse" class="control-label"></label>
+                <select asp-for="IdClasse" class="form-control" asp-items="ViewBag.IdClasse"></select>
+                <span asp-validation-for="IdClasse" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

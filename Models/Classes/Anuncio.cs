@@ -1,0 +1,36 @@
+﻿using CliCarProject.Models.Classes;
+using System;
+using System.Collections.Generic;
+
+namespace CliCarProject.Models;
+
+public partial class Anuncio
+{
+    public int IdAnuncio { get; set; }
+
+    public string Titulo { get; set; } = null!;
+
+    public string? Descricao { get; set; }
+
+    public decimal Preco { get; set; }
+
+    public string? Estado { get; set; }
+
+    public DateTime? DataCriacao { get; set; }
+
+    public DateTime? DataAtualizacao { get; set; }
+
+    public int IdVeiculo { get; set; }
+
+    public string IdVendedor { get; set; } = null!;
+
+    public int IdLocalizacao { get; set; }
+
+    public virtual Compra? Compra { get; set; }
+
+    public virtual Localizacao IdLocalizacaoNavigation { get; set; } = null!;
+
+    public virtual Veiculo IdVeiculoNavigation { get; set; } = null!;
+
+    public virtual ICollection<VisitaReserva> VisitaReservas { get; set; } = new List<VisitaReserva>();
+}
