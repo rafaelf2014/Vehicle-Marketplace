@@ -333,6 +333,12 @@ public partial class ApplicationDbContext : IdentityDbContext
                 .HasForeignKey(d => d.IdModelo)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Veiculo__ID_Mode__5812160E");
+
+            entity.HasOne(d => d.IdVendedorNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdVendedor)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Veiculo_AspNetUsers");
         });
 
         modelBuilder.Entity<Vendedor>(entity =>
