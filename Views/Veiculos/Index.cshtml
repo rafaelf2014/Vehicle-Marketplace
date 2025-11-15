@@ -49,16 +49,16 @@
                 @Html.DisplayFor(modelItem => item.Condicao)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.IdClasseNavigation.IdClasse)
+                @Html.DisplayFor(modelItem => item.IdClasseNavigation.Nome)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.IdCombustivelNavigation.IdCombustivel)
+                @Html.DisplayFor(modelItem => item.IdCombustivelNavigation.Tipo)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.IdModeloNavigation.IdModelo)
+                @Html.DisplayFor(modelItem => item.IdModeloNavigation.Nome)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.IdVendedorNavigation.Id)
+                @Html.DisplayFor(modelItem => item.IdVendedorNavigation.UserName)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.IdVeiculo">Edit</a> |

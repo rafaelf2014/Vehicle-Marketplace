@@ -10,41 +10,82 @@
     <link rel="stylesheet" href="~/CliCarProject.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">CliCarProject</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+    <header class="shadow-sm" style="background: #ffffff;">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white py-3">
+            <div class="container">
+
+                <!-- LOGO -->
+                <a class="navbar-brand fw-bold fs-3">
+                    <img src="@Url.Content("~/images/Logo.png")" alt="Logo" class="logo-img" />
+                </a>
+
+                <!-- MOBILE BUTTON -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+
+                <!-- LINKS -->
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+
+                        <li class="nav-item px-2">
+                            <a class="nav-link" href="/">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+
+                        <li class="nav-item px-2">
+                            <a class="nav-link" href="/Veiculos">Carros</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Car" asp-action="CarSearch">Cars</a>
+
+                        <li class="nav-item px-2">
+                            <a class="nav-link" href="/Favoritos">Favoritos</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="btn btn-outline-primary ms-2" asp-controller="User" asp-action="UserProfile">
-                                <i class="bi bi-person-circle"></i> Perfil
-                            </a>
+
+                        <li class="nav-item px-2">
+                            <a class="nav-link" href="/Comunidade">Comunidade</a>
                         </li>
+
                     </ul>
-                    <partial name="_LoginPartial" />
+
+                    <!-- AÇÕES DIREITA -->
+                    <div class="d-flex align-items-center">
+
+                        <!-- BOTÃO CRIAR ANÚNCIO -->
+                        <a href="/Veiculos/Create" class="btn btn-danger me-3 px-3">
+                            + Criar Anúncio
+                        </a>
+
+                        <!-- LOGIN / PERFIL -->
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <div class="dropdown">
+                                <a class="btn btn-outline-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="/Identity/Account/Manage">Perfil</a></li>
+                                    <li>
+                                        <form method="post" asp-area="Identity" asp-page="/Account/Logout">
+                                            <button class="dropdown-item text-danger">Logout</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-dark me-2" href="/Identity/Account/Login">Login</a>
+                            <a class="btn btn-danger" href="/Identity/Account/Register">Criar Conta</a>
+                        }
+                    </div>
                 </div>
+
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+
+    <main role="main" class="pb-3">
+        @RenderBody()
+    </main>
 
     <footer class="border-top footer text-muted">
         <div class="container">
