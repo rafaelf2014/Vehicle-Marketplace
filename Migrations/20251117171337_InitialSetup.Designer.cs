@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251111175619_fixIdentityRelations")]
-    partial class fixIdentityRelations
+    [Migration("20251117171337_InitialSetup")]
+    partial class InitialSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -382,7 +382,6 @@ namespace CliCarProject.Migrations
                         .HasColumnName("ID_Modelo");
 
                     b.Property<string>("IdVendedor")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("ID_Vendedor");
@@ -891,7 +890,6 @@ namespace CliCarProject.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdVendedorNavigation")
                         .WithMany()
                         .HasForeignKey("IdVendedor")
-                        .IsRequired()
                         .HasConstraintName("FK_Veiculo_AspNetUsers");
 
                     b.Navigation("IdClasseNavigation");
