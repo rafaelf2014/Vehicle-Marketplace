@@ -177,8 +177,8 @@ namespace CliCarProject.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -222,8 +222,8 @@ namespace CliCarProject.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -359,24 +359,22 @@ namespace CliCarProject.Migrations
                 {
                     ID_Veiculo = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ID_Vendedor = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    ID_Vendedor = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     Ano = table.Column<int>(type: "int", nullable: false),
                     Quilometragem = table.Column<int>(type: "int", nullable: true),
                     Condicao = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true),
                     ID_Modelo = table.Column<int>(type: "int", nullable: false),
                     ID_Combustivel = table.Column<int>(type: "int", nullable: false),
-                    ID_Classe = table.Column<int>(type: "int", nullable: false),
-                    IdVendedorNavigationIdUtilizador = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    ID_Classe = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Veiculo__808FFECF1FB610CC", x => x.ID_Veiculo);
                     table.ForeignKey(
-                        name: "FK_Veiculo_Vendedor_IdVendedorNavigationIdUtilizador",
-                        column: x => x.IdVendedorNavigationIdUtilizador,
-                        principalTable: "Vendedor",
-                        principalColumn: "ID_Utilizador",
-                        onDelete: ReferentialAction.Cascade);
+                        name: "FK_Veiculo_AspNetUsers",
+                        column: x => x.ID_Vendedor,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__Veiculo__ID_Clas__59FA5E80",
                         column: x => x.ID_Classe,
@@ -614,9 +612,9 @@ namespace CliCarProject.Migrations
                 column: "ID_Modelo");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Veiculo_IdVendedorNavigationIdUtilizador",
+                name: "IX_Veiculo_ID_Vendedor",
                 table: "Veiculo",
-                column: "IdVendedorNavigationIdUtilizador");
+                column: "ID_Vendedor");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VisitaReserva_ID_Anuncio",
@@ -661,6 +659,9 @@ namespace CliCarProject.Migrations
                 name: "Imagem");
 
             migrationBuilder.DropTable(
+                name: "Vendedor");
+
+            migrationBuilder.DropTable(
                 name: "VisitaReserva");
 
             migrationBuilder.DropTable(
@@ -682,7 +683,7 @@ namespace CliCarProject.Migrations
                 name: "Veiculo");
 
             migrationBuilder.DropTable(
-                name: "Vendedor");
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Classe");
@@ -692,9 +693,6 @@ namespace CliCarProject.Migrations
 
             migrationBuilder.DropTable(
                 name: "Modelo");
-
-            migrationBuilder.DropTable(
-                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Marca");

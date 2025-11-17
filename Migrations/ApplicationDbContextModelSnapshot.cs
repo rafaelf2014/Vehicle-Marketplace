@@ -379,7 +379,6 @@ namespace CliCarProject.Migrations
                         .HasColumnName("ID_Modelo");
 
                     b.Property<string>("IdVendedor")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("ID_Vendedor");
@@ -888,7 +887,6 @@ namespace CliCarProject.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdVendedorNavigation")
                         .WithMany()
                         .HasForeignKey("IdVendedor")
-                        .IsRequired()
                         .HasConstraintName("FK_Veiculo_AspNetUsers");
 
                     b.Navigation("IdClasseNavigation");

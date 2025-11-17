@@ -4,16 +4,13 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using CliCarProject.Models.Classes;
 using CliCarProject.Models;
+using Microsoft.AspNetCore.Identity;
 
 
 namespace CliCarProject.Data;
 
-public partial class ApplicationDbContext : IdentityDbContext
+public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
-    public ApplicationDbContext()
-    {
-    }
-
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
