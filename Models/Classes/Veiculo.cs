@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace CliCarProject.Models.Classes;
@@ -14,7 +14,8 @@ public partial class Veiculo
     public int Ano { get; set; }
 
     public int? Quilometragem { get; set; }
-
+    [Required]
+    [RegularExpression("N|S|U", ErrorMessage = "Condição inválida.")]
     public string? Condicao { get; set; }
 
     public int IdModelo { get; set; }

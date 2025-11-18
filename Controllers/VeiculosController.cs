@@ -9,6 +9,7 @@ using CliCarProject.Data;
 using CliCarProject.Models.Classes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace CliCarProject.Controllers
@@ -28,7 +29,7 @@ namespace CliCarProject.Controllers
         // GET: Veiculos
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Veiculos.Include(v => v.IdClasseNavigation).Include(v => v.IdCombustivelNavigation).Include(v => v.IdModeloNavigation).Include(v => v.IdVendedorNavigation);
+            var applicationDbContext = _context.Veiculos.Include(v => v.IdClasseNavigation).Include(v => v.IdCombustivelNavigation).Include(v => v.IdModeloNavigation).Include(v => v.IdVendedorNavigation).Include(v => v.Imagems);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -40,27 +41,28 @@ namespace CliCarProject.Controllers
                 return NotFound();
             }
 
-            var veiculo = await _context.Veiculos
-                .Include(v => v.IdClasseNavigation)
-                .Include(v => v.IdCombustivelNavigation)
-                .Include(v => v.IdModeloNavigation)
-                .Include(v => v.IdVendedorNavigation)
-                .FirstOrDefaultAsync(m => m.IdVeiculo == id);
-            if (veiculo == null)
+            var veiculos = await _context.Veiculos
+        .Include(v => v.IdModeloNavigation)
+            .ThenInclude(m => m.IdMarcaNavigation)
+        .Include(v => v.IdClasseNavigation)
+        .Include(v => v.IdCombustivelNavigation)
+        .Include(v => v.Imagems)
+        .ToListAsync();
+            if (veiculos == null)
             {
                 return NotFound();
             }
 
-            return View(veiculo);
+            return View(veiculos);
         }
 
         // GET: Veiculos/Create
         [Authorize]
         public IActionResult Create()
         {
-            ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "IdClasse");
-            ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "IdCombustivel");
-            ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "IdModelo");
+            ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "Nome");
+            ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "Tipo");
+            ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "Nome");
             return View();
         }
 
@@ -70,7 +72,7 @@ namespace CliCarProject.Controllers
         [Authorize]
         [HttpPost]
         [ActionName("Create")]
-        public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,IdModelo,IdCombustivel,IdClasse")] Veiculo veiculo)
+        public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,IdModelo,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
         {
             Console.WriteLine("🔥 POST chegou ao método Create");
 
@@ -90,12 +92,49 @@ namespace CliCarProject.Controllers
 
             veiculo.IdVendedor = userId;
 
+            
             try
             {
                 _context.Add(veiculo);
                 await _context.SaveChangesAsync();
-                
                 Console.WriteLine("✅ Veículo guardado na base de dados!");
+
+                // (4) Guardar cada imagem
+                if (Imagens != null && Imagens.Count > 0)
+                {
+                    // Criar pasta do veiculo
+                    var pastaVeiculo = Path.Combine("wwwroot/uploads/veiculos", veiculo.IdVeiculo.ToString());
+
+                    if (!Directory.Exists(pastaVeiculo))
+                        Directory.CreateDirectory(pastaVeiculo);
+
+                    foreach (var file in Imagens)
+                    {
+                        if (file.Length > 0)
+                        {
+                            // Gerar nome único do ficheiro
+                            var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+
+                            // Caminho COMPLETO para guardar no disco
+                            var filePath = Path.Combine(pastaVeiculo, fileName);
+
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await file.CopyToAsync(stream);
+                            }
+
+                            // Guardar só o NOME no SQL
+                            var imagem = new Imagem
+                            {
+                                IdVeiculo = veiculo.IdVeiculo,
+                                Nome = fileName
+                            };
+
+                            _context.Imagems.Add(imagem);
+                        }
+                    }
+                }
+                await _context.SaveChangesAsync(); // salvar imagens
             }
             catch (Exception ex)
             {

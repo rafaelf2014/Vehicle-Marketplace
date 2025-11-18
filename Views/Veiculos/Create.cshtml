@@ -1,56 +1,129 @@
 ﻿@model CliCarProject.Models.Classes.Veiculo
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Criar Veículo";
 }
 
-<h1>Create</h1>
+<div class="container mt-5">
 
-<h4>Veiculo</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-controller="Veiculos" asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Ano" class="control-label"></label>
+    <h2 class="text-center mb-5" style="font-weight: 700;">
+        Precisamos de algumas informações
+    </h2>
+
+    <form asp-action="Create" asp-controller="Veiculos" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <!-- GRID 2 COLUNAS -->
+        <div class="row g-4">
+
+            <!-- Ano -->
+            <div class="col-md-6">
+                <label asp-for="Ano" class="form-label fw-semibold">Ano ( Obrigatório )</label>
                 <input asp-for="Ano" class="form-control" />
                 <span asp-validation-for="Ano" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Quilometragem" class="control-label"></label>
-                <input asp-for="Quilometragem" class="form-control" />
+
+            <!-- Marca (IdModeloNavigation->Marca?) -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Marca ( Obrigatório )</label>
+                <select class="form-control" disabled>
+                    <option>Selecionar</option>
+                </select>
+                <small class="text-muted">Será escolhido automaticamente pelo modelo.</small>
+            </div>
+
+            <!-- Modelo -->
+            <div class="col-md-6">
+                <label asp-for="IdModelo" class="form-label fw-semibold">Modelo ( Obrigatório )</label>
+                <select asp-for="IdModelo" class="form-control" asp-items="ViewBag.IdModelo">
+                    <option value="">Selecionar</option>
+                </select>
+                <span asp-validation-for="IdModelo" class="text-danger"></span>
+            </div>
+
+            <!-- Categoria -->
+            <div class="col-md-6">
+                <label asp-for="IdClasse" class="form-label fw-semibold">Categoria ( Obrigatório )</label>
+                <select asp-for="IdClasse" class="form-control" asp-items="ViewBag.IdClasse">
+                    <option value="">Selecionar</option>
+                </select>
+                <span asp-validation-for="IdClasse" class="text-danger"></span>
+            </div>
+
+            <!-- Tipo de caixa -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Caixa ( Obrigatório )</label>
+                <select class="form-control" disabled>
+                    <option>Selecionar</option>
+                </select>
+                <small class="text-muted">Campo ainda não configurado no modelo.</small>
+            </div>
+
+            <!-- Combustível -->
+            <div class="col-md-6">
+                <label asp-for="IdCombustivel" class="form-label fw-semibold">Combustível ( Obrigatório )</label>
+                <select asp-for="IdCombustivel" class="form-control" asp-items="ViewBag.IdCombustivel">
+                    <option value="">Selecionar</option>
+                </select>
+                <span asp-validation-for="IdCombustivel" class="text-danger"></span>
+            </div>
+
+            <!-- Quilómetros -->
+            <div class="col-md-6">
+                <label asp-for="Quilometragem" class="form-label fw-semibold">Quilómetros ( Obrigatório )</label>
+                <div class="input-group">
+                    <input asp-for="Quilometragem" class="form-control" />
+                    <span class="input-group-text">Km</span>
+                </div>
                 <span asp-validation-for="Quilometragem" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Condicao" class="control-label"></label>
-                <input asp-for="Condicao" class="form-control" />
+
+            <!-- Estado do Carro -->
+            <div class="col-md-6">
+                <label asp-for="Condicao" class="form-label fw-semibold">Estado do Carro ( Obrigatório )</label>
+                <select asp-for="Condicao" class="form-control">
+                    <option value="">Selecionar</option>
+                    <option value="N">Novo</option>
+                    <option value="S">Seminovo</option>
+                    <option value="U">Usado</option>
+                </select>
                 <span asp-validation-for="Condicao" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="IdModelo" class="control-label"></label>
-                <select asp-for="IdModelo" class ="form-control" asp-items="ViewBag.IdModelo"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdCombustivel" class="control-label"></label>
-                <select asp-for="IdCombustivel" class ="form-control" asp-items="ViewBag.IdCombustivel"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdClasse" class="control-label"></label>
-                <select asp-for="IdClasse" class ="form-control" asp-items="ViewBag.IdClasse"></select>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+            <!-- Descrição -->
+            <div class="col-md-12">
+                <label class="form-label fw-semibold">Descrição do Veículo ( Opcional )</label>
+                <textarea class="form-control" rows="4"></textarea>
+            </div>
+
+            <!-- UPLOAD -->
+            <div class="col-md-12 mt-4">
+                <div class="border rounded p-5 text-center" style="background:#f8f8f8;">
+                    <i class="bi bi-upload" style="font-size: 4rem; opacity:.4;"></i>
+                    <p class="mt-3">Upload from Computer</p>
+
+                    <input type="file"
+                           name="Imagens"
+                           multiple
+                           class="form-control mt-3"
+                           accept="image/*" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão final -->
+        <div class="text-center mt-5 mb-5">
+            <button type="submit" class="btn btn-danger px-5 py-2" style="font-size: 1.1rem;">
+                🚗 Criar Veículo
+            </button>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
