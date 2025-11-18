@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "UserProfile";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <!-- 🔹 Cartão de perfil -->
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body text-center p-4">
+                    <!-- Foto do utilizador -->
+                    <div class="mb-3">
+                        <img src="https://via.placeholder.com/150"
+                             alt="Foto do utilizador"
+                             class="rounded-circle shadow-sm"
+                             width="150" height="150">
+                    </div>
+
+                    <!-- Nome e username -->
+                    <h3 class="fw-bold mb-0">John Doe</h3>
+                    <p class="text-muted">johndoe</p>
+
+                    <!-- Informações básicas -->
+                    <hr>
+                    <div class="text-start px-4">
+                        <p><strong>Email:</strong> johndoe@email.com</p>
+                        <p><strong>Telefone:</strong> +351 912 345 678</p>
+                        <p><strong>Localização:</strong> Porto, Portugal</p>
+                        <p><strong>Data de registo:</strong> 15/05/2023</p>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="mt-4 d-flex justify-content-center gap-2">
+                        <a href="#" class="btn btn-outline-primary">Editar Perfil</a>
+                        <a href="#" class="btn btn-outline-secondary">Alterar Palavra-passe</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🔹 Secção de informações adicionais -->
+            <div class="card mt-4 border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Sobre mim</h5>
+                    <p class="text-muted">
+                        Sou um entusiasta de automóveis e tecnologia.
+                        Gosto de explorar novos modelos, aprender sobre motores e partilhar conhecimento.
+                    </p>
+                    <hr>
+                    <h5 class="fw-bold mb-3">Atividade recente</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Viu o anúncio <strong>BMW 320i</strong></li>
+                        <li class="list-group-item">Atualizou a informação de contacto</li>
+                        <li class="list-group-item">Adicionou um carro aos favoritos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
