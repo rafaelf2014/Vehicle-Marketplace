@@ -109,3 +109,24 @@ body {
     object-fit: contain;
     margin-right: 8px;
 }
+
+.vehicle-card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform .15s ease-in-out, box-shadow .15s;
+}
+
+    .vehicle-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+.vehicle-img {
+    height: 220px;
+    object-fit: cover;
+}
+
+.table td {
+    padding: 4px 6px;
+    font-size: 14px;
+}
