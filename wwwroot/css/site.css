@@ -56,7 +56,7 @@ body {
 .hero-section {
     position: relative;
     width: 100%;
-}
+}   
 
 .hero-image img {
     width: 100%;
@@ -65,6 +65,7 @@ body {
     filter: brightness(0.55);
 }
 
+/* centra o conteúdo do hero */
 .hero-content {
     position: absolute;
     top: 50%;
@@ -72,6 +73,9 @@ body {
     transform: translate(-50%, -50%);
     text-align: center;
     color: white;
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 .hero-title {
@@ -85,27 +89,117 @@ body {
     margin-bottom: 20px;
 }
 
+/* caixa branca dos filtros: TORNAR MENOR */
 .search-box {
     background: rgba(255, 255, 255, 0.95);
-    padding: 20px;
-    margin-top: 30px;
+    padding: 10px;               /* reduzido */
+    margin-top: 16px;            /* ligeiro ajuste */
     border-radius: 10px;
-    display: inline-block;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    display: block;
+    max-width: 1200px;           /* reduzido para ficar mais compacto */
+    width: 85%;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
 }
 
+/* Força uma linha única em desktop e permite scroll horizontal se necessário */
+.search-box form {
+    display: flex;
+    flex-wrap: nowrap; /* NÃO empilhar em linhas */
+    gap: 8px;          /* gap reduzido */
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto; /* permite rolar horizontalmente se não couber */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Comportamento dos inputs/selects — mais compactos */
+.search-box .form-control,
+.search-box .form-select {
+    width: auto;
+    min-width: 100px;       /* reduzido */
+    max-width: 220px;       /* reduzido */
+    flex: 0 0 150px;        /* largura base menor */
+    box-sizing: border-box;
+    height: 36px;           /* altura menor */
+    padding: 6px 10px;      /* padding reduzido */
+}
+
+/* Campo de pesquisa cresce para ocupar espaço disponível (mais curto) */
+.search-box input[name="searchBox"],
+.search-box input[type="search"] {
+    /* Tornar o campo mais compacto e fixo para caber na mesma linha */
+    flex: 0 0 180px;    /* flex-basis fixo — ajusta para 280px/300px se quiseres ainda menor */
+    width: 180px;
+    min-width: 180px;
+    max-width: 420px;
+    height: 36px;
+    padding: 6px 10px;
+}
+
+/* botão mantém tamanho compacto */
+.search-box button {
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 6px 10px;
+}
+
+/* estilo adicional */
 .filters {
     display: flex;
-    gap: 15px;
+    gap: 12px;
 }
 
-    .filters select,
-    .filters button {
-        height: 40px;
-    }
+.filters select,
+.filters button {
+    height: 32px;
+}
+
 .logo-img {
-    height: 80px; 
-    width: auto; 
+    height: 80px;
+    width: auto;
     object-fit: contain;
     margin-right: 8px;
+}
+
+/* para ecrãs muito largos mantém uma linha única e ajusta larguras */
+@media (min-width: 1200px) {
+    .search-box form {
+        gap: 10px;
+    }
+
+    .search-box .form-control,
+    .search-box .form-select {
+        flex: 0 0 140px;
+        max-width: 200px;
+    }
+
+    .search-box input[name="searchBox"] {
+        flex: 1 1 420px;
+    }
+}
+
+/* Responsivo: em ecrãs pequenos empilha os filtros verticalmente */
+@media (max-width: 991px) {
+    .search-box form {
+        flex-wrap: wrap; /* neste breakpoint permite empilhar */
+        gap: 8px;
+    }
+
+    .search-box .form-control,
+    .search-box .form-select {
+        min-width: 160px;
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: none;
+        height: 40px;
+    }
+
+    .search-box input[name="searchBox"] {
+        min-width: auto;
+        height: 40px;
+    }
 }
