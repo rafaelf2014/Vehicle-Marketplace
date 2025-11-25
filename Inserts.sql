@@ -62,5 +62,10 @@
    --ALTER TABLE Veiculo
    --ADD CONSTRAINT FK_Veiculo_Marca
    --FOREIGN KEY (IdMarca) REFERENCES Marca(ID_Marca);
+
+   --Alter table veiculo
+   --add Caixa varchar(1);
+
+   
    
    
