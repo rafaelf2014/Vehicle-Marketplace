@@ -92,22 +92,21 @@ body {
 /* caixa branca dos filtros: TORNAR MENOR */
 .search-box {
     background: rgba(255, 255, 255, 0.95);
-    padding: 10px;               /* reduzido */
-    margin-top: 16px;            /* ligeiro ajuste */
-    border-radius: 10px;
+    padding: 14px;               /* reduzido */
+    margin-top: 20px;            /* ligeiro ajuste */
+    border-radius: 14px;
     display: block;
-    max-width: 1200px;           /* reduzido para ficar mais compacto */
-    width: 85%;
+    max-width: 1400px;           /* reduzido para ficar mais compacto */
+    width: 95%;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 2px 10px rgba(0,0,0,0.12);
 }
 
-/* Força uma linha única em desktop e permite scroll horizontal se necessário */
 .search-box form {
     display: flex;
-    flex-wrap: nowrap; /* NÃO empilhar em linhas */
-    gap: 8px;          /* gap reduzido */
+    flex-wrap: nowrap; 
+    gap: 10px;         
     align-items: center;
     justify-content: center;
     margin: 0;
@@ -128,14 +127,13 @@ body {
     padding: 6px 10px;      /* padding reduzido */
 }
 
-/* Campo de pesquisa cresce para ocupar espaço disponível (mais curto) */
+
 .search-box input[name="searchBox"],
 .search-box input[type="search"] {
-    /* Tornar o campo mais compacto e fixo para caber na mesma linha */
-    flex: 0 0 180px;    /* flex-basis fixo — ajusta para 280px/300px se quiseres ainda menor */
-    width: 180px;
-    min-width: 180px;
-    max-width: 420px;
+    flex: 0 0 100px;    /* flex-basis fixo — ajusta para 280px/300px se quiseres ainda menor */
+    width: 100px;
+    min-width: 100px;
+    max-width: 260px;
     height: 36px;
     padding: 6px 10px;
 }

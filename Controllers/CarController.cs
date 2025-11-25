@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using CliCarProject.Models.Classes;
+using System.Diagnostics;
 
 namespace CliCarProject.Controllers
 {
@@ -18,14 +19,36 @@ namespace CliCarProject.Controllers
         [HttpGet]
         public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, int? priceRange)
         {
-            // base query com includes necessários
+            // Se o utilizador escolheu um modelo mas não especificou marca,
+            // inferimos a marca a partir do modelo (evita estado inconsistente).
+            if (modeloId.HasValue && !marcaId.HasValue)
+            {
+                var modelo = _context.Modelos.Find(modeloId.Value);
+                if (modelo != null)
+                {
+                    marcaId = modelo.IdMarca;
+                }
+            }
+
+            // Se foram passados ambos, garantimos consistência:
+            if (modeloId.HasValue && marcaId.HasValue)
+            {
+                var modelo = _context.Modelos.Find(modeloId.Value);
+                if (modelo != null && modelo.IdMarca != marcaId.Value)
+                {
+                    // modelo não pertence à marca selecionada → ignorar o modelo
+                    modeloId = null;
+                }
+            }
+
+            Debug.WriteLine($"CarSearch called: searchBox={searchBox}, marcaId={marcaId}, modeloId={modeloId}, categoriaId={categoriaId}, combustivelId={combustivelId}, caixa={caixa}, priceRange={priceRange}");
+
             var query = _context.Veiculos
                 .Include(v => v.IdModeloNavigation).ThenInclude(m => m.IdMarcaNavigation)
                 .Include(v => v.Imagems)
                 .Include(v => v.Anuncios)
                 .AsQueryable();
 
-            // filtros
             if (!string.IsNullOrWhiteSpace(searchBox))
             {
                 query = query.Where(v =>
@@ -45,10 +68,6 @@ namespace CliCarProject.Controllers
             if (combustivelId.HasValue)
                 query = query.Where(v => v.IdCombustivel == combustivelId.Value);
 
-            // caixa: só aplica se tiveres essa propriedade no modelo (exemplo comentado)
-            // if (!string.IsNullOrEmpty(caixa))
-            //     query = query.Where(v => v.Caixa == caixa);
-
             if (priceRange.HasValue)
             {
                 switch (priceRange.Value)
@@ -65,12 +84,23 @@ namespace CliCarProject.Controllers
                 }
             }
 
+            try
+            {
+                Debug.WriteLine("Generated SQL: " + query.ToQueryString());
+            }
+            catch { }
+
             var resultados = query.ToList();
 
-            // popular dados para a view (podes trocar por ViewModel se preferires)
+            // popular dados para a view
             ViewBag.Resultados = resultados;
             ViewBag.Marcas = _context.Marcas.ToList();
-            ViewBag.Modelos = _context.Modelos.ToList();
+
+            // Se houver marca selecionada, devolve só os modelos dessa marca.
+            ViewBag.Modelos = marcaId.HasValue
+                ? _context.Modelos.Where(m => m.IdMarca == marcaId.Value).ToList()
+                : _context.Modelos.ToList();
+
             ViewBag.Classes = _context.Classes.ToList();
             ViewBag.Combustiveis = _context.Combustivels.ToList();
             ViewBag.Caixas = new List<SelectListItem>
@@ -81,6 +111,18 @@ namespace CliCarProject.Controllers
             };
 
             return View("CarSearch");
+        }
+
+        // Endpoint para popular os modelos via AJAX quando muda a marca
+        [HttpGet]
+        public IActionResult GetModelos(int marcaId)
+        {
+            var modelos = _context.Modelos
+                .Where(m => m.IdMarca == marcaId)
+                .Select(m => new { m.IdModelo, m.Nome })
+                .ToList();
+
+            return Json(modelos);
         }
     }
 }
