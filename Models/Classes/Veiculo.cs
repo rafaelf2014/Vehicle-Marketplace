@@ -18,6 +18,9 @@ public partial class Veiculo
     [RegularExpression("N|S|U", ErrorMessage = "Condição inválida.")]
     public string? Condicao { get; set; }
 
+    [Required]
+    [RegularExpression("M|A", ErrorMessage = "Condição inválida.")]
+    public string? Caixa { get; set; }
     public int IdModelo { get; set; }
 
     public int IdMarca { get; set; }

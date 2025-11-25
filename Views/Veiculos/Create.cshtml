@@ -55,10 +55,12 @@
             <!-- Tipo de caixa -->
             <div class="col-md-6">
                 <label class="form-label fw-semibold">Caixa ( Obrigatório )</label>
-                <select class="form-control" disabled>
-                    <option>Selecionar</option>
+                <select asp-for="Caixa" class="form-control">
+                    <option value="">Selecionar</option>
+                    <option value="M">Manual</option>
+                    <option value="A">Automático</option>
                 </select>
-                <small class="text-muted">Campo ainda não configurado no modelo.</small>
+                <span asp-validation-for="Caixa" class="text-danger"></span>
             </div>
 
             <!-- Combustível -->

@@ -73,7 +73,7 @@ namespace CliCarProject.Controllers
         [Authorize]
         [HttpPost]
         [ActionName("Create")]
-        public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,IdModelo,IdMarca,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
+        public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,Caixa,IdModelo,IdMarca,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
         {
             Console.WriteLine("🔥 POST chegou ao método Create");
 
