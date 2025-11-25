@@ -1,4 +1,5 @@
 ﻿using CliCarProject.Models.Classes;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 
@@ -31,6 +32,8 @@ public partial class Anuncio
     public virtual Localizacao? IdLocalizacaoNavigation { get; set; } 
 
     public virtual Veiculo? IdVeiculoNavigation { get; set; } 
+
+    public virtual IdentityUser? IdVendedorNavigation { get; set; }
 
     public virtual ICollection<VisitaReserva> VisitaReservas { get; set; } = new List<VisitaReserva>();
 }
