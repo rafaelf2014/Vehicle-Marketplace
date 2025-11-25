@@ -28,10 +28,10 @@
             <!-- Marca (IdModeloNavigation->Marca?) -->
             <div class="col-md-6">
                 <label class="form-label fw-semibold">Marca ( Obrigatório )</label>
-                <select class="form-control" disabled>
-                    <option>Selecionar</option>
+                <select asp-for="IdMarca" class="form-control" asp-items="ViewBag.IdMarca">
+                    <option value="">Selecionar</option>
                 </select>
-                <small class="text-muted">Será escolhido automaticamente pelo modelo.</small>
+                <span asp-validation-for="IdMarca" class="text-danger"></span>
             </div>
 
             <!-- Modelo -->
