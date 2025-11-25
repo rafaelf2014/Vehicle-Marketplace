@@ -56,11 +56,11 @@
 --('Madeira'),
 --('Açores');
 
-   --   ALTER TABLE Veiculo
-   --ADD IdMarca INT;
+      ALTER TABLE Veiculo
+   ADD IdMarca INT;
 
-   --ALTER TABLE Veiculo
-   --ADD CONSTRAINT FK_Veiculo_Marca
-   --FOREIGN KEY (IdMarca) REFERENCES Marca(ID_Marca);
+   ALTER TABLE Veiculo
+   ADD CONSTRAINT FK_Veiculo_Marca
+   FOREIGN KEY (IdMarca) REFERENCES Marca(ID_Marca);
    
    
