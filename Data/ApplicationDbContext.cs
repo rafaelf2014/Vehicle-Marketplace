@@ -331,6 +331,12 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Veiculo__ID_Mode__5812160E");
 
+            entity.HasOne(d => d.IdMarcaNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdMarca)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Veiculo_Marca");
+
             entity.HasOne(d => d.IdVendedorNavigation)
                 .WithMany()
                 .HasForeignKey(d => d.IdVendedor)

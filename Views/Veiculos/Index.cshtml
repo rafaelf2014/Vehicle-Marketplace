@@ -1,71 +1,55 @@
-@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
+﻿@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Meus veículos";
 }
 
-<h1>Index</h1>
+<h2 class="mb-4">Meus veículos</h2>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Ano)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Quilometragem)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Condicao)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdClasseNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdCombustivelNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdModeloNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdVendedorNavigation)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Ano)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Quilometragem)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Condicao)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdClasseNavigation.Nome)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdCombustivelNavigation.Tipo)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdModeloNavigation.Nome)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdVendedorNavigation.UserName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdVeiculo">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdVeiculo">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdVeiculo">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+<div class="container">
+    <div class="row g-4">
+
+        @foreach (var item in Model)
+        {
+            var img = item.Imagems?.FirstOrDefault();
+            string imagePath = img != null
+            ? $"/uploads/veiculos/{item.IdVeiculo}/{img.Nome}"
+            : "/images/Image_not_available.png"; // Fallback caso não tenha imagens
+
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+
+                    <!-- Imagem -->
+                    <img src="@imagePath"
+                         class="card-img-top"
+                         alt="Imagem do veículo"
+                         style="width:100%; height:220px; object-fit:cover;" />
+
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            @item.IdModeloNavigation?.Nome
+                        </h5>
+
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item"><b>Estado:</b> @item.Condicao</li>
+                            <li class="list-group-item"><b>Combustível:</b> @item.IdCombustivelNavigation?.Tipo</li>
+                            <li class="list-group-item"><b>Quilometragem:</b> @item.Quilometragem.ToString() Km</li>
+                            <li class="list-group-item"><b>Ano:</b> @item.Ano</li>
+                            <li class="list-group-item"><b>Marca:</b> @item.IdModeloNavigation?.IdMarcaNavigation?.Nome</li>
+                            <li class="list-group-item"><b>Modelo:</b> @item.IdModeloNavigation?.Nome</li>
+                            <li class="list-group-item"><b>Categoria:</b> @item.IdClasseNavigation?.Nome</li>
+                        </ul>
+
+                        <a asp-action="Edit"
+                           asp-route-id="@item.IdVeiculo"
+                           class="btn btn-danger w-100">
+                            Editar Veículo
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

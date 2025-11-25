@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CliCarProject.Models.Classes;
 
 namespace CliCarProject.Models;
 
