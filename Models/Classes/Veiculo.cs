@@ -20,6 +20,8 @@ public partial class Veiculo
 
     public int IdModelo { get; set; }
 
+    public int IdMarca { get; set; }
+
     public int IdCombustivel { get; set; }
 
     public int IdClasse { get; set; }
@@ -30,7 +32,8 @@ public partial class Veiculo
 
     public virtual Combustivel? IdCombustivelNavigation { get; set; }
 
-    public virtual Modelo? IdModeloNavigation { get; set; } 
+    public virtual Modelo? IdModeloNavigation { get; set; }
+    public virtual Marca? IdMarcaNavigation { get; set; }
     public virtual IdentityUser? IdVendedorNavigation { get; set; } 
 
     public virtual ICollection<Imagem> Imagems { get; set; } = new List<Imagem>();

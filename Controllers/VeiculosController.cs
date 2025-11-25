@@ -29,7 +29,7 @@ namespace CliCarProject.Controllers
         // GET: Veiculos
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Veiculos.Include(v => v.IdClasseNavigation).Include(v => v.IdCombustivelNavigation).Include(v => v.IdModeloNavigation).Include(v => v.IdVendedorNavigation).Include(v => v.Imagems);
+            var applicationDbContext = _context.Veiculos.Include(v => v.IdClasseNavigation).Include(v => v.IdCombustivelNavigation).Include(v => v.IdModeloNavigation).Include(v => v.IdMarcaNavigation).Include(v => v.IdVendedorNavigation).Include(v => v.Imagems);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -43,7 +43,7 @@ namespace CliCarProject.Controllers
 
             var veiculos = await _context.Veiculos
         .Include(v => v.IdModeloNavigation)
-            .ThenInclude(m => m.IdMarcaNavigation)
+            .Include(v => v.IdMarcaNavigation)
         .Include(v => v.IdClasseNavigation)
         .Include(v => v.IdCombustivelNavigation)
         .Include(v => v.Imagems)
@@ -63,6 +63,7 @@ namespace CliCarProject.Controllers
             ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "Nome");
             ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "Tipo");
             ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "Nome");
+            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "Nome");
             return View();
         }
 
@@ -72,7 +73,7 @@ namespace CliCarProject.Controllers
         [Authorize]
         [HttpPost]
         [ActionName("Create")]
-        public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,IdModelo,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
+        public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,IdModelo,IdMarca,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
         {
             Console.WriteLine("🔥 POST chegou ao método Create");
 
@@ -165,6 +166,7 @@ namespace CliCarProject.Controllers
             ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "IdClasse", veiculo.IdClasse);
             ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "IdCombustivel", veiculo.IdCombustivel);
             ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "IdModelo", veiculo.IdModelo);
+            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "IdMarca", veiculo.IdMarca);
             ViewData["IdVendedor"] = new SelectList(_context.Users, "Id", "Id", veiculo.IdVendedor);
             return View(veiculo);
         }
@@ -204,6 +206,7 @@ namespace CliCarProject.Controllers
             ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "IdClasse", veiculo.IdClasse);
             ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "IdCombustivel", veiculo.IdCombustivel);
             ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "IdModelo", veiculo.IdModelo);
+            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "IdMarca", veiculo.IdMarca);
             ViewData["IdVendedor"] = new SelectList(_context.Users, "Id", "Id", veiculo.IdVendedor);
             return View(veiculo);
         }
@@ -220,6 +223,7 @@ namespace CliCarProject.Controllers
                 .Include(v => v.IdClasseNavigation)
                 .Include(v => v.IdCombustivelNavigation)
                 .Include(v => v.IdModeloNavigation)
+                .Include(v => v.IdMarcaNavigation)
                 .Include(v => v.IdVendedorNavigation)
                 .FirstOrDefaultAsync(m => m.IdVeiculo == id);
             if (veiculo == null)
