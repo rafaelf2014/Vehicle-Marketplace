@@ -1,72 +1,258 @@
 ﻿@model CliCarProject.Models.Classes.Anuncio
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalhes do Anúncio";
+
+    var veiculo = Model.IdVeiculoNavigation;
+    var imagens = veiculo.Imagems
+        .OrderByDescending(i => i.IdImagem)
+        .ToList();
+
+    // preço formatado
+    string precoFormatado = Model.Preco.ToString("N0") + " €";
+
+    // data (podes depois trocar para DataAtualizacao se quiseres)
+    string dataCriacao = Model.DataCriacao?.ToString("dd/MM/yyyy");
 }
 
-<h1>Details</h1>
+<div class="container mt-4">
 
-<div>
-    <h4>Anuncio</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Titulo)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Titulo)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Descricao)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Descricao)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Preco)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Preco)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Estado)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Estado)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DataCriacao)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DataCriacao)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DataAtualizacao)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DataAtualizacao)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdVendedor)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdVendedor)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdLocalizacaoNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdLocalizacaoNavigation.IdLocalizacao)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdVeiculoNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdVeiculoNavigation.IdVeiculo)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.IdAnuncio">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <a href="javascript:history.back()" class="btn btn-secondary mb-3">← Voltar</a>
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">@Model.Titulo</h2>
+            <h5 class="text-muted mb-1">
+                @veiculo.IdMarcaNavigation.Nome @veiculo.IdModeloNavigation.Nome • @veiculo.Ano
+            </h5>
+            <small class="text-muted">
+                Criado em: @dataCriacao
+                @* // Futuro: substituir por DataAtualizacao quando implementares *@
+            </small>
+        </div>
+
+        <div class="text-end">
+            <div class="fw-bold" style="font-size: 1.8rem; color: #d32f2f;">
+                @precoFormatado
+            </div>
+            @if (Model.Estado != null)
+            {
+                <span class="badge bg-success mt-1">@Model.Estado</span>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- COLUNA ESQUERDA: CARROSSEL -->
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+
+                    @if (imagens.Any())
+                    {
+                        <div id="carouselAnuncio" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner" style="height: 360px;">
+                                @for (int i = 0; i < imagens.Count; i++)
+                                {
+                                    var img = imagens[i];
+                                    var url = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}");
+
+                                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                                        <img src="@url"
+                                             class="d-block w-100 rounded"
+                                             style="height: 360px; object-fit: cover;" />
+                                    </div>
+                                }
+                            </div>
+
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselAnuncio" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+
+                            <button class="carousel-control-next" type="button" data-bs-target="#carouselAnuncio" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                                <span class="visually-hidden">Seguinte</span>
+                            </button>
+                        </div>
+
+                        <!-- MINIATURAS -->
+                        <div class="d-flex gap-2 mt-2 flex-wrap">
+                            @for (int i = 0; i < imagens.Count; i++)
+                            {
+                                var img = imagens[i];
+                                var thumbUrl = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}");
+
+                                <img src="@thumbUrl"
+                                     class="rounded"
+                                     style="width: 90px; height: 60px; object-fit: cover; cursor: pointer;"
+                                     data-bs-target="#carouselAnuncio"
+                                     data-bs-slide-to="@i" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Este veículo ainda não tem imagens.</p>
+                    }
+
+                </div>
+            </div>
+
+            <!-- ESPECIFICAÇÕES -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold">Especificações do Veículo</h5>
+                </div>
+                <div class="card-body">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Marca</small>
+                                <span>@veiculo.IdMarcaNavigation.Nome</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Modelo</small>
+                                <span>@veiculo.IdModeloNavigation.Nome</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Ano</small>
+                                <span>@veiculo.Ano</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Quilometragem</small>
+                                <span>@veiculo.Quilometragem?.ToString("N0") km</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Condição</small>
+                                @{
+                                    string condicao =
+                                    veiculo.Condicao == "N" ? "Novo" :
+                                    veiculo.Condicao == "S" ? "Seminovo" :
+                                    veiculo.Condicao == "U" ? "Usado" :
+                                    veiculo.Condicao ?? "N/D";
+                                }
+                                <span>@condicao</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Combustível</small>
+                                <span>@veiculo.IdCombustivelNavigation.Tipo</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Caixa</small>
+                                @{
+                                    string caixa =
+                                    veiculo.Caixa == "M" ? "Manual" :
+                                    veiculo.Caixa == "A" ? "Automático" :
+                                    veiculo.Caixa ?? "N/D";
+                                }
+                                <span>@caixa</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <small class="text-muted d-block">Categoria</small>
+                                <span>@veiculo.IdClasseNavigation.Nome</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- DESCRIÇÃO -->
+            <div class="card shadow-sm border-0 mb-5">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold">Descrição</h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.Descricao))
+                    {
+                        <p class="mb-0">@Model.Descricao</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Este anúncio ainda não tem descrição detalhada.</p>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COLUNA DIREITA: INFO DO VENDEDOR / AÇÕES -->
+        <div class="col-lg-4">
+
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold">Informações do vendedor</h5>
+                </div>
+                <div class="card-body">
+
+                    <p class="mb-1">
+                        <strong>Vendedor:</strong><br />
+                        @(Model.IdVendedorNavigation?.UserName ?? "Por implementar (nome do vendedor)")
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Email:</strong><br />
+                        @(Model.IdVendedorNavigation?.Email ?? "Por implementar (email do vendedor)")
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Telemóvel:</strong><br />
+                        <span class="text-muted">Por implementar (campo telemóvel / contacto)</span>
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Localização:</strong><br />
+                        @(Model.IdLocalizacaoNavigation?.Distrito ?? "Por implementar (localização)")
+                    </p>
+
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+
+                    <!-- Exemplo: botão só para o dono do anúncio (ajusta a lógica conforme o teu sistema) -->
+                    @* Por implementar: verificar se User.Identity.Name == Model.IdVendedorNavigation?.UserName *@
+                    <a asp-action="Edit" asp-route-id="@Model.IdAnuncio"
+                       class="btn btn-warning w-100 mb-2">
+                        ✏️ Editar este anúncio
+                    </a>
+
+                    <a asp-action="Index"
+                       class="btn btn-outline-secondary w-100">
+                        Voltar à lista de anúncios
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
 </div>
