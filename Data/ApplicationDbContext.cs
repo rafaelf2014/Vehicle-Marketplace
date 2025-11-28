@@ -4,16 +4,13 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using CliCarProject.Models.Classes;
 using CliCarProject.Models;
+using Microsoft.AspNetCore.Identity;
 
 
 namespace CliCarProject.Data;
 
-public partial class ApplicationDbContext : IdentityDbContext
+public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
-    public ApplicationDbContext()
-    {
-    }
-
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
@@ -120,6 +117,11 @@ public partial class ApplicationDbContext : IdentityDbContext
                 .HasForeignKey(d => d.IdVeiculo)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Anuncio__ID_Veic__5FB337D6");
+
+            entity.HasOne(d => d.IdVendedorNavigation).WithMany()
+                .HasForeignKey(d => d.IdVendedor)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Anuncio_AspNetUsers");
         });
 
         modelBuilder.Entity<Classe>(entity =>
@@ -333,6 +335,18 @@ public partial class ApplicationDbContext : IdentityDbContext
                 .HasForeignKey(d => d.IdModelo)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Veiculo__ID_Mode__5812160E");
+
+            entity.HasOne(d => d.IdMarcaNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdMarca)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Veiculo_Marca");
+
+            entity.HasOne(d => d.IdVendedorNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdVendedor)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Veiculo_AspNetUsers");
         });
 
         modelBuilder.Entity<Vendedor>(entity =>
