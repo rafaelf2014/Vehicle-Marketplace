@@ -36,8 +36,22 @@ namespace CliCarProject.Controllers
                 var modelo = _context.Modelos.Find(modeloId.Value);
                 if (modelo != null && modelo.IdMarca != marcaId.Value)
                 {
-                    // modelo não pertence à marca selecionada → ignorar o modelo
+                   
                     modeloId = null;
+                }
+            }
+
+            if (modeloId.HasValue && !categoriaId.HasValue)
+            {
+                var existe = _context.Veiculos.Any(v => v.IdModelo == modeloId.Value && v.IdClasse == categoriaId.Value);
+                if (!existe)
+                {
+               
+            {
+                var existe = _context.Veiculos.Any(v => v.IdModelo == modeloId.Value && v.IdClasse == categoriaId.Value);
+                if (!existe)
+                {
+                   
                 }
             }
 
@@ -90,16 +104,58 @@ namespace CliCarProject.Controllers
             }
             catch { }
 
-            var resultados = query.ToList();
+            // Determina se o utilizador não aplicou filtros:
+            bool noFilters = string.IsNullOrWhiteSpace(searchBox)
+                             && !marcaId.HasValue
+                             && !modeloId.HasValue
+                             && !categoriaId.HasValue
+                             && !combustivelId.HasValue
+                             && string.IsNullOrWhiteSpace(caixa)
+                             && !priceRange.HasValue;
+
+            List<Veiculo> resultados;
+
+            if (noFilters)
+            {
+                // busca todos e escolhe um subconjunto aleatório (ex.: 12)
+                var all = query.ToList();
+                resultados = all
+                    .OrderBy(x => Guid.NewGuid())
+                    .Take(12)
+                    .ToList();
+            }
+            else
+            {
+                resultados = query.ToList();
+            }
 
             // popular dados para a view
             ViewBag.Resultados = resultados;
             ViewBag.Marcas = _context.Marcas.ToList();
 
             // Se houver marca selecionada, devolve só os modelos dessa marca.
-            ViewBag.Modelos = marcaId.HasValue
-                ? _context.Modelos.Where(m => m.IdMarca == marcaId.Value).ToList()
-                : _context.Modelos.ToList();
+            // Melhorado: também considera categoriaId para evitar modelos que não existam nessa categoria.
+            if (marcaId.HasValue && categoriaId.HasValue)
+            {
+                ViewBag.Modelos = _context.Modelos
+                    .Where(m => m.IdMarca == marcaId.Value
+                                && _context.Veiculos.Any(v => v.IdModelo == m.IdModelo && v.IdClasse == categoriaId.Value))
+                    .ToList();
+            }
+            else if (marcaId.HasValue)
+            {
+                ViewBag.Modelos = _context.Modelos.Where(m => m.IdMarca == marcaId.Value).ToList();
+            }
+            else if (categoriaId.HasValue)
+            {
+                ViewBag.Modelos = _context.Modelos
+                    .Where(m => _context.Veiculos.Any(v => v.IdModelo == m.IdModelo && v.IdClasse == categoriaId.Value))
+                    .ToList();
+            }
+            else
+            {
+                ViewBag.Modelos = _context.Modelos.ToList();
+            }
 
             ViewBag.Classes = _context.Classes.ToList();
             ViewBag.Combustiveis = _context.Combustivels.ToList();
