@@ -1,8 +1,15 @@
-﻿@{
+﻿@using CliCarProject.Models.Classes
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
     ViewData["Title"] = "Home";
+    var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
+    var modelos = ViewBag.Modelos as List<Modelo> ?? new List<Modelo>();
+    var classes = ViewBag.Classes as List<Classe> ?? new List<Classe>();
+    var combustiveis = ViewBag.Combustiveis as List<Combustivel> ?? new List<Combustivel>();
+    var caixas = ViewBag.Caixas as List<SelectListItem> ?? new List<SelectListItem>();
 }
 
-<!-- Banner Principal -->
 <div class="hero-section">
     <div class="hero-image">
         <img src="@Url.Content("~/images/TemporaryImageHomePage.jpg")" alt="Car Hero" class="hero-img" />
@@ -13,34 +20,45 @@
         <p class="hero-subtitle">Encontra o carro perfeito para ti.</p>
 
         <div class="search-box">
-            <div class="filters">
-                <select class="form-select">
-                    <option>Marca</option>
-                </select>
-                <select class="form-select">
-                    <option>Modelo</option>
-                </select>
-                <select class="form-select">
-                    <option>Categoria</option>
-                </select>
-                <select class="form-select">
-                    <option>Combustível</option>
-                </select>
-                <select class="form-select">
-                    <option>Caixa</option>
+            <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="d-flex gap-2 align-items-center flex-wrap">
+                <input name="searchBox" class="form-control" placeholder="Procurar..." />
+
+                <select class="form-select" name="marcaId" id="marcaId">
+                    <option value="">Marca</option>
+                    @foreach (var m in marcas) { <option value="@m.IdMarca">@m.Nome</option> }
                 </select>
 
-                <button class="btn btn-danger">Pesquisar</button>
-            </div>
+                <select class="form-select" name="modeloId" id="modeloId" disabled>
+                    <option value="">Modelo</option>
+                    @foreach (var mo in modelos) { <option value="@mo.IdModelo">@mo.Nome</option> }
+                </select>
+
+                <select class="form-select" name="categoriaId">
+                    <option value="">Categoria</option>
+                    @foreach (var c in classes) { <option value="@c.IdClasse">@c.Nome</option> }
+                </select>
+
+                <select class="form-select" name="combustivelId">
+                    <option value="">Combustível</option>
+                    @foreach (var cb in combustiveis) { <option value="@cb.IdCombustivel">@cb.Tipo</option> }
+                </select>
+
+                <select class="form-select" name="caixa">
+                    @foreach (var cx in caixas) { <option value="@cx.Value">@cx.Text</option> }
+                </select>
+
+                <select class="form-select" name="priceRange">
+                    <option value="">Preço</option>
+                    <option value="1">Até 10.000 €</option>
+                    <option value="2">10.000 € – 30.000 €</option>
+                    <option value="3">Acima de 30.000 €</option>
+                </select>
+
+                <button type="submit" class="btn btn-danger">Pesquisar</button>
+            </form>
         </div>
     </div>
 </div>
-
-
-<br />
-<br />
-<br />
-<br />
 
 <!-- Secção Destaques -->
 <div class="container mt-5">
@@ -87,3 +105,55 @@
 
     <p class="text-muted">Ainda não tens favoritos.</p>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const marcaSelect = document.getElementById('marcaId');
+            const modeloSelect = document.getElementById('modeloId');
+
+            function setModelos(list) {
+                modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                list.forEach(m => {
+                    const id = m.idModelo ?? m.IdModelo;
+                    const nome = m.nome ?? m.Nome;
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = nome;
+                    modeloSelect.appendChild(opt);
+                });
+                modeloSelect.disabled = list.length === 0;
+            }
+
+            marcaSelect.addEventListener('change', function () {
+                const marcaId = this.value;
+                if (!marcaId) {
+                    // sem marca => desactiva modelo e limpa opções
+                    modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                    modeloSelect.disabled = true;
+                    return;
+                }
+
+                // fetch modelos da API
+                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setModelos(data || []);
+                    })
+                    .catch(() => {
+                        modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                        modeloSelect.disabled = true;
+                    });
+            });
+
+            // Ao carregar a página, se houver uma marca já selecionada (ex.: após submit),
+            // disparar a mudança para popular modelos.
+            document.addEventListener('DOMContentLoaded', function () {
+                if (marcaSelect.value) {
+                    // força disparo de change para popular modelos
+                    marcaSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        })();
+    </script>
+}
