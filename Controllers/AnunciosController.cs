@@ -31,9 +31,26 @@ namespace CliCarProject.Controllers
         // GET: Anuncios
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Anuncios.Include(a => a.IdLocalizacaoNavigation).Include(a => a.IdVeiculoNavigation);
-            return View(await applicationDbContext.ToListAsync());
+            var query = _context.Anuncios
+    .Include(a => a.IdVeiculoNavigation)
+        .ThenInclude(v => v.Imagems)
+    .Include(a => a.IdVeiculoNavigation)
+        .ThenInclude(v => v.IdMarcaNavigation)
+    .Include(a => a.IdVeiculoNavigation)
+        .ThenInclude(v => v.IdModeloNavigation)
+    .Include(a => a.IdVeiculoNavigation)
+        .ThenInclude(v => v.IdCombustivelNavigation)
+    //.Include(a => a.IdLocalizacaoNavigation) // podes manter se usares depois
+    .AsQueryable();
+
+
+            query = query.OrderByDescending(a=>a.DataCriacao);
+
+            var anuncios = await query.ToListAsync();
+
+            return View(anuncios);
         }
+
 
         // GET: Anuncios/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -44,9 +61,20 @@ namespace CliCarProject.Controllers
             }
 
             var anuncio = await _context.Anuncios
-                .Include(a => a.IdLocalizacaoNavigation)
                 .Include(a => a.IdVeiculoNavigation)
-                .FirstOrDefaultAsync(m => m.IdAnuncio == id);
+                    .ThenInclude(v => v.Imagems)
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdMarcaNavigation)
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdModeloNavigation)
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdCombustivelNavigation)
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdClasseNavigation)
+                .Include(a => a.IdLocalizacaoNavigation)
+                .Include(a => a.IdVendedorNavigation) // IdentityUser do vendedor
+                .FirstOrDefaultAsync(a => a.IdAnuncio == id);
+
             if (anuncio == null)
             {
                 return NotFound();
@@ -54,6 +82,7 @@ namespace CliCarProject.Controllers
 
             return View(anuncio);
         }
+
 
         // GET: Anuncios/Create
         [Authorize] //Quando tivermos sistema de Roles trocamos por [Athorize(Roles="Vendedor")];

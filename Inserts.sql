@@ -62,6 +62,12 @@
    ALTER TABLE Veiculo
    ADD Caixa VarChar(1);
    --FOREIGN KEY (IdMarca) REFERENCES Marca(ID_Marca);
+
+   --Alter table veiculo
+   --add Caixa varchar(1);
+
    
 
+   
+   
    

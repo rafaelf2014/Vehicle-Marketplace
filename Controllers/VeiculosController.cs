@@ -27,10 +27,58 @@ namespace CliCarProject.Controllers
         }
 
         // GET: Veiculos
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder, int page = 1, int pageSize = 6)
         {
-            var applicationDbContext = _context.Veiculos.Include(v => v.IdClasseNavigation).Include(v => v.IdCombustivelNavigation).Include(v => v.IdModeloNavigation).Include(v => v.IdMarcaNavigation).Include(v => v.IdVendedorNavigation).Include(v => v.Imagems);
-            return View(await applicationDbContext.ToListAsync());
+            // ViewBag para manter seleção atual
+            ViewBag.CurrentSort = sortOrder;
+
+            // opções de ordenação
+            ViewBag.SortAnoAsc = "ano_asc";
+            ViewBag.SortAnoDesc = "ano_desc";
+            ViewBag.SortKmAsc = "km_asc";
+            ViewBag.SortKmDesc = "km_desc";
+            ViewBag.SortModeloAsc = "modelo_asc";
+            ViewBag.SortModeloDesc = "modelo_desc";
+            ViewBag.SortDataAsc = "data_asc";
+            ViewBag.SortDataDesc = "data_desc";
+
+            var query = _context.Veiculos
+                .Include(v => v.Imagems)
+                .Include(v => v.IdModeloNavigation)
+                .OrderBy(v => v.IdVeiculo)
+                .AsQueryable();
+
+            // ORDENAR
+            query = sortOrder switch
+            {
+                "ano_asc" => query.OrderBy(v => v.Ano),
+                "ano_desc" => query.OrderByDescending(v => v.Ano),
+
+                "km_asc" => query.OrderBy(v => v.Quilometragem),
+                "km_desc" => query.OrderByDescending(v => v.Quilometragem),
+
+                "modelo_asc" => query.OrderBy(v => v.IdModeloNavigation.Nome),
+                "modelo_desc" => query.OrderByDescending(v => v.IdModeloNavigation.Nome),
+
+                "data_asc" => query.OrderBy(v => v.IdVeiculo),
+                "data_desc" => query.OrderByDescending(v => v.IdVeiculo),
+
+                _ => query.OrderBy(v => v.IdVeiculo)
+            };
+
+            // PAGINAÇÃO
+            int totalItems = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var veiculos = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+
+            return View(veiculos);
         }
 
         // GET: Veiculos/Details/5
@@ -47,7 +95,9 @@ namespace CliCarProject.Controllers
         .Include(v => v.IdClasseNavigation)
         .Include(v => v.IdCombustivelNavigation)
         .Include(v => v.Imagems)
-        .ToListAsync();
+        .FirstOrDefaultAsync(v => v.IdVeiculo == id);
+
+
             if (veiculos == null)
             {
                 return NotFound();
@@ -99,6 +149,8 @@ namespace CliCarProject.Controllers
                 _context.Add(veiculo);
                 await _context.SaveChangesAsync();
                 Console.WriteLine("✅ Veículo guardado na base de dados!");
+                
+                
 
                 // (4) Guardar cada imagem
                 if (Imagens != null && Imagens.Count > 0)
@@ -108,6 +160,7 @@ namespace CliCarProject.Controllers
 
                     if (!Directory.Exists(pastaVeiculo))
                         Directory.CreateDirectory(pastaVeiculo);
+
 
                     foreach (var file in Imagens)
                     {
@@ -154,20 +207,25 @@ namespace CliCarProject.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
-            var veiculo = await _context.Veiculos.FindAsync(id);
+            var veiculo = await _context.Veiculos
+                .Include(v => v.Imagems)
+                .Include(v => v.IdModeloNavigation)
+                .Include(v => v.IdMarcaNavigation)
+                .Include(v => v.IdCombustivelNavigation)
+                .Include(v => v.IdClasseNavigation)
+                .FirstOrDefaultAsync(v => v.IdVeiculo == id);
+
             if (veiculo == null)
-            {
                 return NotFound();
-            }
-            ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "IdClasse", veiculo.IdClasse);
-            ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "IdCombustivel", veiculo.IdCombustivel);
-            ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "IdModelo", veiculo.IdModelo);
-            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "IdMarca", veiculo.IdMarca);
-            ViewData["IdVendedor"] = new SelectList(_context.Users, "Id", "Id", veiculo.IdVendedor);
+
+            // Popular dropdowns
+            ViewBag.IdMarca = new SelectList(_context.Marcas, "IdMarca", "Nome", veiculo.IdMarca);
+            ViewBag.IdModelo = new SelectList(_context.Modelos.Where(m => m.IdMarca == veiculo.IdMarca), "IdModelo", "Nome", veiculo.IdModelo);
+            ViewBag.IdClasse = new SelectList(_context.Classes, "IdClasse", "Nome", veiculo.IdClasse);
+            ViewBag.IdCombustivel = new SelectList(_context.Combustivels, "IdCombustivel", "Tipo", veiculo.IdCombustivel);
+
             return View(veiculo);
         }
 
@@ -176,39 +234,92 @@ namespace CliCarProject.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdVeiculo,IdVendedor,Ano,Quilometragem,Condicao,IdModelo,IdCombustivel,IdClasse")] Veiculo veiculo)
+        public async Task<IActionResult> Edit(int id, Veiculo veiculo)
         {
             if (id != veiculo.IdVeiculo)
-            {
                 return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                // repopular dropdowns em caso de erro
+                ViewBag.IdMarca = new SelectList(_context.Marcas, "IdMarca", "Nome", veiculo.IdMarca);
+                ViewBag.IdModelo = new SelectList(_context.Modelos, "IdModelo", "Nome", veiculo.IdModelo);
+                ViewBag.IdClasse = new SelectList(_context.Classes, "IdClasse", "Nome", veiculo.IdClasse);
+                ViewBag.IdCombustivel = new SelectList(_context.Combustivels, "IdCombustivel", "Nome", veiculo.IdCombustivel);
+
+                return View(veiculo);
             }
 
-            if (ModelState.IsValid)
+            _context.Update(veiculo);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id = veiculo.IdVeiculo });
+        }
+
+        // POST: Veiculos/EditImages/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditImages(int id, IFormFile[] NovasImagens, int[] RemoverIds)
+        {
+            if (RemoverIds != null && RemoverIds.Length > 0)
             {
-                try
+                foreach (var imgId in RemoverIds)
                 {
-                    _context.Update(veiculo);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!VeiculoExists(veiculo.IdVeiculo))
+                    var imagem = await _context.Imagems.FirstOrDefaultAsync(i => i.IdImagem == imgId);
+
+                    if (imagem != null)
                     {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
+
+                        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/veiculos", id.ToString(), imagem.Nome);
+
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            System.IO.File.Delete(filePath);
+                        }
+
+                        _context.Imagems.Remove(imagem);
+                        await _context.SaveChangesAsync();
+
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                
             }
-            ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "IdClasse", veiculo.IdClasse);
-            ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "IdCombustivel", veiculo.IdCombustivel);
-            ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "IdModelo", veiculo.IdModelo);
-            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "IdMarca", veiculo.IdMarca);
-            ViewData["IdVendedor"] = new SelectList(_context.Users, "Id", "Id", veiculo.IdVendedor);
-            return View(veiculo);
+            if (NovasImagens != null && NovasImagens.Length > 0)
+            {
+                // 1. Caminho da pasta do veículo
+                var pastaVeiculo = Path.Combine("wwwroot/uploads/veiculos", id.ToString());
+
+                // 2. Criar se não existir
+                if (!Directory.Exists(pastaVeiculo))
+                    Directory.CreateDirectory(pastaVeiculo);
+
+                // 3. Loop pelas novas imagens
+                foreach (var file in NovasImagens)
+                {
+                    if (file.Length > 0)
+                    {
+                        var filename = Guid.NewGuid() + Path.GetExtension(file.FileName);
+
+                        var filePath = Path.Combine(pastaVeiculo, filename);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        var novaImagem = new Imagem
+                        {
+                            IdVeiculo = id,
+                            Nome = filename
+                        };
+
+                        _context.Imagems.Add(novaImagem);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
+
+            return RedirectToAction(nameof(Edit), new { id });
         }
 
         // GET: Veiculos/Delete/5
