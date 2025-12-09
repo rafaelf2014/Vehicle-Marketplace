@@ -156,10 +156,6 @@ namespace CliCarProject.Areas.Identity.Pages.Account
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            // --- Conditional server-side validation: remove ModelState entries for fields
-            // that are not relevant to the chosen role. This allows keeping [Required]
-            // data- attributes in the templates (for client-side validation) while
-            // preventing the server from rejecting the other role's submission.
             if (Input != null)
             {
                 var role = Input.Role ?? string.Empty;
@@ -221,6 +217,9 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                 }
  
             }
+
+            // ----------------- Criar Contas Vendedor e Comprador --------------------
+
             var userId = user.Id;
 
             if (Input.Role == "Vendedor")
@@ -233,11 +232,11 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                     Nif = Input.NIF,
                     Tipo = Input.TypeSeller
                 };
-                _logger.LogInformation("Vendedor criado com sucesso: {IdUtilizador}", vendedor.IdUtilizador);
+                
 
                 _dbContext.Vendedors.Add(vendedor);
                 await _dbContext.SaveChangesAsync();
-
+                SuccessMessage = "Conta criada com sucesso";
             }
 
             if (Input.Role == "Comprador")
@@ -251,10 +250,28 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                 };
                 _dbContext.Compradors.Add(comprador);
                 await _dbContext.SaveChangesAsync();
+                SuccessMessage = "Conta criada com sucesso";
 
             }
-            SuccessMessage = "Conta criada com sucesso";
-            return RedirectToPage("/Account/Login");
+            
+
+            // ----------------- EMAIL DE CONFIRMAÇÃO --------------------
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new { area = "Identity", userId = userId, code = code },
+                protocol: Request.Scheme);
+
+            await _emailSender.SendEmailAsync(
+                Input.Email,
+                "Confirme o seu email",
+                $"Por favor confirme a sua conta clicando aqui: <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Confirmar Email</a>");
+
+            // Redireciona para página automática de confirmação
+            return RedirectToPage("RegisterConfirmation", new { email = Input.Email });
         }
 
         private IdentityUser CreateUser()
