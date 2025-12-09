@@ -1,71 +1,114 @@
-@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
+﻿@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Veículos";
 }
 
-<h1>Index</h1>
+<div class="container py-4">
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Ano)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Quilometragem)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Condicao)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdClasseNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdCombustivelNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdModeloNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdVendedorNavigation)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Ano)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Quilometragem)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Condicao)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdClasseNavigation.Nome)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdCombustivelNavigation.Tipo)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdModeloNavigation.Nome)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdVendedorNavigation.UserName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdVeiculo">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdVeiculo">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdVeiculo">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+    <!-- ======================== -->
+    <!--   BARRA DE ORDENAÇÃO     -->
+    <!-- ======================== -->
+
+    <form method="get" class="mb-4">
+        <div class="row g-2">
+
+            <div class="col-md-4">
+                <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+                    <option value="">Ordenar por...</option>
+
+                    <option value="ano_asc">Ano (ascendente)</option>
+                    <option value="ano_desc">Ano (descendente)</option>
+
+                    <option value="km_asc">Quilometragem (ascendente)</option>
+                    <option value="km_desc">Quilometragem (descendente)</option>
+
+                    <option value="modelo_asc">Modelo (A→Z)</option>
+                    <option value="modelo_desc">Modelo (Z→A)</option>
+
+                    <option value="data_desc">Mais recentes</option>
+                    <option value="data_asc">Mais antigos</option>
+                </select>
+            </div>
+
+        </div>
+    </form>
+
+
+    <!-- ======================== -->
+    <!--   GRID DE VEÍCULOS       -->
+    <!-- ======================== -->
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+
+        @foreach (var item in Model)
+        {
+            var capa = item.Imagems?.FirstOrDefault()
+            ?? item.Imagems?.FirstOrDefault();
+
+            <div class="col">
+                <div class="card shadow-sm border-0 h-100">
+
+                    <!-- IMAGEM -->
+                    <a asp-action="Details" asp-route-id="@item.IdVeiculo">
+                        <img src="~/uploads/veiculos/@item.IdVeiculo/@capa?.Nome"
+                             class="card-img-top"
+                             style="height:180px; object-fit:cover; border-radius:6px;" />
+                    </a>
+
+                    <div class="card-body">
+                        <h5 class="card-title">@item.IdModeloNavigation?.Nome</h5>
+                        <p class="card-text text-muted">
+                            @item.Ano • @item.Quilometragem km • @item.Condicao
+                        </p>
+                    </div>
+
+                    <div class="card-footer bg-white border-0">
+                        <a asp-action="Details" asp-route-id="@item.IdVeiculo"
+                           class="btn btn-outline-primary w-100">
+                            Ver Detalhes
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+
+
+    <!-- ======================== -->
+    <!--       PAGINAÇÃO          -->
+    <!-- ======================== -->
+
+    <nav aria-label="Pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+
+            <!-- Botão anterior -->
+            <li class="page-item @(ViewBag.Page == 1 ? "disabled" : "")">
+                <a class="page-link" href="?page=@(ViewBag.Page - 1)&sortOrder=@ViewBag.CurrentSort">
+                    Anterior
+                </a>
+            </li>
+
+            <!-- Números das páginas -->
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                    <a class="page-link" href="?page=@i&sortOrder=@ViewBag.CurrentSort">
+                        @i
+                    </a>
+                </li>
+            }
+
+            <!-- Próxima página -->
+            <li class="page-item @(ViewBag.Page == ViewBag.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="?page=@(ViewBag.Page + 1)&sortOrder=@ViewBag.CurrentSort">
+                    Próxima
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+</div>

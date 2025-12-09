@@ -29,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\uploads\anuncios\" />
     <Folder Include="Areas\Identity\Pages\Account\Register\" />
   </ItemGroup>
 

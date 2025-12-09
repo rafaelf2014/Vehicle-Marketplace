@@ -1,0 +1,86 @@
+﻿@model IEnumerable<CliCarProject.Models.Classes.Anuncio>
+
+@{
+    ViewData["Title"] = "Anúncios";
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4 fw-bold">Anúncios Disponíveis</h2>
+
+    <div class="row">
+
+        @foreach (var anuncio in Model)
+        {
+            var veiculo = anuncio.IdVeiculoNavigation;
+
+            // Imagem de capa
+            var capa = veiculo.Imagems
+            .OrderByDescending(i => i.IdImagem)
+            .FirstOrDefault();
+
+
+            
+                string imagemUrl;
+
+                if (capa != null)
+                {
+                 imagemUrl = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{capa.Nome}");
+                }
+                else
+                {
+                    imagemUrl = Url.Content("~/images/Image_not_available.png");
+                }
+            
+
+
+
+            <div class="col-md-4 col-sm-6 mb-4">
+                <div class="card shadow-sm h-100">
+
+                    <!-- IMAGEM -->
+                    <img src="@imagemUrl"
+                         class="card-img-top"
+                         style="height: 220px; object-fit: cover;" />
+
+
+
+                    <div class="card-body">
+
+                        <!-- TÍTULO -->
+                        <h5 class="fw-bold">@anuncio.Titulo</h5>
+
+                        <!-- MARCA + MODELO -->
+                        <p class="mb-1 text-muted">
+                            🚗 @veiculo.IdMarcaNavigation.Nome @veiculo.IdModeloNavigation.Nome
+                        </p>
+
+                        <!-- ANO + COMUSTÍVEL -->
+                        <p class="mb-1">
+                            📅 @veiculo.Ano • ⛽ @veiculo.IdCombustivelNavigation.Tipo
+                        </p>
+
+                        <!-- QUILÓMETROS -->
+                        <p class="mb-1">
+                            🛣️ @veiculo.Quilometragem?.ToString("N0") km
+                        </p>
+
+                        <!-- PREÇO -->
+                        <h4 class="fw-bold text-danger mt-3">
+                            @anuncio.Preco.ToString("N0") €
+                        </h4>
+
+                        <!-- BOTÃO -->
+                        <a asp-action="Details" asp-route-id="@anuncio.IdAnuncio"
+                           class="btn btn-primary w-100 mt-3">
+                            Ver Anúncio
+                        </a>
+
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
