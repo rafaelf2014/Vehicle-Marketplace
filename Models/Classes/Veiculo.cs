@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 
 namespace CliCarProject.Models.Classes;
@@ -14,10 +14,16 @@ public partial class Veiculo
     public int Ano { get; set; }
 
     public int? Quilometragem { get; set; }
-
+    [Required]
+    [RegularExpression("N|S|U", ErrorMessage = "Condição inválida.")]
     public string? Condicao { get; set; }
 
+    [Required]
+    [RegularExpression("M|A", ErrorMessage = "Condição inválida.")]
+    public string? Caixa { get; set; }
     public int IdModelo { get; set; }
+
+    public int IdMarca { get; set; }
 
     public int IdCombustivel { get; set; }
 
@@ -29,7 +35,8 @@ public partial class Veiculo
 
     public virtual Combustivel? IdCombustivelNavigation { get; set; }
 
-    public virtual Modelo? IdModeloNavigation { get; set; } 
+    public virtual Modelo? IdModeloNavigation { get; set; }
+    public virtual Marca? IdMarcaNavigation { get; set; }
     public virtual IdentityUser? IdVendedorNavigation { get; set; } 
 
     public virtual ICollection<Imagem> Imagems { get; set; } = new List<Imagem>();
