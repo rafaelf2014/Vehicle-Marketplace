@@ -65,7 +65,7 @@ body {
     filter: brightness(0.55);
 }
 
-/* centra o conte˙do do hero */
+/* centra o conte√∫do do hero */
 .hero-content {
     position: absolute;
     top: 50%;
@@ -111,11 +111,11 @@ body {
     justify-content: center;
     margin: 0;
     padding: 0;
-    overflow-x: auto; /* permite rolar horizontalmente se n„o couber */
+    overflow-x: auto; /* permite rolar horizontalmente se n√£o couber */
     -webkit-overflow-scrolling: touch;
 }
 
-/* Comportamento dos inputs/selects ó mais compactos */
+/* Comportamento dos inputs/selects ¬ó mais compactos */
 .search-box .form-control,
 .search-box .form-select {
     width: auto;
@@ -130,7 +130,7 @@ body {
 
 .search-box input[name="searchBox"],
 .search-box input[type="search"] {
-    flex: 0 0 100px;    /* flex-basis fixo ó ajusta para 280px/300px se quiseres ainda menor */
+    flex: 0 0 100px;    /* flex-basis fixo ¬ó ajusta para 280px/300px se quiseres ainda menor */
     width: 100px;
     min-width: 100px;
     max-width: 260px;
@@ -138,7 +138,7 @@ body {
     padding: 6px 10px;
 }
 
-/* bot„o mantÈm tamanho compacto */
+/* bot√£o mant√©m tamanho compacto */
 .search-box button {
     flex: 0 0 auto;
     height: 32px;
@@ -163,7 +163,7 @@ body {
     margin-right: 8px;
 }
 
-/* para ecr„s muito largos mantÈm uma linha ˙nica e ajusta larguras */
+/* para ecr√£s muito largos mant√©m uma linha √∫nica e ajusta larguras */
 @media (min-width: 1200px) {
     .search-box form {
         gap: 10px;
@@ -180,7 +180,7 @@ body {
     }
 }
 
-/* Responsivo: em ecr„s pequenos empilha os filtros verticalmente */
+/* Responsivo: em ecr√£s pequenos empilha os filtros verticalmente */
 @media (max-width: 991px) {
     .search-box form {
         flex-wrap: wrap; /* neste breakpoint permite empilhar */
@@ -200,4 +200,55 @@ body {
         min-width: auto;
         height: 40px;
     }
+.tabs-container {
+
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin: 30px 0 40px 0;
+    border-bottom: 1px solid #dcdcdc;
+    padding-bottom: 10px;
+}
+
+    .tabs-container > a {
+        text-decoration: none; /* remove underline */
+        color: #777; /* cor padr√£o igual aos bot√µes */
+        font-size: 14px;
+        padding: 8px 0;
+        cursor: pointer;
+        background: none;
+        border: none;
+    }
+
+.tab {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #777;
+    font-size: 14px;
+    padding: 8px 0;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+/* Hover */
+.tab:hover {
+    color: #5a2fd8;
+}
+
+/* Ativo */
+.tab.active {
+   color: #5a2fd8;
+   font-weight: 500;
+}
+
+        /* Linha por baixo */
+        .tab.active::after {
+            content: "";
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #5a2fd8;
 }
