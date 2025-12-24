@@ -201,3 +201,85 @@ body {
         height: 40px;
     }
 }
+
+/* Searchbox do hero: lado direito e vertical */
+.search-box.search-box-right {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    margin: 0;                /* override do margin auto */
+    z-index: 2;
+}
+
+.search-box.search-box-right .search-box-vertical {
+    display: grid;
+    gap: 10px;
+}
+
+/* inputs/selects 100% na coluna */
+.search-box.search-box-right .form-control,
+.search-box.search-box-right .form-select,
+.search-box.search-box-right button {
+    width: 100%;
+    max-width: none;
+    flex: none;               /* override das regras antigas */
+}
+
+/* Em telas menores, não fixa à direita (fica centralizado/normal) */
+@media (max-width: 991px) {
+    .search-box.search-box-right {
+        position: static;
+        transform: none;
+        width: 95%;
+        margin: 20px auto 0;
+    }
+}
+
+/* Searchbox: lado esquerdo e vertical */
+.search-box.search-box-left {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    margin: 0;
+    z-index: 2;
+}
+
+.search-box.search-box-left .search-box-vertical {
+    display: grid;
+    gap: 10px;
+}
+
+.search-box.search-box-left .form-control,
+.search-box.search-box-left .form-select,
+.search-box.search-box-left button {
+    width: 100%;
+    max-width: none;
+    flex: none;
+}
+
+/* Em telas menores, não fixa (fica normal/central) */
+@media (max-width: 991px) {
+    .search-box.search-box-left {
+        position: static;
+        transform: none;
+        width: 95%;
+        margin: 20px auto 0;
+    }
+}
+
+/* CarSearch: empurra conteúdo para a direita para não colidir com a search-box-left */
+.carsearch-content {
+    margin-left: 360px; /* 320px da searchbox + 40px de folga */
+}
+
+@media (max-width: 991px) {
+    .carsearch-content {
+        margin-left: 0;
+    }
+}
