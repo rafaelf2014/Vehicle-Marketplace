@@ -17,156 +17,96 @@ namespace CliCarProject.Controllers
         }
 
         [HttpGet]
-        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, int? priceRange)
+        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, int? priceRange, string sortOrder, int page = 1)
         {
-            // Se o utilizador escolheu um modelo mas não especificou marca,
-            // inferimos a marca a partir do modelo (evita estado inconsistente).
             if (modeloId.HasValue && !marcaId.HasValue)
             {
                 var modelo = _context.Modelos.Find(modeloId.Value);
                 if (modelo != null)
-                {
                     marcaId = modelo.IdMarca;
-                }
             }
 
-            // Se foram passados ambos, garantimos consistência:
             if (modeloId.HasValue && marcaId.HasValue)
             {
                 var modelo = _context.Modelos.Find(modeloId.Value);
                 if (modelo != null && modelo.IdMarca != marcaId.Value)
-                {
-                   
                     modeloId = null;
-                }
             }
 
-            if (modeloId.HasValue && !categoriaId.HasValue)
-            {
-                var existe = _context.Veiculos.Any(v => v.IdModelo == modeloId.Value && v.IdClasse == categoriaId.Value);
-                if (!existe)
-                {
-               
-            {
-                var existe = _context.Veiculos.Any(v => v.IdModelo == modeloId.Value && v.IdClasse == categoriaId.Value);
-                if (!existe)
-                {
-                   
-                }
-            }
-
-            Debug.WriteLine($"CarSearch called: searchBox={searchBox}, marcaId={marcaId}, modeloId={modeloId}, categoriaId={categoriaId}, combustivelId={combustivelId}, caixa={caixa}, priceRange={priceRange}");
-
-            var query = _context.Veiculos
-                .Include(v => v.IdModeloNavigation).ThenInclude(m => m.IdMarcaNavigation)
-                .Include(v => v.Imagems)
-                .Include(v => v.Anuncios)
+            var query = _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.Imagems)
+                .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.IdMarcaNavigation)
+                .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.IdModeloNavigation)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchBox))
             {
-                query = query.Where(v =>
-                    v.IdModeloNavigation.Nome.Contains(searchBox) ||
-                    v.IdModeloNavigation.IdMarcaNavigation.Nome.Contains(searchBox));
+                query = query.Where(a =>
+                    a.Titulo.Contains(searchBox) ||
+                    a.IdVeiculoNavigation!.IdModeloNavigation!.Nome.Contains(searchBox) ||
+                    a.IdVeiculoNavigation!.IdMarcaNavigation!.Nome.Contains(searchBox));
             }
 
             if (marcaId.HasValue)
-                query = query.Where(v => v.IdModeloNavigation.IdMarca == marcaId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdMarca == marcaId.Value);
 
             if (modeloId.HasValue)
-                query = query.Where(v => v.IdModelo == modeloId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdModelo == modeloId.Value);
 
             if (categoriaId.HasValue)
-                query = query.Where(v => v.IdClasse == categoriaId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdClasse == categoriaId.Value);
 
             if (combustivelId.HasValue)
-                query = query.Where(v => v.IdCombustivel == combustivelId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdCombustivel == combustivelId.Value);
+
+            if (!string.IsNullOrWhiteSpace(caixa))
+                query = query.Where(a => a.IdVeiculoNavigation!.Caixa == caixa);
 
             if (priceRange.HasValue)
             {
-                switch (priceRange.Value)
+                query = priceRange.Value switch
                 {
-                    case 1:
-                        query = query.Where(v => v.Anuncios.Any(a => a.Preco <= 10000));
-                        break;
-                    case 2:
-                        query = query.Where(v => v.Anuncios.Any(a => a.Preco > 10000 && a.Preco <= 30000));
-                        break;
-                    case 3:
-                        query = query.Where(v => v.Anuncios.Any(a => a.Preco > 30000));
-                        break;
-                }
+                    1 => query.Where(a => a.Preco <= 10000),
+                    2 => query.Where(a => a.Preco > 10000 && a.Preco <= 30000),
+                    3 => query.Where(a => a.Preco > 30000),
+                    _ => query
+                };
             }
 
-            try
+            query = sortOrder switch
             {
-                Debug.WriteLine("Generated SQL: " + query.ToQueryString());
-            }
-            catch { }
+                "ano_asc" => query.OrderBy(a => a.IdVeiculoNavigation!.Ano),
+                "ano_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation!.Ano),
 
-            // Determina se o utilizador não aplicou filtros:
-            bool noFilters = string.IsNullOrWhiteSpace(searchBox)
-                             && !marcaId.HasValue
-                             && !modeloId.HasValue
-                             && !categoriaId.HasValue
-                             && !combustivelId.HasValue
-                             && string.IsNullOrWhiteSpace(caixa)
-                             && !priceRange.HasValue;
+                "km_asc" => query.OrderBy(a => a.IdVeiculoNavigation!.Quilometragem),
+                "km_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation!.Quilometragem),
 
-            List<Veiculo> resultados;
+                "modelo_asc" => query.OrderBy(a => a.IdVeiculoNavigation!.IdModeloNavigation!.Nome),
+                "modelo_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation!.IdModeloNavigation!.Nome),
 
-            if (noFilters)
-            {
-                // busca todos e escolhe um subconjunto aleatório (ex.: 12)
-                var all = query.ToList();
-                resultados = all
-                    .OrderBy(x => Guid.NewGuid())
-                    .Take(12)
-                    .ToList();
-            }
-            else
-            {
-                resultados = query.ToList();
-            }
+                "preco_asc" => query.OrderBy(a => a.Preco),
+                "preco_desc" => query.OrderByDescending(a => a.Preco),
 
-            // popular dados para a view
-            ViewBag.Resultados = resultados;
-            ViewBag.Marcas = _context.Marcas.ToList();
-
-            // Se houver marca selecionada, devolve só os modelos dessa marca.
-            // Melhorado: também considera categoriaId para evitar modelos que não existam nessa categoria.
-            if (marcaId.HasValue && categoriaId.HasValue)
-            {
-                ViewBag.Modelos = _context.Modelos
-                    .Where(m => m.IdMarca == marcaId.Value
-                                && _context.Veiculos.Any(v => v.IdModelo == m.IdModelo && v.IdClasse == categoriaId.Value))
-                    .ToList();
-            }
-            else if (marcaId.HasValue)
-            {
-                ViewBag.Modelos = _context.Modelos.Where(m => m.IdMarca == marcaId.Value).ToList();
-            }
-            else if (categoriaId.HasValue)
-            {
-                ViewBag.Modelos = _context.Modelos
-                    .Where(m => _context.Veiculos.Any(v => v.IdModelo == m.IdModelo && v.IdClasse == categoriaId.Value))
-                    .ToList();
-            }
-            else
-            {
-                ViewBag.Modelos = _context.Modelos.ToList();
-            }
-
-            ViewBag.Classes = _context.Classes.ToList();
-            ViewBag.Combustiveis = _context.Combustivels.ToList();
-            ViewBag.Caixas = new List<SelectListItem>
-            {
-                new SelectListItem("Todas", ""),
-                new SelectListItem("Manual", "Manual"),
-                new SelectListItem("Automática", "Automática")
+                "data_asc" => query.OrderBy(a => a.DataCriacao),
+                _ => query.OrderByDescending(a => a.DataCriacao),
             };
 
-            return View("CarSearch");
+            const int pageSize = 9;
+            var totalItems = query.Count();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+            var anuncios = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.CurrentSort = sortOrder ?? "";
+            ViewBag.Page = page;
+            ViewBag.TotalPages = Math.Max(1, totalPages);
+
+            return View("CarSearch", anuncios);
         }
 
         // Endpoint para popular os modelos via AJAX quando muda a marca

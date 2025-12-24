@@ -1,147 +1,209 @@
-﻿@{
-    ViewData["Title"] = "Carros";
+﻿@using System.Globalization
+@using System.Linq
+@using CliCarProject.Models.Classes
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@model IEnumerable<Anuncio>
+
+@{
+    ViewData["Title"] = "Anúncios";
+
+    var currentSort = (string?)ViewBag.CurrentSort ?? "";
+    var page = (int?)ViewBag.Page ?? 1;
+    var totalPages = (int?)ViewBag.TotalPages ?? 1;
+
+    var marcas = ViewBag.Marcas as List<Marca> ?? new();
+    var modelos = ViewBag.Modelos as List<Modelo> ?? new();
+    var classes = ViewBag.Classes as List<Classe> ?? new();
+    var combustiveis = ViewBag.Combustiveis as List<Combustivel> ?? new();
+    var caixas = ViewBag.Caixas as List<SelectListItem> ?? new();
 }
 
-<style>
-    /* Estilos locais para aproximar do design solicitado */
-    .filter-btn {
-        width: 100%;
-        text-align: left;
-        background: #d6d0ce;
-        border: none;
-        padding: 12px 16px;
-        margin-bottom: 12px;
-        border-radius: 8px;
-        color: #333;
-    }
+<div class="container py-4">
 
-    .filter-aside {
-        max-width: 280px;
-    }
+    <div class="carsearch-content">
 
-    .card-placeholder-img {
-        height: 140px;
-        background: linear-gradient(90deg, #efefef, #e6e6e6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #888;
-        font-weight: 600;
-        border-top-left-radius: .5rem;
-        border-top-right-radius: .5rem;
-    }
+        <!-- ======================== -->
+        <!--   BARRA DE ORDENAÇÃO     -->
+        <!-- ======================== -->
 
-    .badge-status {
-        font-size: 0.75rem;
-        padding: 4px 8px;
-        border-radius: 12px;
-    }
+        <form method="get" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
 
-    .controls-top {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-    }
+                        <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Ano (ascendente)</option>
+                        <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Ano (descendente)</option>
 
-    .pagination-dots {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
+                        <option value="km_asc" selected="@(currentSort == "km_asc" ? "selected" : null)">Quilometragem (ascendente)</option>
+                        <option value="km_desc" selected="@(currentSort == "km_desc" ? "selected" : null)">Quilometragem (descendente)</option>
 
-    .pagination-dots span {
-        width: 8px;
-        height: 8px;
-        background: #ccc;
-        border-radius: 50%;
-        display: inline-block;
-    }
+                        <option value="modelo_asc" selected="@(currentSort == "modelo_asc" ? "selected" : null)">Modelo (A→Z)</option>
+                        <option value="modelo_desc" selected="@(currentSort == "modelo_desc" ? "selected" : null)">Modelo (Z→A)</option>
 
-    .pagination-dots .active {
-        background: #222;
-    }
+                        <option value="data_desc" selected="@(currentSort == "data_desc" ? "selected" : null)">Mais recentes</option>
+                        <option value="data_asc" selected="@(currentSort == "data_asc" ? "selected" : null)">Mais antigos</option>
 
-    }
-</style>
-
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- Coluna de filtros (APENAS VISUAL) -->
-        <aside class="col-lg-3 filter-aside">
-            <h4 class="mb-3">Filtrar pesquisa</h4>
-
-            <div class="d-grid">
-                <button class="filter-btn" type="button">Marca</button>
-                <button class="filter-btn" type="button">Modelo</button>
-                <button class="filter-btn" type="button">Categoria</button>
-                <button class="filter-btn" type="button">Combustível</button>
-                <button class="filter-btn" type="button">Caixa</button>
-                <div class="d-flex gap-2">
-                    <button class="filter-btn" style="flex:1" type="button">Preço de</button>
-                    <button class="filter-btn" style="flex:1" type="button">Preço até</button>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="filter-btn" style="flex:1" type="button">Ano de</button>
-                    <button class="filter-btn" style="flex:1" type="button">Ano até</button>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="filter-btn" style="flex:1" type="button">Km de</button>
-                    <button class="filter-btn" style="flex:1" type="button">Km até</button>
-                </div>
-                <button class="filter-btn" type="button">Localização</button>
-                <button class="btn btn-secondary mt-2" type="button">Limpar filtros</button>
-            </div>
-        </aside>
-
-        <!-- Secção anúncios -->
-        <main class="col-lg-9">
-            <div class="d-flex align-items-start justify-content-between mb-3">
-                <div>
-                    <h2 class="mb-1">Carros</h2>
-                    <small class="text-muted">Número de anúncios: 172</small>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <div class="me-2">
-                        <select class="form-select">
-                            <option>Destacado</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-danger">Guardar Filtros</button>
+                        <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (ascendente)</option>
+                        <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (descendente)</option>
+                    </select>
                 </div>
             </div>
+        </form>
 
-            <div class="controls-top">
-                <ul class="nav nav-tabs mb-0">
-                    <li class="nav-item"><a class="nav-link active" href="#">Todos (172)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Usados (132)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Novos (40)</a></li>
-                </ul>
+        <!-- ======================== -->
+        <!--   GRID DE ANÚNCIOS       -->
+        <!-- ======================== -->
 
-                <div class="d-flex align-items-center gap-2">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Procurar...">
-                        <button class="btn btn-outline-primary" type="button">Pesquisar</button>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+
+            @foreach (var item in Model)    
+            {
+                var veiculo = item.IdVeiculoNavigation;
+
+                var img = veiculo?.Imagems?
+                    .OrderByDescending(i => i.IdImagem)
+                    .FirstOrDefault();
+
+                // Segui o padrão que já existe em Views\Anuncios\Details.cshtml:
+                // ~/uploads/veiculos/{IdVeiculo}/{Nome}
+                var imageSrc = (veiculo != null && img != null && !string.IsNullOrWhiteSpace(img.Nome))
+                    ? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}")
+                    : Url.Content("~/img/placeholder-car.png");
+
+                var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + " €";
+
+                <div class="col">
+                    <div class="card shadow-sm border-0 h-100">
+
+                        <!-- IMAGEM -->
+                        <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio">
+                            <img src="@imageSrc"
+                                 class="card-img-top"
+                                 alt="Imagem do anúncio @item.IdAnuncio"
+                                 style="height:180px; object-fit:cover; border-radius:6px;" />
+                        </a>
+
+                        <div class="card-body">
+                            <h5 class="card-title mb-1">@item.Titulo</h5>
+
+                            <div class="fw-bold mb-2" style="color:#d32f2f;">
+                                @precoFormatado
+                            </div>
+
+                            <p class="card-text text-muted mb-0">
+                                @veiculo?.IdMarcaNavigation?.Nome @veiculo?.IdModeloNavigation?.Nome
+                                @if (veiculo != null)
+                                {
+                                    <text> • @veiculo.Ano</text>
+                                    <text> • @veiculo.Quilometragem km</text>
+                                    <text> • @veiculo.Condicao</text>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="card-footer bg-white border-0">
+                            <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
+                               class="btn btn-outline-primary w-100">
+                                Ver Detalhes
+                            </a>
+                        </div>
+
                     </div>
                 </div>
-            </div>
+            }
 
- 
+        </div>
 
-            <!-- Paginação visual (dots + seta) -->
-            <div class="d-flex align-items-center justify-content-between mt-4">
-                <div class="pagination-dots">
-                    <span class="active"></span>
-                    <span></span>
-                    <span></span>
-                </div>
+        <!-- ======================== -->
+        <!--       PAGINAÇÃO          -->
+        <!-- ======================== -->
 
-                <div>
-                    <button class="btn btn-link">Próximo →</button>
-                </div>
-            </div>
-        </main>
+        <nav aria-label="Pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+
+                @{
+                    var prevPage = Math.Max(1, page - 1);
+                    var nextPage = Math.Min(totalPages, page + 1);
+                }
+
+                <li class="page-item @(page <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=@prevPage&sortOrder=@currentSort">Anterior</a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == page ? "active" : "")">
+                        <a class="page-link" href="?page=@i&sortOrder=@currentSort">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(page >= totalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@nextPage&sortOrder=@currentSort">Próxima</a>
+                </li>
+
+            </ul>
+        </nav>
     </div>
+
+    <div class="search-box search-box-left">
+        <form method="get"
+              asp-controller="Car"
+              asp-action="CarSearch"
+              id="searchForm"
+              class="search-box-vertical d-grid gap-2">
+
+            <input name="searchBox" class="form-control" placeholder="Procurar..." />
+
+            <select class="form-select" name="marcaId" id="marcaId">
+                <option value="">Marca</option>
+                @foreach (var m in marcas)
+                {
+                    <option value="@m.IdMarca">@m.Nome</option>
+                }
+            </select>
+
+            <select class="form-select" name="modeloId" id="modeloId" disabled>
+                <option value="">Modelo</option>
+                @foreach (var mo in modelos)
+                {
+                    <option value="@mo.IdModelo">@mo.Nome</option>
+                }
+            </select>
+
+            <select class="form-select" name="categoriaId">
+                <option value="">Categoria</option>
+                @foreach (var c in classes)
+                {
+                    <option value="@c.IdClasse">@c.Nome</option>
+                }
+            </select>
+
+            <select class="form-select" name="combustivelId">
+                <option value="">Combustível</option>
+                @foreach (var cb in combustiveis)
+                {
+                    <option value="@cb.IdCombustivel">@cb.Tipo</option>
+                }
+            </select>
+
+            <select class="form-select" name="caixa">
+                @foreach (var cx in caixas)
+                {
+                    <option value="@cx.Value">@cx.Text</option>
+                }
+            </select>
+
+            <select class="form-select" name="priceRange">
+                <option value="">Preço</option>
+                <option value="1">Até 10.000 €</option>
+                <option value="2">10.000 € – 30.000 €</option>
+                <option value="3">Acima de 30.000 €</option>
+            </select>
+
+            <button type="submit" class="btn btn-danger w-100">Pesquisar</button>
+        </form>
+    </div>
+
 </div>
