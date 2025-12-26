@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251226115731_setup")]
-    partial class setup
+    [Migration("20251226141506_disponivel")]
+    partial class disponivel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -362,7 +362,7 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdVeiculo"));
 
-                    b.Property<int>("Ano")
+                    b.Property<int?>("Ano")
                         .HasColumnType("int");
 
                     b.Property<string>("Caixa")
@@ -375,6 +375,9 @@ namespace CliCarProject.Migrations
                         .IsUnicode(false)
                         .HasColumnType("char(1)")
                         .IsFixedLength();
+
+                    b.Property<bool>("Disponivel")
+                        .HasColumnType("bit");
 
                     b.Property<int>("IdClasse")
                         .HasColumnType("int")

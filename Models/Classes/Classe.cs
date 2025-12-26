@@ -1,8 +1,6 @@
-﻿using CliCarProject.Models.Classes;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace CliCarProject.Models;
+namespace CliCarProject.Models.Classes;
 
 public partial class Classe
 {

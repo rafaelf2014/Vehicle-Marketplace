@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CliCarProject.Models;
+namespace CliCarProject.Models.Classes;
 
 public partial class Acao
 {
