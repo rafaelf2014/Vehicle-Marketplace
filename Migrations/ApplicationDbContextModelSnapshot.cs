@@ -144,6 +144,8 @@ namespace CliCarProject.Migrations
 
                     b.HasIndex("IdVeiculo");
 
+                    b.HasIndex("IdVendedor");
+
                     b.ToTable("Anuncio", (string)null);
                 });
 
@@ -360,6 +362,10 @@ namespace CliCarProject.Migrations
                     b.Property<int>("Ano")
                         .HasColumnType("int");
 
+                    b.Property<string>("Caixa")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Condicao")
                         .IsRequired()
                         .HasMaxLength(1)
@@ -376,9 +382,6 @@ namespace CliCarProject.Migrations
                         .HasColumnName("ID_Combustivel");
 
                     b.Property<int>("IdMarca")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdMarcaNavigationIdMarca")
                         .HasColumnType("int");
 
                     b.Property<int>("IdModelo")
@@ -400,7 +403,7 @@ namespace CliCarProject.Migrations
 
                     b.HasIndex("IdCombustivel");
 
-                    b.HasIndex("IdMarcaNavigationIdMarca");
+                    b.HasIndex("IdMarca");
 
                     b.HasIndex("IdModelo");
 
@@ -804,9 +807,17 @@ namespace CliCarProject.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__Anuncio__ID_Veic__5FB337D6");
 
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdVendedorNavigation")
+                        .WithMany()
+                        .HasForeignKey("IdVendedor")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_Anuncio_AspNetUsers");
+
                     b.Navigation("IdLocalizacaoNavigation");
 
                     b.Navigation("IdVeiculoNavigation");
+
+                    b.Navigation("IdVendedorNavigation");
                 });
 
             modelBuilder.Entity("CliCarProject.Models.Classes.FiltrosFavorito", b =>
@@ -889,7 +900,9 @@ namespace CliCarProject.Migrations
 
                     b.HasOne("CliCarProject.Models.Classes.Marca", "IdMarcaNavigation")
                         .WithMany()
-                        .HasForeignKey("IdMarcaNavigationIdMarca");
+                        .HasForeignKey("IdMarca")
+                        .IsRequired()
+                        .HasConstraintName("FK_Veiculo_Marca");
 
                     b.HasOne("CliCarProject.Models.Classes.Modelo", "IdModeloNavigation")
                         .WithMany("Veiculos")
