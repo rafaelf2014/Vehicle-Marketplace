@@ -106,6 +106,32 @@ namespace CliCarProject.Controllers
             ViewBag.Page = page;
             ViewBag.TotalPages = Math.Max(1, totalPages);
 
+            // ... código de paginação ...
+
+            // PREENCHER OS DADOS PARA OS DROPDOWNS LATERAIS
+            ViewBag.Marcas = _context.Marcas.OrderBy(m => m.Nome).ToList();
+            ViewBag.Classes = _context.Classes.OrderBy(c => c.Nome).ToList(); // Categoria
+            ViewBag.Combustiveis = _context.Combustivels.OrderBy(c => c.Tipo).ToList();
+
+            // Lista manual para as Caixas (se não vier da BD)
+            ViewBag.Caixas = new List<SelectListItem>
+{
+    new SelectListItem { Value = "Manual", Text = "Manual" },
+    new SelectListItem { Value = "Automática", Text = "Automática" }
+};
+
+            // Se tiveres uma marca selecionada, carrega os modelos dela para o filtro não ficar vazio
+            if (marcaId.HasValue)
+            {
+                ViewBag.Modelos = _context.Modelos.Where(m => m.IdMarca == marcaId).OrderBy(m => m.Nome).ToList();
+            }
+            else
+            {
+                ViewBag.Modelos = new List<Modelo>();
+            }
+
+            return View("CarSearch", anuncios);
+
             return View("CarSearch", anuncios);
         }
 
