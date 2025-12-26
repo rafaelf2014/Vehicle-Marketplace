@@ -115,7 +115,7 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-/* Comportamento dos inputs/selects ó mais compactos */
+/* Comportamento dos inputs/selects ÅEmais compactos */
 .search-box .form-control,
 .search-box .form-select {
     width: auto;
@@ -130,7 +130,7 @@ body {
 
 .search-box input[name="searchBox"],
 .search-box input[type="search"] {
-    flex: 0 0 100px;    /* flex-basis fixo ó ajusta para 280px/300px se quiseres ainda menor */
+    flex: 0 0 100px;    /* flex-basis fixo ÅEajusta para 280px/300px se quiseres ainda menor */
     width: 100px;
     min-width: 100px;
     max-width: 260px;

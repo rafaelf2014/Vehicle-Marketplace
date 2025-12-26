@@ -1,0 +1,175 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+    var initialRole = Model?.Input?.Role ?? (string.IsNullOrEmpty(Request.Query["role"]) ? "Comprador" : Request.Query["role"].ToString());
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="tabs-container">
+    <a asp-page="/Account/Login" class="tab">Login</a>
+
+    <!-- Buttons now toggle client-side (no duplicate inputs in DOM) -->
+    <button type="button" class="tab @(initialRole == "Comprador" ? "active" : "")" data-role="Comprador">Criar Conta Comprador</button>
+    <button type="button" class="tab @(initialRole == "Vendedor" ? "active" : "")" data-role="Vendedor">Criar Conta Vendedor</button>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-md-6 col-lg-4">
+        <form id="registerForm" asp-route-returnUrl="@(Model?.ReturnUrl ?? string.Empty)" method="post">
+      <input type="hidden" id="roleInput" name="Input.Role" value="@initialRole" />
+      <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+      <!-- Common fields (always in the form) -->
+      <div class="form-floating mb-3">
+          <input asp-for="Input.UserName" class="form-control" autocomplete="username" />
+          <label asp-for="Input.UserName"></label>
+          <span asp-validation-for="Input.UserName" class="text-danger"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+          <input asp-for="Input.Email" class="form-control" autocomplete="email" />
+          <label asp-for="Input.Email"></label>
+          <span asp-validation-for="Input.Email" class="text-danger"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+          <input asp-for="Input.PhoneNumber" class="form-control" />
+          <label asp-for="Input.PhoneNumber"></label>
+          <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+          <input asp-for="Input.CodigoPostal" class="form-control" />
+          <label asp-for="Input.CodigoPostal"></label>
+          <span asp-validation-for="Input.CodigoPostal" class="text-danger"></span>
+      </div>
+
+      <!-- Placeholder for role-specific fields (injected from templates) -->
+      <div id="roleFields"></div>
+
+      <div class="form-floating mb-3">
+          <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+          <label asp-for="Input.Password"></label>
+          <span asp-validation-for="Input.Password" class="text-danger"></span>
+      </div>
+
+      <div class="form-floating mb-3">
+          <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+          <label asp-for="Input.ConfirmPassword"></label>
+          <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+      </div>
+
+      <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+    </form>
+  </div>
+</div>
+
+<!-- Templates: inert until cloned into the form -->
+<template id="comprador-template">
+    <div class="form-floating mb-3">
+        <input asp-for="Input.Morada" class="form-control" />
+        <label asp-for="Input.Morada"></label>
+        <span asp-validation-for="Input.Morada" class="text-danger"></span>
+    </div>
+</template>
+
+<template id="vendedor-template">
+    <div class="form-floating mb-3">
+        <input asp-for="Input.NIF" class="form-control" />
+        <label asp-for="Input.NIF"></label>
+        <span asp-validation-for="Input.NIF" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.TypeSeller"></label>
+        <select asp-for="Input.TypeSeller" class="form-control">
+            <option value="">-- Select Tipo Vendedor --</option>
+            <option value="P">Particular</option>
+            <option value="C">Comercial</option>
+        </select>
+        <span asp-validation-for="Input.TypeSeller" class="text-danger"></span>
+    </div>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            const tabs = document.querySelectorAll('.tabs-container .tab[data-role]');
+            const roleInput = document.getElementById('roleInput');
+            const roleFields = document.getElementById('roleFields');
+            const compradorTpl = document.getElementById('comprador-template');
+            const vendedorTpl = document.getElementById('vendedor-template');
+
+            function clearRoleFields() {
+                while (roleFields.firstChild) roleFields.removeChild(roleFields.firstChild);
+            }
+
+            function hasServerValidationErrors() {
+                // verifica summary/server messages
+                const summary = document.querySelector('div[role="alert"].text-danger, .validation-summary-errors');
+                if (summary && summary.textContent.trim()) return true;
+
+                // verifica spans gerados por asp-validation-for (data-valmsg-for)
+                const msgs = document.querySelectorAll('[data-valmsg-for]');
+                for (let i = 0; i < msgs.length; i++) {
+                    if (msgs[i].textContent && msgs[i].textContent.trim()) return true;
+                }
+                return false;
+            }
+
+            function resetClientValidation() {
+                if (window.jQuery && window.jQuery.validator) {
+                    const $form = $('#registerForm');
+                    const validator = $form.data('validator') || $form.validate();
+                    if (validator) {
+                        validator.resetForm();
+                        $form.find('.input-validation-error').removeClass('input-validation-error');
+                        $form.find('[data-valmsg-for]').text('');
+                    }
+                }
+            }
+
+            function injectTemplate(template) {
+                clearRoleFields();
+                if (!template) return;
+                const clone = template.content.cloneNode(true);
+                roleFields.appendChild(clone);
+
+                if (window.jQuery && window.jQuery.validator && window.jQuery.validator.unobtrusive) {
+                    window.jQuery.validator.unobtrusive.parse($('#registerForm'));
+                }
+            }
+
+            function setRole(role, pushUrl = true, initialLoad = false) {
+                tabs.forEach(t => t.classList.toggle('active', t.dataset.role === role));
+                if (roleInput) roleInput.value = role;
+
+                // só resetar validação quando não houver mensagens do servidor (mantém erros visíveis)
+                if (!initialLoad && !hasServerValidationErrors()) {
+                    resetClientValidation();
+                }
+
+                if (role === 'Vendedor') injectTemplate(vendedorTpl);
+                else injectTemplate(compradorTpl);
+
+                if (pushUrl) {
+                    try {
+                        const url = new URL(window.location);
+                        url.searchParams.set('role', role);
+                        window.history.replaceState({}, '', url);
+                    } catch (e) { }
+                }
+            }
+
+            tabs.forEach(tab => tab.addEventListener('click', function () {
+                setRole(this.dataset.role, true, false);
+            }));
+
+            // chamada existente (mantida conforme pediste)
+            setRole('@initialRole', "Comprador");
+        })();
+    </script>
+}

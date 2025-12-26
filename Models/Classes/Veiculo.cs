@@ -11,8 +11,8 @@ public partial class Veiculo
 
     public string? IdVendedor { get; set; } = null!;
 
-    public int Ano { get; set; }
-
+    public int? Ano { get; set; }
+    
     public int? Quilometragem { get; set; }
     [Required]
     [RegularExpression("N|S|U", ErrorMessage = "Condição inválida.")]
@@ -28,6 +28,7 @@ public partial class Veiculo
     public int IdCombustivel { get; set; }
 
     public int IdClasse { get; set; }
+    public bool Disponivel { get; set; } = true;
 
     public virtual ICollection<Anuncio> Anuncios { get; set; } = new List<Anuncio>();
 
