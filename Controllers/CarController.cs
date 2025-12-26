@@ -60,7 +60,7 @@ namespace CliCarProject.Controllers
                 query = query.Where(a => a.IdVeiculoNavigation!.IdCombustivel == combustivelId.Value);
 
             if (!string.IsNullOrWhiteSpace(caixa))
-                query = query.Where(a => a.IdVeiculoNavigation!.Caixa == caixa);
+                query = query.Where(a => a.IdVeiculoNavigation!.Caixa.ToLower() == caixa.ToLower());
 
             if (priceRange.HasValue)
             {
@@ -115,10 +115,10 @@ namespace CliCarProject.Controllers
 
             // Lista manual para as Caixas (se não vier da BD)
             ViewBag.Caixas = new List<SelectListItem>
-{
-    new SelectListItem { Value = "Manual", Text = "Manual" },
-    new SelectListItem { Value = "Automática", Text = "Automática" }
-};
+            {
+                new SelectListItem { Value = "M", Text = "Manual" },
+                new SelectListItem { Value = "A", Text = "Automática" }
+            };
 
             // Se tiveres uma marca selecionada, carrega os modelos dela para o filtro não ficar vazio
             if (marcaId.HasValue)
