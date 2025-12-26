@@ -21,7 +21,7 @@
 
         <div class="search-box">
             <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="d-flex gap-2 align-items-center flex-wrap">
-                <input name="searchBox" class="form-control" placeholder="Procurar..." />
+                <input name="searchBox" class="form-control" placeholder="Procurar..."/>
 
                 <select class="form-select" name="marcaId" id="marcaId">
                     <option value="">Marca</option>
@@ -44,7 +44,9 @@
                 </select>
 
                 <select class="form-select" name="caixa">
-                    @foreach (var cx in caixas) { <option value="@cx.Value">@cx.Text</option> }
+                    <option value="">Qualquer Caixa</option>
+                    <option value="M">Manual</option>
+                    <option value="A">Automática</option>
                 </select>
 
                 <select class="form-select" name="priceRange">
