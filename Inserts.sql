@@ -59,9 +59,10 @@
    --   ALTER TABLE Veiculo
    --ADD IdMarca INT;
 
-   --ALTER TABLE Veiculo
-   --ADD CONSTRAINT FK_Veiculo_Marca
+   ALTER TABLE Veiculo
+   ADD Caixa VarChar(1);
    --FOREIGN KEY (IdMarca) REFERENCES Marca(ID_Marca);
+<<<<<<< HEAD
 
    --Alter table veiculo
    --add Caixa varchar(1);
@@ -69,5 +70,8 @@
    
 
    
+=======
+>>>>>>> origin/AlexandrePereira-Branch
    
+
    
