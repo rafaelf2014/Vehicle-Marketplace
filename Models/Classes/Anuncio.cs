@@ -17,6 +17,8 @@ public partial class Anuncio
 
     public string? Estado { get; set; }
 
+    public int Visualizacoes { get; set; }
+
     public DateTime? DataCriacao { get; set; }
 
     public DateTime? DataAtualizacao { get; set; }

@@ -6,9 +6,7 @@
 
 <div class="container py-4">
 
-    <!-- ======================== -->
     <!--   BARRA DE ORDENAÇÃO     -->
-    <!-- ======================== -->
 
     <form method="get" class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -29,9 +27,12 @@
                 </div>
             </form>
 
-            <a asp-action="Create" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
-                <i class="bi bi-plus-lg"></i> Novo Veículo
-            </a>
+            @if (User.IsInRole("Vendedor"))
+            {
+                <a asp-action="Create" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+                    <i class="bi bi-plus-lg"></i> Novo Veículo
+                </a>
+            }
 
         </div>
     </form>
@@ -46,13 +47,36 @@
         Desmarcar Todos
     </button>
 
-
-    <!-- ======================== -->
     <!--   GRID DE VEÍCULOS       -->
-    <!-- ======================== -->
+    @if (!Model.Any())
+    {
+        <div class="col-12 d-flex flex-column justify-content-center align-items-center text-center" style="height: 60vh;">
 
+            @if (User.IsInRole("Vendedor"))
+            {
+                <a asp-action="Create" class="text-decoration-none">
+                    <img src="~/images/add_symbol.png" alt="Adicionar Veículo"
+                            style="width: 60px; height: 60px; cursor: pointer; transition: transform 0.2s;"
+                            class="img-hover-effect" />
+
+                    <h2 class="text-secondary mt-3" style="font-weight: 600;">
+                        Ainda não tem veículos registados.<br>
+                        <small style="font-size: 1.2rem; font-weight: 400;">Clique para adicionar o seu primeiro carro</small>
+                    </h2>
+                </a>
+            }
+            else
+            {
+                <div class="text-muted">
+                    <i class="bi bi-car-front" style="font-size: 4rem; opacity: 0.3;"></i>
+                    <h2 class="mt-3">Nenhum veículo disponível nesta garagem.</h2>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
     <div class="row row-cols-1 row-cols-md-3 g-4" id="veiculos-list">
-
         @foreach (var item in Model)
         {
             var capa = item.Imagems?.FirstOrDefault();
@@ -63,19 +87,18 @@
             ? $"/uploads/veiculos/{item.IdVeiculo}/{capa.Nome}"
             : imagemDefault;
 
-
             <div class="col">
                 <div class="card shadow-sm border-0 h-100 position-relative">
                     <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
                         <input type="checkbox" class="form-check-input vehicle-checkbox"
-                               value="@item.IdVeiculo" style="transform: scale(1.5); cursor: pointer;">
+                                value="@item.IdVeiculo" style="transform: scale(1.5); cursor: pointer;">
                     </div>
 
                     <!-- IMAGEM -->
                     <div class="card-img-container" style="cursor: pointer;">
                         <img src="@imagemPath"
-                             class="card-img-top"
-                             style="height:180px; object-fit:cover; border-radius:6px;" />
+                                class="card-img-top"
+                                style="height:180px; object-fit:cover; border-radius:6px;" />
                     </div>
 
                     <div class="card-body">
@@ -87,22 +110,17 @@
 
                     <div class="card-footer bg-white border-0">
                         <a asp-action="Details" asp-route-id="@item.IdVeiculo"
-                           class="btn btn-outline-primary w-100">
+                            class="btn btn-outline-primary w-100">
                             Ver Detalhes
                         </a>
                     </div>
-
                 </div>
             </div>
         }
-
     </div>
+    }
 
-
-    <!-- ======================== -->
     <!--       PAGINAÇÃO          -->
-    <!-- ======================== -->
-
     <nav aria-label="Pagination" class="mt-4">
         <ul class="pagination justify-content-center">
 

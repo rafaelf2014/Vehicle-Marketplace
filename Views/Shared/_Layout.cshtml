@@ -8,48 +8,6 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CliCarProject.styles.css" asp-append-version="true" />
-    <style>
-        .navbar-brand {
-            font-weight: 700;
-            color: #c41e3a !important;
-            font-size: 1.6rem;
-        }
-
-        .navbar {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .navbar-nav .nav-link {
-            color: #333 !important;
-            font-weight: 500;
-            margin-right: 10px;
-        }
-
-            .navbar-nav .nav-link:hover {
-                color: #c41e3a !important;
-            }
-
-        .search-container {
-            position: relative;
-            z-index: 2;
-        }
-
-            .search-container h1 {
-                color: #ff4d4d;
-                font-weight: 700;
-                margin-bottom: 1rem;
-            }
-
-
-      
-
-        footer {
-            margin-top: 50px;
-        }
-
-
-
-    </style>
 </head>
 <body>
     <header class="shadow-sm" style="background: #ffffff;">
@@ -77,13 +35,14 @@
                         <li class="nav-item px-2">
                             <a class="nav-link" href="/Veiculos">Carros</a>
                         </li>
-
+						@if (User.IsInRole("Vendedor"))
+						{
+                            <li class="nav-item px-2">
+                                <a class="nav-link" href="/Anuncios">Meus Anuncios</a>
+                            </li>
+						}
                         <li class="nav-item px-2">
                             <a class="nav-link" href="/Favoritos">Favoritos</a>
-                        </li>
-
-                        <li class="nav-item px-2">
-                            <a class="nav-link" href="/Comunidade">Comunidade</a>
                         </li>
 
                     </ul>
@@ -92,9 +51,12 @@
                     <div class="d-flex align-items-center">
 
                         <!-- BOTÃO CRIAR ANÚNCIO -->
-                        <a href="/Anuncios/Create" class="btn btn-danger me-3 px-3">
-                            + Criar Anúncio
-                        </a>
+                        @if (User.IsInRole("Vendedor"))
+                        {
+                            <a href="/Anuncios/Create" class="btn btn-danger me-3 px-3">
+                                + Criar Anúncio
+                            </a>
+                        }
 
                         <!-- LOGIN / PERFIL -->
                         @if (User.Identity.IsAuthenticated)
@@ -141,3 +103,43 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+<style>
+    .navbar-brand {
+        font-weight: 700;
+        color: #c41e3a !important;
+        font-size: 1.6rem;
+    }
+
+    .navbar {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .navbar-nav .nav-link {
+        color: #333 !important;
+        font-weight: 500;
+        margin-right: 10px;
+    }
+
+        .navbar-nav .nav-link:hover {
+            color: #c41e3a !important;
+        }
+
+    .search-container {
+        position: relative;
+        z-index: 2;
+    }
+
+        .search-container h1 {
+            color: #ff4d4d;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+
+
+
+    footer {
+        margin-top: 50px;
+    }
+
+</style>
