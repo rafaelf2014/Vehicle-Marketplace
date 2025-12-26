@@ -10,6 +10,7 @@ using CliCarProject.Models.Classes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using static System.Net.Mime.MediaTypeNames;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 
 namespace CliCarProject.Controllers
@@ -26,55 +27,55 @@ namespace CliCarProject.Controllers
             _userManager = userManager;
         }
 
+        private void CarregarDropdowns()
+        {
+            ViewBag.IdMarca = new SelectList(_context.Marcas.OrderBy(m => m.Nome), "IdMarca", "Nome");
+            ViewBag.IdCombustivel = new SelectList(_context.Combustivels.OrderBy(c => c.Tipo), "IdCombustivel", "Tipo");
+            ViewBag.IdClasse = new SelectList(_context.Classes.OrderBy(c => c.Nome), "IdClasse", "Nome");
+            // Se o modelo depender da marca, podes carregar todos ou filtrar
+            ViewBag.IdModelo = new SelectList(_context.Modelos, "IdModelo", "Nome");
+        }
+
         // GET: Veiculos
+        [Authorize]
         public async Task<IActionResult> Index(string sortOrder, int page = 1, int pageSize = 6)
         {
+            var userId = _userManager.GetUserId(User);
+            
             // ViewBag para manter seleção atual
             ViewBag.CurrentSort = sortOrder;
 
-            // opções de ordenação
-            ViewBag.SortAnoAsc = "ano_asc";
-            ViewBag.SortAnoDesc = "ano_desc";
-            ViewBag.SortKmAsc = "km_asc";
-            ViewBag.SortKmDesc = "km_desc";
-            ViewBag.SortModeloAsc = "modelo_asc";
-            ViewBag.SortModeloDesc = "modelo_desc";
-            ViewBag.SortDataAsc = "data_asc";
-            ViewBag.SortDataDesc = "data_desc";
-
             var query = _context.Veiculos
-                .Include(v => v.Imagems)
-                .Include(v => v.IdModeloNavigation)
-                .OrderBy(v => v.IdVeiculo)
-                .AsQueryable();
+        .Include(v => v.Imagems)
+        .Include(v => v.IdModeloNavigation)
+        .Where(v => v.Disponivel && v.IdVendedor == userId) // Filtro de dono e disponibilidade
+        .AsQueryable();
 
-            // ORDENAR
             query = sortOrder switch
             {
                 "ano_asc" => query.OrderBy(v => v.Ano),
                 "ano_desc" => query.OrderByDescending(v => v.Ano),
-
                 "km_asc" => query.OrderBy(v => v.Quilometragem),
                 "km_desc" => query.OrderByDescending(v => v.Quilometragem),
-
                 "modelo_asc" => query.OrderBy(v => v.IdModeloNavigation.Nome),
                 "modelo_desc" => query.OrderByDescending(v => v.IdModeloNavigation.Nome),
-
                 "data_asc" => query.OrderBy(v => v.IdVeiculo),
                 "data_desc" => query.OrderByDescending(v => v.IdVeiculo),
-
-                _ => query.OrderBy(v => v.IdVeiculo)
+                _ => query.OrderByDescending(v => v.IdVeiculo) // Padrão: Mais recentes primeiro
             };
 
-            // PAGINAÇÃO
             int totalItems = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            // Se a página solicitada for maior que o total, volta para a 1
+            if (page > totalPages && totalPages > 0) page = totalPages;
 
             var veiculos = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
+            // Dados para a View
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
 
@@ -110,22 +111,29 @@ namespace CliCarProject.Controllers
         [Authorize]
         public IActionResult Create()
         {
-            ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "Nome");
-            ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "Tipo");
-            ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "Nome");
-            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "Nome");
-            return View();
+            CarregarDropdowns();
+            return View(new Veiculo());
         }
 
-        // POST: Veiculos/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [Authorize]
         [HttpPost]
         [ActionName("Create")]
         public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,Caixa,IdModelo,IdMarca,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
         {
-            Console.WriteLine("🔥 POST chegou ao método Create");
+            if (veiculo.Quilometragem < 0)
+            {
+                ModelState.AddModelError("Quilometragem", "A quilometragem não pode ser negativa.");
+            }
+
+            if (veiculo.Quilometragem == null)
+            {
+                veiculo.Quilometragem = 0;
+            }
+
+            if (veiculo.Ano < 1886 || veiculo.Ano > DateTime.Now.Year)
+            {
+                ModelState.AddModelError("Ano", $"O ano deve estar entre 1886 e {DateTime.Now.Year}.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -135,6 +143,7 @@ namespace CliCarProject.Controllers
                     foreach (var err in e.Value.Errors)
                         Console.WriteLine($"Erro em {e.Key}: {err.ErrorMessage}");
                 }
+                CarregarDropdowns();
                 return View(veiculo);
 
             }
@@ -143,14 +152,10 @@ namespace CliCarProject.Controllers
 
             veiculo.IdVendedor = userId;
 
-            
             try
             {
                 _context.Add(veiculo);
                 await _context.SaveChangesAsync();
-                Console.WriteLine("✅ Veículo guardado na base de dados!");
-                
-                
 
                 // (4) Guardar cada imagem
                 if (Imagens != null && Imagens.Count > 0)
@@ -160,7 +165,6 @@ namespace CliCarProject.Controllers
 
                     if (!Directory.Exists(pastaVeiculo))
                         Directory.CreateDirectory(pastaVeiculo);
-
 
                     foreach (var file in Imagens)
                     {
@@ -196,11 +200,6 @@ namespace CliCarProject.Controllers
                 Console.WriteLine(ex.InnerException?.Message ?? ex.Message);
             }
             return RedirectToAction(nameof(Index));
-
-            //ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "IdClasse", veiculo.IdClasse);
-            //ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "IdCombustivel", veiculo.IdCombustivel);
-            //ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "IdModelo", veiculo.IdModelo);
-            //return View(veiculo);
         }
 
         // GET: Veiculos/Edit/5
@@ -229,9 +228,6 @@ namespace CliCarProject.Controllers
             return View(veiculo);
         }
 
-        // POST: Veiculos/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Veiculo veiculo)
@@ -282,7 +278,7 @@ namespace CliCarProject.Controllers
 
                     }
                 }
-                
+
             }
             if (NovasImagens != null && NovasImagens.Length > 0)
             {
@@ -322,47 +318,32 @@ namespace CliCarProject.Controllers
             return RedirectToAction(nameof(Edit), new { id });
         }
 
-        // GET: Veiculos/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var veiculo = await _context.Veiculos
-                .Include(v => v.IdClasseNavigation)
-                .Include(v => v.IdCombustivelNavigation)
-                .Include(v => v.IdModeloNavigation)
-                .Include(v => v.IdMarcaNavigation)
-                .Include(v => v.IdVendedorNavigation)
-                .FirstOrDefaultAsync(m => m.IdVeiculo == id);
-            if (veiculo == null)
-            {
-                return NotFound();
-            }
-
-            return View(veiculo);
-        }
-
         // POST: Veiculos/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
+        [Route("Veiculos/DeleteMultiple")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteMultiple([FromBody] List<int> ids)
         {
-            var veiculo = await _context.Veiculos.FindAsync(id);
-            if (veiculo != null)
+
+            if (ids == null || !ids.Any()) return BadRequest();
+
+            var veiculo = await _context.Veiculos.Where(v => ids.Contains(v.IdVeiculo)).ToListAsync();
+
+            foreach (var v in veiculo)
             {
-                _context.Veiculos.Remove(veiculo);
+                v.Disponivel = false;
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
 
-        private bool VeiculoExists(int id)
-        {
-            return _context.Veiculos.Any(e => e.IdVeiculo == id);
         }
     }
 }

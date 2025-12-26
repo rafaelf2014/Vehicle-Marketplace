@@ -1,5 +1,5 @@
 ﻿@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
-
+@Html.AntiForgeryToken()
 @{
     ViewData["Title"] = "Veículos";
 }
@@ -11,50 +11,72 @@
     <!-- ======================== -->
 
     <form method="get" class="mb-4">
-        <div class="row g-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
 
-            <div class="col-md-4">
-                <select name="sortOrder" class="form-select" onchange="this.form.submit()">
-                    <option value="">Ordenar por...</option>
+            <form method="get" class="m-0">
+                <div class="d-flex gap-2">
+                    <select name="sortOrder" class="form-select" onchange="this.form.submit()" style="min-width: 200px;">
+                        <option value="">Ordenar por...</option>
+                        <option value="ano_asc">Ano (ascendente)</option>
+                        <option value="ano_desc">Ano (descendente)</option>
+                        <option value="km_asc">Quilometragem (ascendente)</option>
+                        <option value="km_desc">Quilometragem (descendente)</option>
+                        <option value="modelo_asc">Modelo (A→Z)</option>
+                        <option value="modelo_desc">Modelo (Z→A)</option>
+                        <option value="data_desc">Mais recentes</option>
+                        <option value="data_asc">Mais antigos</option>
+                    </select>
+                </div>
+            </form>
 
-                    <option value="ano_asc">Ano (ascendente)</option>
-                    <option value="ano_desc">Ano (descendente)</option>
-
-                    <option value="km_asc">Quilometragem (ascendente)</option>
-                    <option value="km_desc">Quilometragem (descendente)</option>
-
-                    <option value="modelo_asc">Modelo (A→Z)</option>
-                    <option value="modelo_desc">Modelo (Z→A)</option>
-
-                    <option value="data_desc">Mais recentes</option>
-                    <option value="data_asc">Mais antigos</option>
-                </select>
-            </div>
+            <a asp-action="Create" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-plus-lg"></i> Novo Veículo
+            </a>
 
         </div>
     </form>
+
+    <!-- Botão Delete -->
+    <button type="button" class="btn btn-danger mb-3" id="delete-selected-btn" disabled onclick="deleteSelected()">
+        Excluir Selecionados (<span id="selected-count">0</span>)
+    </button>
+    <!-- Botão Selecionar-->
+    <button type="button" class="btn btn-outline-secondary mb-3" id="deselect-all-btn"
+    style="display: none;" onclick="deselectAll()">
+        Desmarcar Todos
+    </button>
 
 
     <!-- ======================== -->
     <!--   GRID DE VEÍCULOS       -->
     <!-- ======================== -->
 
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4" id="veiculos-list">
 
         @foreach (var item in Model)
         {
-            var capa = item.Imagems?.FirstOrDefault()
-            ?? item.Imagems?.FirstOrDefault();
+            var capa = item.Imagems?.FirstOrDefault();
+
+            string imagemDefault = "/images/Image_not_available.png";
+
+            var imagemPath = (capa != null)
+            ? $"/uploads/veiculos/{item.IdVeiculo}/{capa.Nome}"
+            : imagemDefault;
+
 
             <div class="col">
-                <div class="card shadow-sm border-0 h-100">
+                <div class="card shadow-sm border-0 h-100 position-relative">
+                    <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                        <input type="checkbox" class="form-check-input vehicle-checkbox"
+                               value="@item.IdVeiculo" style="transform: scale(1.5); cursor: pointer;">
+                    </div>
 
                     <!-- IMAGEM -->
-                    <a asp-action="Details" asp-route-id="@item.IdVeiculo">
-                        <img src="~/uploads/veiculos/@item.IdVeiculo/@capa?.Nome"
+                    <div class="card-img-container" style="cursor: pointer;">
+                        <img src="@imagemPath"
                              class="card-img-top"
                              style="height:180px; object-fit:cover; border-radius:6px;" />
-                    </a>
+                    </div>
 
                     <div class="card-body">
                         <h5 class="card-title">@item.IdModeloNavigation?.Nome</h5>
@@ -112,3 +134,99 @@
     </nav>
 
 </div>
+
+<style>
+    .card {
+        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+        user-select: none; /* Impede que o texto seja selecionado ao clicar várias vezes rápido */
+    }
+
+    .card-selected {
+        border: 2px solid #dc3545 !important;
+        background-color: #fff5f5 !important;
+    }
+
+    /* Feedback visual ao clicar (active state) */
+    .card:active {
+        transform: scale(0.98);
+    }
+</style>
+
+<script>
+    // 1. Ouvinte global para cliques (Delegated Event)
+    document.getElementById('veiculos-list').addEventListener('click', function (e) {
+       
+        if (e.target.closest('.btn-outline-primary')) return;
+
+        // Encontra o card e o checkbox
+        const card = e.target.closest('.card');
+        if (!card) return;
+
+        const checkbox = card.querySelector('.vehicle-checkbox');
+
+        // Se não clicou diretamente no checkbox, inverte o estado
+        if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+
+        // Aplica a classe visual imediatamente
+        card.classList.toggle('card-selected', checkbox.checked);
+
+        // Atualiza a barra de ferramentas
+        updateToolbar();
+    });
+
+    // 2. Função para atualizar os botões
+    function updateToolbar() {
+        const selectedCount = document.querySelectorAll('.vehicle-checkbox:checked').length;
+        const deleteBtn = document.getElementById('delete-selected-btn');
+        const deselectBtn = document.getElementById('deselect-all-btn');
+        const countSpan = document.getElementById('selected-count');
+
+        deleteBtn.disabled = selectedCount === 0;
+        countSpan.innerText = selectedCount;
+
+        // Mostra/Esconde o botão "Desmarcar" conforme necessário
+        deselectBtn.style.display = selectedCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // 3. Função para desmarcar tudo instantaneamente
+    function deselectAll() {
+        document.querySelectorAll('.vehicle-checkbox:checked').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.card').classList.remove('card-selected');
+        });
+        updateToolbar();
+    }
+
+    // 4. Função de Delete (Ajustada para o seu Controller)
+    async function deleteSelected() {
+        const selectedCheckboxes = document.querySelectorAll('.vehicle-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+
+        if (!confirm(`Confirmar desativação de ${selectedIds.length} veículos?`)) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        // Se o seu controller usa ActionName("Delete"), a URL deve ser '/Veiculos/Delete'
+        const response = await fetch('/Veiculos/DeleteMultiple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            },
+            body: JSON.stringify(selectedIds)
+        });
+
+        if (response.ok) {
+            selectedCheckboxes.forEach(cb => {
+                const col = cb.closest('.col');
+                col.style.opacity = '0';
+                setTimeout(() => col.remove(), 300);
+            });
+            setTimeout(updateToolbar, 350);
+        } else {
+            alert("Erro ao remover. Verifique a consola (F12).");
+        }
+    }
+</script>
