@@ -359,7 +359,7 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdVeiculo"));
 
-                    b.Property<int>("Ano")
+                    b.Property<int?>("Ano")
                         .HasColumnType("int");
 
                     b.Property<string>("Caixa")
