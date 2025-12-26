@@ -43,6 +43,7 @@
 
       
 
+
         footer {
             margin-top: 50px;
         }
@@ -77,6 +78,14 @@
                         <li class="nav-item px-2">
                             <a class="nav-link" href="/Veiculos">Carros</a>
                         </li>
+
+                        @* Botão para o Painel de Controlo visível apenas a Admins *@
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item px-2">
+                                <a class="nav-link" href="/Admin">Painel de Controlo</a>
+                            </li>
+                        }
 
                         <li class="nav-item px-2">
                             <a class="nav-link" href="/Favoritos">Favoritos</a>
