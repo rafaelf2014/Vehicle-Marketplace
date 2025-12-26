@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251117171337_InitialSetup")]
-    partial class InitialSetup
+    [Migration("20251118092120_InicialSetup")]
+    partial class InicialSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -382,9 +382,14 @@ namespace CliCarProject.Migrations
                         .HasColumnName("ID_Modelo");
 
                     b.Property<string>("IdVendedor")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("ID_Vendedor");
+
+                    b.Property<string>("IdVendedorNavigationIdUtilizador")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("Quilometragem")
                         .HasColumnType("int");
@@ -398,7 +403,7 @@ namespace CliCarProject.Migrations
 
                     b.HasIndex("IdModelo");
 
-                    b.HasIndex("IdVendedor");
+                    b.HasIndex("IdVendedorNavigationIdUtilizador");
 
                     b.ToTable("Veiculo", (string)null);
                 });
@@ -887,10 +892,11 @@ namespace CliCarProject.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__Veiculo__ID_Mode__5812160E");
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdVendedorNavigation")
+                    b.HasOne("CliCarProject.Models.Classes.Vendedor", "IdVendedorNavigation")
                         .WithMany()
-                        .HasForeignKey("IdVendedor")
-                        .HasConstraintName("FK_Veiculo_AspNetUsers");
+                        .HasForeignKey("IdVendedorNavigationIdUtilizador")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("IdClasseNavigation");
 

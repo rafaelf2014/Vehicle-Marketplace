@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CliCarProject.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialSetup : Migration
+    public partial class InicialSetup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -359,22 +359,24 @@ namespace CliCarProject.Migrations
                 {
                     ID_Veiculo = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ID_Vendedor = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    ID_Vendedor = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Ano = table.Column<int>(type: "int", nullable: false),
                     Quilometragem = table.Column<int>(type: "int", nullable: true),
                     Condicao = table.Column<string>(type: "char(1)", unicode: false, fixedLength: true, maxLength: 1, nullable: true),
                     ID_Modelo = table.Column<int>(type: "int", nullable: false),
                     ID_Combustivel = table.Column<int>(type: "int", nullable: false),
-                    ID_Classe = table.Column<int>(type: "int", nullable: false)
+                    ID_Classe = table.Column<int>(type: "int", nullable: false),
+                    IdVendedorNavigationIdUtilizador = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Veiculo__808FFECF1FB610CC", x => x.ID_Veiculo);
                     table.ForeignKey(
-                        name: "FK_Veiculo_AspNetUsers",
-                        column: x => x.ID_Vendedor,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        name: "FK_Veiculo_Vendedor_IdVendedorNavigationIdUtilizador",
+                        column: x => x.IdVendedorNavigationIdUtilizador,
+                        principalTable: "Vendedor",
+                        principalColumn: "ID_Utilizador",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK__Veiculo__ID_Clas__59FA5E80",
                         column: x => x.ID_Classe,
@@ -612,9 +614,9 @@ namespace CliCarProject.Migrations
                 column: "ID_Modelo");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Veiculo_ID_Vendedor",
+                name: "IX_Veiculo_IdVendedorNavigationIdUtilizador",
                 table: "Veiculo",
-                column: "ID_Vendedor");
+                column: "IdVendedorNavigationIdUtilizador");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VisitaReserva_ID_Anuncio",
@@ -659,9 +661,6 @@ namespace CliCarProject.Migrations
                 name: "Imagem");
 
             migrationBuilder.DropTable(
-                name: "Vendedor");
-
-            migrationBuilder.DropTable(
                 name: "VisitaReserva");
 
             migrationBuilder.DropTable(
@@ -683,7 +682,7 @@ namespace CliCarProject.Migrations
                 name: "Veiculo");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Vendedor");
 
             migrationBuilder.DropTable(
                 name: "Classe");
@@ -693,6 +692,9 @@ namespace CliCarProject.Migrations
 
             migrationBuilder.DropTable(
                 name: "Modelo");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Marca");
