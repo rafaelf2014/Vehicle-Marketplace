@@ -4,83 +4,103 @@
     ViewData["Title"] = "Anúncios";
 }
 
+
+
 <div class="container mt-4">
 
     <h2 class="mb-4 fw-bold">Anúncios Disponíveis</h2>
 
-    <div class="row">
+    @if (!Model.Any())
+    {
+        <div class="col-12 d-flex flex-column justify-content-center align-items-center text-center" style="height: 60vh;">
 
-        @foreach (var anuncio in Model)
-        {
-            var veiculo = anuncio.IdVeiculoNavigation;
+            @if (User.IsInRole("Vendedor"))
+            {
+                <a asp-action="Create" class="text-decoration-none">
+                    <img src="~/images/add_symbol.png" alt="Adicionar Anuncio"
+                    style="width: 60px; height: 60px; cursor: pointer; transition: transform 0.2s;"
+                    class="img-hover-effect" />
 
-            // Imagem de capa
-            var capa = veiculo.Imagems
-            .OrderByDescending(i => i.IdImagem)
-            .FirstOrDefault();
+                    <h2 class="text-secondary mt-3" style="font-weight: 600;">
+                        Ainda não tem anúncios registados.<br>
+                        <small style="font-size: 1.2rem; font-weight: 400;">Clique para criar o seu primeiro anúncio</small>
+                    </h2>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="row">
 
+            @foreach (var anuncio in Model)
+            {
+                var veiculo = anuncio.IdVeiculoNavigation;
 
-            
+                // Imagem de capa
+                var capa = veiculo.Imagems
+                .OrderByDescending(i => i.IdImagem)
+                .FirstOrDefault();
+
                 string imagemUrl;
 
                 if (capa != null)
                 {
-                 imagemUrl = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{capa.Nome}");
+                    imagemUrl = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{capa.Nome}");
                 }
                 else
                 {
                     imagemUrl = Url.Content("~/images/Image_not_available.png");
                 }
-            
+
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="card shadow-sm h-100">
+
+                        <!-- IMAGEM -->
+                        <img src="@imagemUrl"
+                             class="card-img-top"
+                             style="height: 220px; object-fit: cover;" />
 
 
 
-            <div class="col-md-4 col-sm-6 mb-4">
-                <div class="card shadow-sm h-100">
+                        <div class="card-body">
 
-                    <!-- IMAGEM -->
-                    <img src="@imagemUrl"
-                         class="card-img-top"
-                         style="height: 220px; object-fit: cover;" />
+                            <!-- TÍTULO -->
+                            <h5 class="fw-bold">@anuncio.Titulo</h5>
 
+                            <!-- MARCA + MODELO -->
+                            <p class="mb-1 text-muted">
+                                🚗 @veiculo.IdMarcaNavigation.Nome @veiculo.IdModeloNavigation.Nome
+                            </p>
 
+                            <!-- ANO + COMUSTÍVEL -->
+                            <p class="mb-1">
+                                📅 @veiculo.Ano • ⛽ @veiculo.IdCombustivelNavigation.Tipo
+                            </p>
 
-                    <div class="card-body">
+                            <!-- QUILÓMETROS -->
+                            <p class="mb-1">
+                                🛣️ @veiculo.Quilometragem?.ToString("N0") km
+                            </p>
 
-                        <!-- TÍTULO -->
-                        <h5 class="fw-bold">@anuncio.Titulo</h5>
+                            <!-- PREÇO -->
+                            <h4 class="fw-bold text-danger mt-3">
+                                @anuncio.Preco.ToString("N0") €
+                            </h4>
 
-                        <!-- MARCA + MODELO -->
-                        <p class="mb-1 text-muted">
-                            🚗 @veiculo.IdMarcaNavigation.Nome @veiculo.IdModeloNavigation.Nome
-                        </p>
+                            <!-- BOTÃO -->
+                            <a asp-action="Details" asp-route-id="@anuncio.IdAnuncio"
+                               class="btn btn-primary w-100 mt-3">
+                                Ver Anúncio
+                            </a>
 
-                        <!-- ANO + COMUSTÍVEL -->
-                        <p class="mb-1">
-                            📅 @veiculo.Ano • ⛽ @veiculo.IdCombustivelNavigation.Tipo
-                        </p>
-
-                        <!-- QUILÓMETROS -->
-                        <p class="mb-1">
-                            🛣️ @veiculo.Quilometragem?.ToString("N0") km
-                        </p>
-
-                        <!-- PREÇO -->
-                        <h4 class="fw-bold text-danger mt-3">
-                            @anuncio.Preco.ToString("N0") €
-                        </h4>
-
-                        <!-- BOTÃO -->
-                        <a asp-action="Details" asp-route-id="@anuncio.IdAnuncio"
-                           class="btn btn-primary w-100 mt-3">
-                            Ver Anúncio
-                        </a>
+                        </div>
 
                     </div>
-
                 </div>
-            </div>
-        }
+            }
 
-    </div>
+        </div>
+    }
+    
 </div>

@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using CliCarProject.Models.Classes;
 using static System.Net.Mime.MediaTypeNames;
+using Microsoft.Data.SqlClient;
 
 namespace CliCarProject.Controllers
 {
@@ -29,13 +30,20 @@ namespace CliCarProject.Controllers
         }
 
         // GET: Anuncios
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder)
         {
+            var userId = _userManager.GetUserId(User); //Obtém o ID do usuário atualmente autenticado
+
+            ViewBag.CurrentSort = sortOrder;
+
             var query = _context.Anuncios
-    .Include(a => a.IdVeiculoNavigation)
+        .Include(a => a.IdVeiculoNavigation)
         .ThenInclude(v => v.Imagems)
+        .Where(a => a.Estado == "Ativo") // Apenas anúncios ativos
     .Include(a => a.IdVeiculoNavigation)
         .ThenInclude(v => v.IdMarcaNavigation)
+        .Include(v => v.IdVeiculoNavigation)
+        .Where(a => a.IdVendedor == userId) // Exclui anúncios do vendedor autenticado
     .Include(a => a.IdVeiculoNavigation)
         .ThenInclude(v => v.IdModeloNavigation)
     .Include(a => a.IdVeiculoNavigation)
@@ -44,8 +52,12 @@ namespace CliCarProject.Controllers
     .AsQueryable();
 
 
-            query = query.OrderByDescending(a=>a.DataCriacao);
-
+            query = sortOrder switch
+            {
+                "ano_asc" => query.OrderBy(a => a.DataCriacao),
+                "ano_desc" => query.OrderByDescending(a => a.DataCriacao),
+                _ => query.OrderByDescending(a => a.DataCriacao), // Padrão: mais recentes primeiro
+            };
             var anuncios = await query.ToListAsync();
 
             return View(anuncios);
@@ -75,6 +87,15 @@ namespace CliCarProject.Controllers
                 .Include(a => a.IdVendedorNavigation) // IdentityUser do vendedor
                 .FirstOrDefaultAsync(a => a.IdAnuncio == id);
 
+            var currentUserId = _userManager.GetUserId(User);
+
+            // Só conta se o visitante não for o dono do anúncio
+            if (anuncio.IdVendedor != currentUserId)
+            {
+                anuncio.Visualizacoes += 1;
+                await _context.SaveChangesAsync();
+            }
+
             if (anuncio == null)
             {
                 return NotFound();
@@ -95,7 +116,8 @@ namespace CliCarProject.Controllers
             ViewData["IdVeiculo"] = new SelectList(
     _context.Veiculos
         .Where(v => v.IdVendedor == userId)
-        .Select(v => new {
+        .Select(v => new
+        {
             v.IdVeiculo,
             Nome = v.IdModeloNavigation.Nome + " (" + v.Ano + ")"
         }),

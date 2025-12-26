@@ -15,7 +15,7 @@ namespace CliCarProject.Data
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
             // Aplicar migrações pendentes (opcional)
-            await context.Database.MigrateAsync();
+            //await context.Database.MigrateAsync();
 
             if (!context.Classes.Any())
             {
@@ -37,7 +37,7 @@ namespace CliCarProject.Data
                     new Combustivel { Tipo = "Gasolina" },
                     new Combustivel { Tipo = "Diesel" },
                     new Combustivel { Tipo = "Elétrico" },
-                    new Combustivel { Tipo = "Híbrido" },
+                    new Combustivel { Tipo = "Hú~rido" },
                     new Combustivel { Tipo = "GPL" }
                 );
             }
@@ -57,7 +57,7 @@ namespace CliCarProject.Data
 
             if (!context.Modelos.Any())
             {
-                // Obter marcas já persistidas
+                // Obter marcas jEpersistidas
                 var honda = await context.Marcas.FirstOrDefaultAsync(m => m.Nome == "Honda");
                 var toyota = await context.Marcas.FirstOrDefaultAsync(m => m.Nome == "Toyota");
                 var bmw = await context.Marcas.FirstOrDefaultAsync(m => m.Nome == "BMW");
