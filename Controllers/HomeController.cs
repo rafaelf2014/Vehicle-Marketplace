@@ -1,8 +1,10 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using CliCarProject.Models;
 using CliCarProject.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using CliCarProject.Models.Classes;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace CliCarProject.Controllers;
@@ -18,21 +20,29 @@ public class HomeController : Controller
         _context = context;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        ViewBag.Marcas = _context.Marcas.ToList();
-        ViewBag.Modelos = _context.Modelos.ToList();
-        ViewBag.Classes = _context.Classes.ToList();    
-        ViewBag.Combustiveis = _context.Combustivels.ToList();
+        // 1. Carregar Dados para as Dropdowns (ViewBag)
+        ViewBag.Marcas = await _context.Marcas.OrderBy(m => m.Nome).ToListAsync();
+        ViewBag.Classes = await _context.Classes.OrderBy(c => c.Nome).ToListAsync();
+        ViewBag.Combustiveis = await _context.Combustivels.OrderBy(c => c.Tipo).ToListAsync();
 
-        ViewBag.Caixas = new List<SelectListItem>
-        {
-            new SelectListItem("Todas", ""),
-            new SelectListItem("Manual", "Manual"),
-            new SelectListItem("Autom�tica", "Autom�tica")
-        };
+        // Inicializamos modelos como lista vazia (será preenchida via AJAX no browser)
+        ViewBag.Modelos = new List<Modelo>();
 
-        return View();
+        // 2. Carregar Anúncios em Destaque para o Model
+        // Ordenamos por visualizações e pegamos nos 6 principais
+        var destaques = await _context.Anuncios
+            .Where(a => a.Estado == "Ativo")
+            .Include(a => a.IdVeiculoNavigation)
+                .ThenInclude(v => v.Imagems)
+            .Include(a => a.IdVeiculoNavigation)
+                .ThenInclude(v => v.IdModeloNavigation)
+            .OrderByDescending(a => a.Visualizacoes)
+            .Take(4)
+            .ToListAsync();
+
+        return View(destaques);
     }
 
     public IActionResult Privacy()
