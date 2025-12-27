@@ -232,6 +232,34 @@ namespace CliCarProject.Migrations
                     b.ToTable("Comprador", (string)null);
                 });
 
+            modelBuilder.Entity("CliCarProject.Models.Classes.Favorito", b =>
+                {
+                    b.Property<int>("IdFavorito")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ID_Favorito");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdFavorito"));
+
+                    b.Property<int>("IdAnuncio")
+                        .HasColumnType("int")
+                        .HasColumnName("ID_Anuncio");
+
+                    b.Property<string>("IdUtilizador")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("ID_Utilizador");
+
+                    b.HasKey("IdFavorito");
+
+                    b.HasIndex("IdAnuncio");
+
+                    b.HasIndex(new[] { "IdUtilizador", "IdAnuncio" }, "IX_Favorito_User_Anuncio")
+                        .IsUnique();
+
+                    b.ToTable("Favorito", (string)null);
+                });
+
             modelBuilder.Entity("CliCarProject.Models.Classes.FiltrosFavorito", b =>
                 {
                     b.Property<int>("IdFiltroFavorito")
@@ -457,9 +485,6 @@ namespace CliCarProject.Migrations
                         .IsFixedLength();
 
                     b.Property<bool>("Disponivel")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Disponível")
                         .HasColumnType("bit");
 
                     b.Property<int>("IdClasse")
@@ -849,6 +874,27 @@ namespace CliCarProject.Migrations
                         .HasConstraintName("FK_Comprador_AspNetUsers");
 
                     b.Navigation("IdUtilizadorNavigation");
+                });
+
+            modelBuilder.Entity("CliCarProject.Models.Classes.Favorito", b =>
+                {
+                    b.HasOne("CliCarProject.Models.Classes.Anuncio", "Anuncio")
+                        .WithMany()
+                        .HasForeignKey("IdAnuncio")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Favorito_Anuncio");
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Utilizador")
+                        .WithMany()
+                        .HasForeignKey("IdUtilizador")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Favorito_AspNetUsers");
+
+                    b.Navigation("Anuncio");
+
+                    b.Navigation("Utilizador");
                 });
 
             modelBuilder.Entity("CliCarProject.Models.Classes.FiltrosFavorito", b =>
