@@ -31,12 +31,22 @@
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" href="/">Home</a>
                         </li>
+
 						@if (User.IsInRole("Vendedor"))
 						{
                             <li class="nav-item">
                                 <a class="nav-link" href="/Anuncios">Meus Anúncios</a>
                             </li>
 						}
+
+                        <!-- Botão Painel de Controlo ao lado de Carros (visível só a Admin) -->
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-danger fw-bold" href="/Admin">Painel de Controlo</a>
+                            </li>
+                        }
+
                         <li class="nav-item">
                             <a class="nav-link" href="/Anuncios/Favoritos">Favoritos</a>
                         </li>
