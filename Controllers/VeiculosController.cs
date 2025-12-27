@@ -9,22 +9,24 @@ using CliCarProject.Data;
 using CliCarProject.Models.Classes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
+using CliCarProject.Services;
 using static System.Net.Mime.MediaTypeNames;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 
 namespace CliCarProject.Controllers
 {
     public class VeiculosController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ApplicationDbContext _context; //Injetamos o contexto da base de dados
+        private readonly UserManager<IdentityUser> _userManager; //Injetamos o serviço de gestão de utilizadores
+        private readonly IVeiculoService _veiculoService; //Injetamos o serviço de veículos
 
 
-        public VeiculosController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public VeiculosController(ApplicationDbContext context, UserManager<IdentityUser> userManager, IVeiculoService veiculoService)
         {
             _context = context;
             _userManager = userManager;
+            _veiculoService = veiculoService;
         }
 
         private void CarregarDropdowns()
@@ -40,16 +42,14 @@ namespace CliCarProject.Controllers
         [Authorize]
         public async Task<IActionResult> Index(string sortOrder, int page = 1, int pageSize = 6)
         {
-            var userId = _userManager.GetUserId(User);
-            
             // ViewBag para manter seleção atual
             ViewBag.CurrentSort = sortOrder;
 
             var query = _context.Veiculos
-        .Include(v => v.Imagems)
-        .Include(v => v.IdModeloNavigation)
-        .Where(v => v.Disponivel && v.IdVendedor == userId) // Filtro de dono e disponibilidade
-        .AsQueryable();
+                .Include(v => v.Imagems)
+                .Include(v => v.IdModeloNavigation)
+                .OrderBy(v => v.IdVeiculo)
+                .AsQueryable();
 
             query = sortOrder switch
             {
@@ -111,8 +111,11 @@ namespace CliCarProject.Controllers
         [Authorize]
         public IActionResult Create()
         {
-            CarregarDropdowns();
-            return View(new Veiculo());
+            ViewData["IdClasse"] = new SelectList(_context.Classes, "IdClasse", "Nome");
+            ViewData["IdCombustivel"] = new SelectList(_context.Combustivels, "IdCombustivel", "Tipo");
+            ViewData["IdModelo"] = new SelectList(_context.Modelos, "IdModelo", "Nome");
+            ViewData["IdMarca"] = new SelectList(_context.Marcas, "IdMarca", "Nome");
+            return View();
         }
 
         [Authorize]
@@ -120,26 +123,17 @@ namespace CliCarProject.Controllers
         [ActionName("Create")]
         public async Task<IActionResult> CreateConfirmed([Bind("Ano,Quilometragem,Condicao,Caixa,IdModelo,IdMarca,IdCombustivel,IdClasse")] Veiculo veiculo, List<IFormFile> Imagens)
         {
-            if (veiculo.Quilometragem < 0)
-            {
-                ModelState.AddModelError("Quilometragem", "A quilometragem não pode ser negativa.");
-            }
-
-            if (veiculo.Quilometragem == null)
-            {
-                veiculo.Quilometragem = 0;
-            }
-
-            if (veiculo.Ano < 1886 || veiculo.Ano > DateTime.Now.Year)
-            {
-                ModelState.AddModelError("Ano", $"O ano deve estar entre 1886 e {DateTime.Now.Year}.");
-            }
+            Console.WriteLine("🔥 POST chegou ao método Create");
 
             if (!ModelState.IsValid)
             {
                 Console.WriteLine("❌ ModelState inválido!");
                 foreach (var e in ModelState)
                 {
+                    // Falha na validação - Guardar o rascunho do Veiculo na sessão
+                    var veiculoJson = System.Text.Json.JsonSerializer.Serialize(veiculo);
+                    HttpContext.Session.SetString("VeiculoDraft", veiculoJson);
+
                     foreach (var err in e.Value.Errors)
                         Console.WriteLine($"Erro em {e.Key}: {err.ErrorMessage}");
                 }
@@ -147,15 +141,20 @@ namespace CliCarProject.Controllers
                 return View(veiculo);
 
             }
+            //Console.WriteLine($"👤 Utilizador autenticado: {userId ?? "NENHUM"}");
+
             var userId = _userManager.GetUserId(User);
-            Console.WriteLine($"👤 Utilizador autenticado: {userId ?? "NENHUM"}");
 
             veiculo.IdVendedor = userId;
 
+            
             try
             {
                 _context.Add(veiculo);
                 await _context.SaveChangesAsync();
+                Console.WriteLine("✅ Veículo guardado na base de dados!");
+                
+                
 
                 // (4) Guardar cada imagem
                 if (Imagens != null && Imagens.Count > 0)
@@ -165,6 +164,7 @@ namespace CliCarProject.Controllers
 
                     if (!Directory.Exists(pastaVeiculo))
                         Directory.CreateDirectory(pastaVeiculo);
+
 
                     foreach (var file in Imagens)
                     {
@@ -324,25 +324,40 @@ namespace CliCarProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMultiple([FromBody] List<int> ids)
         {
-
-            if (ids == null || !ids.Any()) return BadRequest();
-
-            var veiculo = await _context.Veiculos.Where(v => ids.Contains(v.IdVeiculo)).ToListAsync();
-
-            foreach (var v in veiculo)
+            if (id == null)
             {
-                v.Disponivel = false;
+                return NotFound();
             }
 
-            try
+            var veiculo = await _context.Veiculos
+                .Include(v => v.IdClasseNavigation)
+                .Include(v => v.IdCombustivelNavigation)
+                .Include(v => v.IdModeloNavigation)
+                .Include(v => v.IdMarcaNavigation)
+                .Include(v => v.IdVendedorNavigation)
+                .FirstOrDefaultAsync(m => m.IdVeiculo == id);
+            if (veiculo == null)
             {
-                await _context.SaveChangesAsync();
-                return Ok(new { success = true });
+                return NotFound();
             }
-            catch (Exception ex)
+
+            return View(veiculo);
+        }
+
+        // POST: Veiculos/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var veiculo = await _context.Veiculos.FindAsync(id);
+            if (veiculo != null)
             {
-                return BadRequest(new { error = ex.Message });
+                _context.Veiculos.Remove(veiculo);
             }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
 
         }
     }

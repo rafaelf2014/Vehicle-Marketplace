@@ -68,7 +68,8 @@ INSERT INTO Localizacao (Distrito) VALUES
 --   --add Caixa varchar(1);
 
    
-
+   alter table Anuncio
+add NVisitas int not null default 0;
    
 --=======
 -->>>>>>> origin/AlexandrePereira-Branch

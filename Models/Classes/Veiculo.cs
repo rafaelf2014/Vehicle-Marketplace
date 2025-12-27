@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace CliCarProject.Models.Classes;
@@ -23,6 +25,9 @@ public partial class Veiculo
     public string? Caixa { get; set; }
     public int IdModelo { get; set; }
 
+    [Required]
+    [DefaultValue(true)]
+    public bool Disponível { get; set; } = true;
     public int IdMarca { get; set; }
 
     public int IdCombustivel { get; set; }
@@ -37,6 +42,7 @@ public partial class Veiculo
     public virtual Combustivel? IdCombustivelNavigation { get; set; }
 
     public virtual Modelo? IdModeloNavigation { get; set; }
+    [ForeignKey(nameof(IdMarca))]   
     public virtual Marca? IdMarcaNavigation { get; set; }
     public virtual IdentityUser? IdVendedorNavigation { get; set; } 
 

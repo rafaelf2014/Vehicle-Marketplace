@@ -34,6 +34,7 @@ namespace CliCarProject.Controllers
         {
             var userId = _userManager.GetUserId(User); //Obtém o ID do usuário atualmente autenticado
 
+<<<<<<< Updated upstream
             ViewBag.CurrentSort = sortOrder;
 
             var query = _context.Anuncios
@@ -50,6 +51,20 @@ namespace CliCarProject.Controllers
         .ThenInclude(v => v.IdCombustivelNavigation)
     //.Include(a => a.IdLocalizacaoNavigation) // podes manter se usares depois
     .AsQueryable();
+=======
+            var query = _context.Anuncios
+            .Include(a => a.IdVeiculoNavigation)
+                .ThenInclude(v => v.Imagems)
+            .Include(a => a.IdVeiculoNavigation)
+                .ThenInclude(v => v.IdMarcaNavigation)
+            .Include(a => a.IdVeiculoNavigation)
+                .ThenInclude(v => v.IdModeloNavigation)
+            .Include(a => a.IdVeiculoNavigation)
+                .ThenInclude(v => v.IdCombustivelNavigation)
+            .Where(User != null ? a => a.IdVendedor == userId : a => true)
+            //.Include(a => a.IdLocalizacaoNavigation)
+            .AsQueryable();
+>>>>>>> Stashed changes
 
 
             query = sortOrder switch
@@ -59,6 +74,13 @@ namespace CliCarProject.Controllers
                 _ => query.OrderByDescending(a => a.DataCriacao), // Padrão: mais recentes primeiro
             };
             var anuncios = await query.ToListAsync();
+
+            var destaques = await _context.Anuncios
+            .OrderByDescending(a => a.NVisitas)
+            .Take(10)
+            .ToListAsync();
+
+
 
             return View(anuncios);
         }
@@ -100,6 +122,9 @@ namespace CliCarProject.Controllers
             {
                 return NotFound();
             }
+            anuncio.NVisitas++;
+            await _context.SaveChangesAsync();
+
 
             return View(anuncio);
         }
@@ -163,7 +188,7 @@ namespace CliCarProject.Controllers
 
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("❌ ModelState inválido!");
+                //Console.WriteLine("❌ ModelState inválido!");
 
                 foreach (var entry in ModelState)
                 {
@@ -171,7 +196,7 @@ namespace CliCarProject.Controllers
                     {
                         Console.WriteLine($"Campo: {entry.Key} → ERRO: {error.ErrorMessage}");
                     }
-                }
+                }   //Percorre os modelsState e imprime os erros no console
 
                 // Recarregar dropdowns
                 ViewData["IdVeiculo"] = new SelectList(
@@ -191,11 +216,9 @@ namespace CliCarProject.Controllers
                 return View(anuncio);
             }
 
-            Console.WriteLine("✅ Anúncio válido — gravando…");
+            //Console.WriteLine("✅ Anúncio válido");
             _context.Anuncios.Add(anuncio);
 
-            
-            
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index","Anuncios");
