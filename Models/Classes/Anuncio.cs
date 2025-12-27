@@ -17,7 +17,11 @@ public partial class Anuncio
 
     public string? Estado { get; set; }
 
+<<<<<<< Updated upstream
     public int Visualizacoes { get; set; }
+=======
+    public int NVisitas { get; set; } = 0;
+>>>>>>> Stashed changes
 
     public DateTime? DataCriacao { get; set; }
 
