@@ -7,13 +7,6 @@
     <UserSecretsId>aspnet-CliCarProject-cd6c34dd-764e-4d08-9af7-5579e1fce33e</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Views\Admin\**" />
-    <Content Remove="Views\Admin\**" />
-    <EmbeddedResource Remove="Views\Admin\**" />
-    <None Remove="Views\Admin\**" />
-  </ItemGroup>
-
 <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.11" />
