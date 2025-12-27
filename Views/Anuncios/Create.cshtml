@@ -4,99 +4,125 @@
     ViewData["Title"] = "Criar Anúncio";
 }
 
-<div class="container mt-4">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-<<<<<<< Updated upstream
-<div class="row">
-    <div class="col-md-6">
-
-        <a href="javascript:history.back()" class="btn btn-secondary mb-3">← Voltar</a>
-
-        <form asp-action="Create" method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-=======
-    <h2 class="fw-bold mb-4">Criar Novo Anúncio</h2>
->>>>>>> Stashed changes
-
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-
-            <form asp-action="Create" method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                <!-- SEÇÃO: Informações do veículo -->
-                <h5 class="fw-bold mb-3">Escolher Veículo</h5>
-                <div class="mb-4">
-                    <label asp-for="IdVeiculo" class="form-label fw-semibold"></label>
-                    <select asp-for="IdVeiculo" class="form-select" asp-items="ViewBag.IdVeiculo">
-                        <option value="">-- Selecione um veículo --</option>
-                    </select>
-                    <span asp-validation-for="IdVeiculo" class="text-danger"></span>
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <a asp-action="Index" class="btn btn-light rounded-pill px-3 shadow-sm text-muted mb-2">
+                        <i class="bi bi-arrow-left me-1"></i> Voltar à lista
+                    </a>
+                    <h2 class="fw-bold text-dark mb-0">🚀 Criar Novo Anúncio</h2>
+                    <p class="text-muted">Preencha os detalhes para colocar o seu veículo no mercado.</p>
                 </div>
+                <i class="bi bi-megaphone text-primary display-4 opacity-25"></i>
+            </div>
 
-                <hr class="my-4" />
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-4 p-md-5">
 
-                <!-- SEÇÃO: Detalhes do anúncio -->
-                <h5 class="fw-bold mb-3">Detalhes do Anúncio</h5>
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 mb-4" role="alert"></div>
 
-                <div class="row">
-                    <!-- Título -->
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="Titulo" class="form-label fw-semibold"></label>
-                        <input asp-for="Titulo" class="form-control" placeholder="Ex: Carro impecável, como novo" />
-                        <span asp-validation-for="Titulo" class="text-danger"></span>
-                    </div>
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-primary-subtle text-primary rounded-pill me-2">1</span>
+                                <h5 class="fw-bold mb-0">Qual veículo deseja anunciar?</h5>
+                            </div>
 
-                    <!-- Preço -->
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="Preco" class="form-label fw-semibold"></label>
-                        <div class="input-group">
-                            <input asp-for="Preco" type="number" step="0.01" class="form-control" placeholder="Ex: 15000" />
-                            <span class="input-group-text">€</span>
+                            <div class="form-floating mb-3">
+                                <select asp-for="IdVeiculo" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdVeiculo">
+                                    <option value="">-- Selecione um dos seus veículos --</option>
+                                </select>
+                                <label asp-for="IdVeiculo" class="fw-semibold"></label>
+                                <span asp-validation-for="IdVeiculo" class="text-danger small"></span>
+                            </div>
                         </div>
-                        <span asp-validation-for="Preco" class="text-danger"></span>
-                    </div>
+
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-primary-subtle text-primary rounded-pill me-2">2</span>
+                                <h5 class="fw-bold mb-0">Detalhes do Anúncio</h5>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Titulo" class="form-control border-0 bg-light rounded-3" placeholder="Ex: BMW 320d Pack M Nacional" />
+                                        <label asp-for="Titulo"></label>
+                                        <span asp-validation-for="Titulo" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Preco" type="number" step="0.01" class="form-control border-0 bg-light rounded-3" placeholder="Preço" />
+                                        <label asp-for="Preco">Preço (€)</label>
+                                        <span asp-validation-for="Preco" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Descricao" class="form-label fw-semibold ms-1">Descrição Detalhada</label>
+                                <textarea asp-for="Descricao" class="form-control border-0 bg-light rounded-3" rows="6"
+                                          placeholder="Descreva o estado do veículo, revisões efetuadas, extras incluídos e o motivo da venda..."></textarea>
+                                <span asp-validation-for="Descricao" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-primary-subtle text-primary rounded-pill me-2">3</span>
+                                <h5 class="fw-bold mb-0">Onde se encontra o veículo?</h5>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <select asp-for="IdLocalizacao" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdLocalizacao">
+                                    <option value="">-- Escolha o Distrito --</option>
+                                </select>
+                                <label asp-for="IdLocalizacao"></label>
+                                <span asp-validation-for="IdLocalizacao" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end pt-3">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow">
+                                <i class="bi bi-check-circle me-2"></i> Publicar Anúncio
+                            </button>
+                        </div>
+                    </form>
+
                 </div>
-
-                <!-- Descrição -->
-                <div class="mb-4">
-                    <label asp-for="Descricao" class="form-label fw-semibold"></label>
-                    <textarea asp-for="Descricao" class="form-control" rows="5"
-                              placeholder="Adicione detalhes importantes, estado do veículo, extras, revisões…"></textarea>
-                    <span asp-validation-for="Descricao" class="text-danger"></span>
-                </div>
-
-                <hr class="my-4" />
-
-                <!-- SEÇÃO: Localização -->
-                <h5 class="fw-bold mb-3">Localização</h5>
-
-                <div class="mb-3">
-                    <label asp-for="IdLocalizacao" class="form-label fw-semibold"></label>
-                    <select asp-for="IdLocalizacao" class="form-select" asp-items="ViewBag.IdLocalizacao">
-                        <option value="">-- Escolha a localização --</option>
-                    </select>
-                    <span asp-validation-for="IdLocalizacao" class="text-danger"></span>
-                </div>
-
-                <div class="text-end mt-4">
-                    <button type="submit" class="btn btn-primary px-4 py-2">
-                        Criar Anúncio
-                    </button>
-                </div>
-
-            </form>
-
+            </div>
         </div>
     </div>
-
-    <div class="mt-3">
-        <a asp-action="Index" class="text-decoration-none">← Voltar à lista</a>
-    </div>
-
 </div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        border: 1px solid #0d6efd !important;
+    }
+
+    .form-floating > label {
+        padding-left: 1.25rem;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff;
+    }
+
+    .rounded-4 {
+        border-radius: 1.25rem !important;
+    }
+</style>
 
 @section Scripts {
     @{
