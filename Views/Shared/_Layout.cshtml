@@ -183,7 +183,8 @@
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-danger fw-bold @(isAdminPanel ? "active" : "")" href="/Admin">Painel de Controlo</a>
+                                @* Força geração de URL para o Controller (evita ambiguidade com Razor Pages) *@
+                                <a class="nav-link text-danger fw-bold @(isAdminPanel ? "active" : "")" href='@Url.Action("Index","Admin")'>Painel de Controlo</a>
                             </li>
                         }
 
