@@ -43,12 +43,13 @@ namespace CliCarProject.Controllers
             var userId = _userManager.GetUserId(User);
 
             var query = _context.Veiculos
-                .Where(v => v.IdVendedor == userId) // Apenas os veículos do dono logado
+                .Where(v => v.IdVendedor == userId && v.Disponivel == true) 
                 .Include(v => v.Imagems)
                 .Include(v => v.IdModeloNavigation)
                 .Include(v => v.IdMarcaNavigation)
                 .AsQueryable();
 
+            // Lógica de Ordenação
             query = sortOrder switch
             {
                 "ano_asc" => query.OrderBy(v => v.Ano),
@@ -62,6 +63,7 @@ namespace CliCarProject.Controllers
 
             int totalItems = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
             if (page > totalPages && totalPages > 0) page = totalPages;
 
             var veiculos = await query
@@ -72,7 +74,7 @@ namespace CliCarProject.Controllers
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
 
-            // Suporte para AJAX Unobtrusive
+            // Retorna PartialView se o pedido for AJAX para evitar duplicação de Layout
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return PartialView(veiculos);
@@ -151,21 +153,77 @@ namespace CliCarProject.Controllers
         {
             if (id != veiculo.IdVeiculo) return NotFound();
 
+            var veiculoOriginal = await _context.Veiculos
+        .AsNoTracking()
+        .FirstOrDefaultAsync(v => v.IdVeiculo == id);
+
+            if (id != veiculo.IdVeiculo) return NotFound();
+
             if (ModelState.IsValid)
             {
                 try
                 {
+                    veiculo.IdVendedor = veiculoOriginal.IdVendedor;
+                    veiculo.Disponivel = veiculoOriginal.Disponivel;
+
                     _context.Update(veiculo);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
                     return NotFound();
                 }
-                return RedirectToAction(nameof(Index));
+                
             }
             CarregarDropdowns();
             return View(veiculo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditImages(int id, int[] RemoverIds, List<IFormFile> NovasImagens)
+        {
+            var veiculo = await _context.Veiculos.Include(v => v.Imagems).FirstOrDefaultAsync(v => v.IdVeiculo == id);
+            if (veiculo == null) return NotFound();
+
+            // 1. Remover Imagens Selecionadas
+            if (RemoverIds != null && RemoverIds.Length > 0)
+            {
+                var imagensParaApagar = veiculo.Imagems.Where(img => RemoverIds.Contains(img.IdImagem)).ToList();
+                foreach (var img in imagensParaApagar)
+                {
+                    // Apagar ficheiro físico
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/veiculos", id.ToString(), img.Nome);
+                    if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+
+                    _context.Imagems.Remove(img);
+                }
+            }
+
+            // 2. Adicionar Novas Imagens
+            if (NovasImagens != null && NovasImagens.Any())
+            {
+                string path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/veiculos", id.ToString());
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+                foreach (var file in NovasImagens)
+                {
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    string filePath = Path.Combine(path, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    veiculo.Imagems.Add(new Imagem { Nome = fileName });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Edit), new { id = id });
         }
 
         [HttpPost]
@@ -173,35 +231,33 @@ namespace CliCarProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMultiple([FromBody] List<int> ids)
         {
-            if (ids == null || !ids.Any()) return BadRequest(new { success = false, error = "Nenhum ID enviado." });
+            if (ids == null || !ids.Any()) return BadRequest();
 
             var userId = _userManager.GetUserId(User);
+
+            // Procuramos os veículos
             var veiculos = await _context.Veiculos
                 .Where(v => ids.Contains(v.IdVeiculo) && v.IdVendedor == userId)
                 .ToListAsync();
 
-            if (!veiculos.Any()) return NotFound(new { success = false, error = "Veículos não encontrados." });
-
-            try
+            if (veiculos.Any())
             {
-                _context.Veiculos.RemoveRange(veiculos);
+                foreach (var v in veiculos)
+                {
+                    v.Disponivel = false;
+
+                    // Procura anúncios ativos deste veículo e desativa-os também
+                    var anunciosRelacionados = _context.Anuncios.Where(a => a.IdVeiculo == v.IdVeiculo);
+                    foreach (var a in anunciosRelacionados)
+                    {
+                        a.Estado = "Inativo";
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 return Ok(new { success = true });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, error = ex.Message });
-            }
-        }
-
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var veiculo = await _context.Veiculos.FindAsync(id);
-            if (veiculo != null) _context.Veiculos.Remove(veiculo);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return NotFound();
         }
     }
 }
