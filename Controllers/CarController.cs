@@ -102,6 +102,9 @@ namespace CliCarProject.Controllers
                 .Take(pageSize)
                 .ToList();
 
+            ViewData["Page"] = page;
+            ViewData["TotalPages"] = totalPages;
+
             ViewBag.CurrentSort = sortOrder ?? "";
             ViewBag.Page = page;
             ViewBag.TotalPages = Math.Max(1, totalPages);
@@ -130,9 +133,14 @@ namespace CliCarProject.Controllers
                 ViewBag.Modelos = new List<Modelo>();
             }
 
-            return View("CarSearch", anuncios);
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_AnunciosGrid", anuncios);
+            }
 
             return View("CarSearch", anuncios);
+
+            
         }
 
         // Endpoint para popular os modelos via AJAX quando muda a marca
