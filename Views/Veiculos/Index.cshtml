@@ -1,196 +1,251 @@
 ﻿@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
-@Html.AntiForgeryToken()
 @{
-    ViewData["Title"] = "Veículos";
+    ViewData["Title"] = "A Minha Garagem";
 }
 
-<div class="container py-4">
+@Html.AntiForgeryToken()
 
-    <!-- ======================== -->
-    <!--   BARRA DE ORDENAÇÃO     -->
-    <!-- ======================== -->
+<div class="container py-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div>
+            <h2 class="fw-bold mb-0">🏎️ A Minha Garagem</h2>
+            <p class="text-muted">Gerencie a sua coleção de veículos e anúncios.</p>
+        </div>
 
-    <form method="get" class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-
+        <div class="d-flex gap-2 align-items-center">
             <form method="get" class="m-0">
-                <div class="d-flex gap-2">
-                    <select name="sortOrder" class="form-select" onchange="this.form.submit()" style="min-width: 200px;">
-                        <option value="">Ordenar por...</option>
-                        <option value="ano_asc">Ano (ascendente)</option>
-                        <option value="ano_desc">Ano (descendente)</option>
-                        <option value="km_asc">Quilometragem (ascendente)</option>
-                        <option value="km_desc">Quilometragem (descendente)</option>
-                        <option value="modelo_asc">Modelo (A→Z)</option>
-                        <option value="modelo_desc">Modelo (Z→A)</option>
-                        <option value="data_desc">Mais recentes</option>
-                        <option value="data_asc">Mais antigos</option>
-                    </select>
-                </div>
+                <select name="sortOrder" class="form-select rounded-pill shadow-sm" onchange="this.form.submit()" style="min-width: 200px;">
+                    <option value="">Ordenar por...</option>
+                    <option value="ano_desc">Ano (Mais recentes)</option>
+                    <option value="ano_asc">Ano (Mais antigos)</option>
+                    <option value="km_asc">Quilometragem (Menor)</option>
+                    <option value="km_desc">Quilometragem (Maior)</option>
+                </select>
             </form>
 
-            <a asp-action="Create" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
-                <i class="bi bi-plus-lg"></i> Novo Veículo
-            </a>
-
+            @if (User.IsInRole("Vendedor"))
+            {
+                <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-plus-lg me-2"></i>Novo Veículo
+                </a>
+            }
         </div>
-    </form>
-
-    <!-- Botão Delete -->
-    <button type="button" class="btn btn-danger mb-3" id="delete-selected-btn" disabled onclick="deleteSelected()">
-        Excluir Selecionados (<span id="selected-count">0</span>)
-    </button>
-    <!-- Botão Selecionar-->
-    <button type="button" class="btn btn-outline-secondary mb-3" id="deselect-all-btn"
-    style="display: none;" onclick="deselectAll()">
-        Desmarcar Todos
-    </button>
-
-
-    <!-- ======================== -->
-    <!--   GRID DE VEÍCULOS       -->
-    <!-- ======================== -->
-
-    <div class="row row-cols-1 row-cols-md-3 g-4" id="veiculos-list">
-
-        @foreach (var item in Model)
-        {
-            var capa = item.Imagems?.FirstOrDefault();
-
-            string imagemDefault = "/images/Image_not_available.png";
-
-            var imagemPath = (capa != null)
-            ? $"/uploads/veiculos/{item.IdVeiculo}/{capa.Nome}"
-            : imagemDefault;
-
-
-            <div class="col">
-                <div class="card shadow-sm border-0 h-100 position-relative">
-                    <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
-                        <input type="checkbox" class="form-check-input vehicle-checkbox"
-                               value="@item.IdVeiculo" style="transform: scale(1.5); cursor: pointer;">
-                    </div>
-
-                    <!-- IMAGEM -->
-                    <div class="card-img-container" style="cursor: pointer;">
-                        <img src="@imagemPath"
-                             class="card-img-top"
-                             style="height:180px; object-fit:cover; border-radius:6px;" />
-                    </div>
-
-                    <div class="card-body">
-                        <h5 class="card-title">@item.IdModeloNavigation?.Nome</h5>
-                        <p class="card-text text-muted">
-                            @item.Ano • @item.Quilometragem km • @item.Condicao
-                        </p>
-                    </div>
-
-                    <div class="card-footer bg-white border-0">
-                        <a asp-action="Details" asp-route-id="@item.IdVeiculo"
-                           class="btn btn-outline-primary w-100">
-                            Ver Detalhes
-                        </a>
-                    </div>
-
-                </div>
-            </div>
-        }
-
     </div>
 
+    <div id="selection-toolbar" class="alert alert-dark border-0 shadow rounded-4 p-3 mb-4 d-flex justify-content-between align-items-center d-none animate-fade-in">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check2-circle fs-4 me-3 text-primary"></i>
+            <span class="fw-bold"><span id="selected-count">0</span> Veículos selecionados</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light rounded-pill btn-sm px-3" onclick="deselectAll()">
+                Desmarcar Todos
+            </button>
+            <button type="button" class="btn btn-danger rounded-pill btn-sm px-3" onclick="deleteSelected()">
+                <i class="bi bi-trash me-2"></i>Eliminar Selecionados
+            </button>
+        </div>
+    </div>
 
-    <!-- ======================== -->
-    <!--       PAGINAÇÃO          -->
-    <!-- ======================== -->
-
-    <nav aria-label="Pagination" class="mt-4">
-        <ul class="pagination justify-content-center">
-
-            <!-- Botão anterior -->
-            <li class="page-item @(ViewBag.Page == 1 ? "disabled" : "")">
-                <a class="page-link" href="?page=@(ViewBag.Page - 1)&sortOrder=@ViewBag.CurrentSort">
-                    Anterior
-                </a>
-            </li>
-
-            <!-- Números das páginas -->
-            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 border rounded-4 bg-light shadow-sm">
+            <i class="bi bi-car-front display-1 text-muted opacity-25"></i>
+            <h3 class="mt-4 fw-bold text-secondary">A sua garagem está vazia</h3>
+            <p class="text-muted">Comece por adicionar o seu primeiro veículo para venda.</p>
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 mt-2">
+                Adicionar Veículo
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4" id="veiculos-list">
+            @foreach (var item in Model)
             {
-                <li class="page-item @(i == ViewBag.Page ? "active" : "")">
-                    <a class="page-link" href="?page=@i&sortOrder=@ViewBag.CurrentSort">
-                        @i
+                var capa = item.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
+                var imagemPath = (capa != null)
+                ? $"/uploads/veiculos/{item.IdVeiculo}/{capa.Nome}"
+                : "/images/Image_not_available.png";
+
+                <div class="col animate-fade-in">
+                    <div class="card h-100 border-0 shadow-sm premium-card rounded-4 overflow-hidden position-relative">
+
+                        <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
+                            <input type="checkbox" class="form-check-input vehicle-checkbox border-primary shadow-sm"
+                                   value="@item.IdVeiculo" style="transform: scale(1.4); cursor: pointer;">
+                        </div>
+
+                        <div class="condition-badge">
+                            @item.Condicao
+                        </div>
+
+                        <div class="card-img-wrapper" style="cursor: pointer;">
+                            <img src="@imagemPath" class="card-img-top" alt="Veículo" />
+                        </div>
+
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold text-truncate mb-1">@item.IdMarcaNavigation?.Nome @item.IdModeloNavigation?.Nome</h6>
+
+                            <div class="row g-0 mt-3 pt-3 border-top">
+                                <div class="col-6 mb-2">
+                                    <div class="d-flex align-items-center small text-muted">
+                                        <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                        <span>@item.Ano</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2 text-end">
+                                    <div class="d-flex align-items-center justify-content-end small text-muted">
+                                        <i class="bi bi-speedometer2 me-2 text-primary"></i>
+                                        <span>@item.Quilometragem?.ToString("N0") km</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-0 p-3 pt-0">
+                            <a asp-action="Details" asp-route-id="@item.IdVeiculo" class="btn btn-outline-dark w-100 rounded-pill btn-sm">
+                                Gerir Veículo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(ViewBag.Page == 1 ? "disabled" : "")">
+                    <a class="page-link rounded-circle mx-1" href="?page=@(ViewBag.Page - 1)&sortOrder=@ViewBag.CurrentSort shadow-sm">
+                        <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
-            }
 
-            <!-- Próxima página -->
-            <li class="page-item @(ViewBag.Page == ViewBag.TotalPages ? "disabled" : "")">
-                <a class="page-link" href="?page=@(ViewBag.Page + 1)&sortOrder=@ViewBag.CurrentSort">
-                    Próxima
-                </a>
-            </li>
+                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                        <a class="page-link rounded-circle mx-1 shadow-sm" href="?page=@i&sortOrder=@ViewBag.CurrentSort">@i</a>
+                    </li>
+                }
 
-        </ul>
-    </nav>
-
+                <li class="page-item @(ViewBag.Page == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link rounded-circle mx-1 shadow-sm" href="?page=@(ViewBag.Page + 1)&sortOrder=@ViewBag.CurrentSort">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
 </div>
 
 <style>
-    .card {
-        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
-        user-select: none; /* Impede que o texto seja selecionado ao clicar várias vezes rápido */
+    /* ESTILOS PREMIUM */
+    .premium-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+        border: 2px solid transparent !important;
     }
 
+        .premium-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    /* Estilo de Seleção */
     .card-selected {
-        border: 2px solid #dc3545 !important;
-        background-color: #fff5f5 !important;
+        border: 2px solid #0d6efd !important;
+        background-color: #f0f7ff !important;
     }
 
-    /* Feedback visual ao clicar (active state) */
-    .card:active {
-        transform: scale(0.98);
+    .card-img-wrapper {
+        height: 170px;
+        overflow: hidden;
+    }
+
+    .card-img-top {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .condition-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 10px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        z-index: 5;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Paginação Customizada */
+    .page-link {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+        border: none;
+    }
+
+    .page-item.active .page-link {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease forwards;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 
 <script>
-    // 1. Ouvinte global para cliques (Delegated Event)
+    // Gerenciamento de Seleção e Toolbar
     document.getElementById('veiculos-list').addEventListener('click', function (e) {
-       
-        if (e.target.closest('.btn-outline-primary')) return;
+        if (e.target.closest('.btn')) return;
 
-        // Encontra o card e o checkbox
         const card = e.target.closest('.card');
         if (!card) return;
 
         const checkbox = card.querySelector('.vehicle-checkbox');
-
-        // Se não clicou diretamente no checkbox, inverte o estado
         if (e.target !== checkbox) {
             checkbox.checked = !checkbox.checked;
         }
 
-        // Aplica a classe visual imediatamente
         card.classList.toggle('card-selected', checkbox.checked);
-
-        // Atualiza a barra de ferramentas
         updateToolbar();
     });
 
-    // 2. Função para atualizar os botões
     function updateToolbar() {
         const selectedCount = document.querySelectorAll('.vehicle-checkbox:checked').length;
-        const deleteBtn = document.getElementById('delete-selected-btn');
-        const deselectBtn = document.getElementById('deselect-all-btn');
+        const toolbar = document.getElementById('selection-toolbar');
         const countSpan = document.getElementById('selected-count');
 
-        deleteBtn.disabled = selectedCount === 0;
-        countSpan.innerText = selectedCount;
-
-        // Mostra/Esconde o botão "Desmarcar" conforme necessário
-        deselectBtn.style.display = selectedCount > 0 ? 'inline-block' : 'none';
+        if (selectedCount > 0) {
+            toolbar.classList.remove('d-none');
+            countSpan.innerText = selectedCount;
+        } else {
+            toolbar.classList.add('d-none');
+        }
     }
 
-    // 3. Função para desmarcar tudo instantaneamente
     function deselectAll() {
         document.querySelectorAll('.vehicle-checkbox:checked').forEach(cb => {
             cb.checked = false;
@@ -199,34 +254,36 @@
         updateToolbar();
     }
 
-    // 4. Função de Delete (Ajustada para o seu Controller)
     async function deleteSelected() {
         const selectedCheckboxes = document.querySelectorAll('.vehicle-checkbox:checked');
         const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
 
-        if (!confirm(`Confirmar desativação de ${selectedIds.length} veículos?`)) return;
+        if (!confirm(`Tem a certeza que deseja eliminar estes ${selectedIds.length} veículos? Esta ação é irreversível.`)) return;
 
         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-        // Se o seu controller usa ActionName("Delete"), a URL deve ser '/Veiculos/Delete'
-        const response = await fetch('/Veiculos/DeleteMultiple', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token
-            },
-            body: JSON.stringify(selectedIds)
-        });
-
-        if (response.ok) {
-            selectedCheckboxes.forEach(cb => {
-                const col = cb.closest('.col');
-                col.style.opacity = '0';
-                setTimeout(() => col.remove(), 300);
+        try {
+            const response = await fetch('/Veiculos/DeleteMultiple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify(selectedIds)
             });
-            setTimeout(updateToolbar, 350);
-        } else {
-            alert("Erro ao remover. Verifique a consola (F12).");
+
+            if (response.ok) {
+                selectedCheckboxes.forEach(cb => {
+                    const col = cb.closest('.col');
+                    col.classList.add('animate-fade-out');
+                    setTimeout(() => col.remove(), 400);
+                });
+                setTimeout(updateToolbar, 450);
+            } else {
+                alert("Erro ao eliminar veículos. Verifique se existem anúncios ativos associados.");
+            }
+        } catch (error) {
+            console.error("Erro:", error);
         }
     }
 </script>

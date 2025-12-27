@@ -1,87 +1,333 @@
-﻿@{
-    ViewData["Title"] = "CarSearch";
+﻿@using System.Globalization
+@using System.Linq
+@using CliCarProject.Models.Classes
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@model IEnumerable<Anuncio>
+
+@{
+    ViewData["Title"] = "Anúncios";
+
+    var currentSort = (string?)ViewBag.CurrentSort ?? "";
+    var page = (int?)ViewBag.Page ?? 1;
+    var totalPages = (int?)ViewBag.TotalPages ?? 1;
+
+    var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
+    var modelos = ViewBag.Modelos as List<Modelo> ?? new List<Modelo>();
+    var classes = ViewBag.Classes as List<Classe> ?? new List<Classe>();
+    var combustiveis = ViewBag.Combustiveis as List<Combustivel> ?? new List<Combustivel>();
+    var caixas = ViewBag.Caixas as List<SelectListItem> ?? new List<SelectListItem>();
+
+    // Lê os filtros atuais da URL (query string) para conseguir "carregar junto" ao ordenar/paginar
+    var qSearchBox = (string?)Context.Request.Query["searchBox"];
+    var qMarcaId = (string?)Context.Request.Query["marcaId"];
+    var qModeloId = (string?)Context.Request.Query["modeloId"];
+    var qCategoriaId = (string?)Context.Request.Query["categoriaId"];
+    var qCombustivelId = (string?)Context.Request.Query["combustivelId"];
+    var qCaixa = (string?)Context.Request.Query["caixa"];
+    var qPriceRange = (string?)Context.Request.Query["priceRange"];
 }
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- 🔹 Secção de filtros -->
-        <aside class="col-md-3 bg-light p-3 rounded shadow-sm">
-            <h4>Filtrar pesquisa</h4>
-            <form>
-                <div class="mb-3">
-                    <label for="searchBox" class="form-label">Pesquisar veículo</label>
-                    <input type="text" class="form-control" id="searchBox" placeholder="Ex: BMW, Toyota...">
-                </div>
+<div class="container py-4">
 
-                <div class="mb-3">
-                    <label for="brandSelect" class="form-label">Marca</label>
-                    <select id="brandSelect" class="form-select">
-                        <option value="">Todas</option>
-                        <option value="Toyota">Toyota</option>
-                        <option value="BMW">BMW</option>
-                        <option value="Audi">Audi</option>
+    <div class="carsearch-content">
+
+        <!-- ======================== -->
+        <!--   BARRA DE ORDENAÇÃO     -->
+        <!-- ======================== -->
+
+        <form method="get" class="mb-4" asp-controller="Car" asp-action="CarSearch">
+            <!-- mantém filtros quando trocar a ordenação -->
+            <input type="hidden" name="searchBox" value="@qSearchBox" />
+            <input type="hidden" name="marcaId" value="@qMarcaId" />
+            <input type="hidden" name="modeloId" value="@qModeloId" />
+            <input type="hidden" name="categoriaId" value="@qCategoriaId" />
+            <input type="hidden" name="combustivelId" value="@qCombustivelId" />
+            <input type="hidden" name="caixa" value="@qCaixa" />
+            <input type="hidden" name="priceRange" value="@qPriceRange" />
+            <input type="hidden" name="page" value="1" /> <!-- ao ordenar, normalmente volta para página 1 -->
+
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
+
+                        <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Ano (ascendente)</option>
+                        <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Ano (descendente)</option>
+
+                        <option value="km_asc" selected="@(currentSort == "km_asc" ? "selected" : null)">Quilometragem (ascendente)</option>
+                        <option value="km_desc" selected="@(currentSort == "km_desc" ? "selected" : null)">Quilometragem (descendente)</option>
+
+                        <option value="modelo_asc" selected="@(currentSort == "modelo_asc" ? "selected" : null)">Modelo (A→Z)</option>
+                        <option value="modelo_desc" selected="@(currentSort == "modelo_desc" ? "selected" : null)">Modelo (Z→A)</option>
+
+                        <option value="data_desc" selected="@(currentSort == "data_desc" ? "selected" : null)">Mais recentes</option>
+                        <option value="data_asc" selected="@(currentSort == "data_asc" ? "selected" : null)">Mais antigos</option>
+
+                        <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (ascendente)</option>
+                        <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (descendente)</option>
                     </select>
                 </div>
-
-                <div class="mb-3">
-                    <label for="priceRange" class="form-label">Faixa de preço</label>
-                    <select id="priceRange" class="form-select">
-                        <option value="">Qualquer</option>
-                        <option value="1">Até 10.000 €</option>
-                        <option value="2">10.000 € – 30.000 €</option>
-                        <option value="3">Acima de 30.000 €</option>
-                    </select>
-                </div>
-
-                <button type="button" class="btn btn-primary w-100">Aplicar filtros</button>
-            </form>
-        </aside>
-
-        <!-- 🔹 Secção dos anúncios -->
-        <main class="col-md-9">
-            <h3 class="mb-3">Anúncios disponíveis</h3>
-
-            <!-- Barra de pesquisa global -->
-            <div class="input-group mb-4">
-                <input type="text" class="form-control" placeholder="Procurar um veículo...">
-                <button class="btn btn-outline-primary" type="button">Pesquisar</button>
             </div>
+        </form>
 
-            <!-- Cards de exemplo -->
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Carro">
+        <!-- ======================== -->
+        <!--   GRID DE ANÚNCIOS       -->
+        <!-- ======================== -->
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+
+            @foreach (var item in Model)
+            {
+                var veiculo = item.IdVeiculoNavigation;
+
+                var img = veiculo?.Imagems?
+                    .OrderByDescending(i => i.IdImagem)
+                    .FirstOrDefault();
+
+                var imageSrc = (veiculo != null && img != null && !string.IsNullOrWhiteSpace(img.Nome))
+                    ? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}")
+                    : Url.Content("~/img/placeholder-car.png");
+
+                var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + " €";
+
+                <div class="col">
+                    <div class="card shadow-sm border-0 h-100">
+
+                        <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio">
+                            <img src="@imageSrc"
+                                 class="card-img-top"
+                                 alt="Imagem do anúncio @item.IdAnuncio"
+                                 style="height:180px; object-fit:cover; border-radius:6px;" />
+                        </a>
+
                         <div class="card-body">
-                            <h5 class="card-title">Toyota Corolla 2020</h5>
-                            <p class="card-text text-muted">15.000 €</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Ver detalhes</a>
+                            <h5 class="card-title mb-1">@item.Titulo</h5>
+
+                            <div class="fw-bold mb-2" style="color:#d32f2f;">
+                                @precoFormatado
+                            </div>
+
+                            <p class="card-text text-muted mb-0">
+                                @veiculo?.IdMarcaNavigation?.Nome @veiculo?.IdModeloNavigation?.Nome
+                                @if (veiculo != null)
+                                {
+                                    <text> • @veiculo.Ano</text>
+                                    <text> • @veiculo.Quilometragem km</text>
+                                    <text> • @veiculo.Condicao</text>
+                                }
+                            </p>
                         </div>
+
+                        <div class="card-footer bg-white border-0">
+                            <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
+                               class="btn btn-outline-primary w-100">
+                                Ver Detalhes
+                            </a>
+                        </div>
+
                     </div>
                 </div>
+            }
 
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Carro">
-                        <div class="card-body">
-                            <h5 class="card-title">BMW 320i 2021</h5>
-                            <p class="card-text text-muted">30.000 €</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Ver detalhes</a>
-                        </div>
-                    </div>
-                </div>
+        </div>
 
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Carro">
-                        <div class="card-body">
-                            <h5 class="card-title">Audi A4 2022</h5>
-                            <p class="card-text text-muted">28.000 €</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Ver detalhes</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+        <!-- ======================== -->
+        <!--       PAGINAÇÃO          -->
+        <!-- ======================== -->
+
+        <nav aria-label="Pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+
+                @{
+                    var prevPage = Math.Max(1, page - 1);
+                    var nextPage = Math.Min(totalPages, page + 1);
+                }
+
+                <li class="page-item @(page <= 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-controller="Car"
+                       asp-action="CarSearch"
+                       asp-route-page="@prevPage"
+                       asp-route-sortOrder="@currentSort"
+                       asp-route-searchBox="@qSearchBox"
+                       asp-route-marcaId="@qMarcaId"
+                       asp-route-modeloId="@qModeloId"
+                       asp-route-categoriaId="@qCategoriaId"
+                       asp-route-combustivelId="@qCombustivelId"
+                       asp-route-caixa="@qCaixa"
+                       asp-route-priceRange="@qPriceRange">
+                        Anterior
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == page ? "active" : "")">
+                        <a class="page-link"
+                           asp-controller="Car"
+                           asp-action="CarSearch"
+                           asp-route-page="@i"
+                           asp-route-sortOrder="@currentSort"
+                           asp-route-searchBox="@qSearchBox"
+                           asp-route-marcaId="@qMarcaId"
+                           asp-route-modeloId="@qModeloId"
+                           asp-route-categoriaId="@qCategoriaId"
+                           asp-route-combustivelId="@qCombustivelId"
+                           asp-route-caixa="@qCaixa"
+                           asp-route-priceRange="@qPriceRange">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(page >= totalPages ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-controller="Car"
+                       asp-action="CarSearch"
+                       asp-route-page="@nextPage"
+                       asp-route-sortOrder="@currentSort"
+                       asp-route-searchBox="@qSearchBox"
+                       asp-route-marcaId="@qMarcaId"
+                       asp-route-modeloId="@qModeloId"
+                       asp-route-categoriaId="@qCategoriaId"
+                       asp-route-combustivelId="@qCombustivelId"
+                       asp-route-caixa="@qCaixa"
+                       asp-route-priceRange="@qPriceRange">
+                        Próxima
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
     </div>
+
+    <!-- ======================== -->
+    <!--       Pesquisa Filtros   -->
+    <!-- ======================== -->
+
+    <div class="search-box search-box-left">
+        <form method="get"
+              asp-controller="Car"
+              asp-action="CarSearch"
+              id="searchForm"
+              class="search-box-vertical d-grid gap-2">
+
+            <input name="searchBox" class="form-control" placeholder="Procurar..." value="@qSearchBox" />
+
+            <select class="form-select" name="marcaId" id="marcaId">
+                <option value="">Marca</option>
+                @foreach (var m in marcas)
+                {
+                    <option value="@m.IdMarca"
+							selected="@(qMarcaId == m.IdMarca.ToString() ? "selected" : null)">
+                    @m.Nome</option>
+                }
+            </select>
+
+            <select class="form-select" name="modeloId" id="modeloId" disabled>
+                <option value="">Modelo</option>
+                @foreach (var mo in modelos)
+                {
+                    <option value="@mo.IdModelo"
+							selected="@(qModeloId == mo.IdModelo.ToString() ? "selected" : null)">
+                    @mo.Nome</option>
+                }
+            </select>
+
+            <select class="form-select" name="categoriaId">
+                <option value="">Categoria</option>
+                @foreach (var c in classes)
+                {
+                    <option value="@c.IdClasse"
+                            selected="@(qCategoriaId == c.IdClasse.ToString() ? "selected" : null)">
+                    @c.Nome
+                    </option>
+                }
+            </select>
+
+            <select class="form-select" name="combustivelId">
+                <option value="">Combustível</option>
+                @foreach (var cb in combustiveis)
+                {
+                    <option value="@cb.IdCombustivel"
+						    selected="@(qCombustivelId == cb.IdCombustivel.ToString() ? "selected" : null)">
+                    @cb.Tipo
+                    </option>
+
+                }
+            </select>
+
+            <select class="form-select" name="caixa">
+                <option value="">Qualquer Caixa</option>
+                @foreach (var cx in caixas)
+                {
+                    <option value="@cx.Value"
+							selected="@(qCaixa == cx.Value ? "selected" : null)">            
+                    @cx.Text</option>
+                }
+            </select>
+
+            <select class="form-select" name="priceRange">
+                <option value="">Preço</option>
+                <option value="1" selected="@(qPriceRange == "1" ? "selected" : null)">Até 10.000 €</option>
+                <option value="2" selected="@(qPriceRange == "2" ? "selected" : null)">10.000 € – 30.000 €</option>
+                <option value="3" selected="@(qPriceRange == "3" ? "selected" : null)">Acima de 30.000 €</option>
+            </select>
+
+            <button type="submit" class="btn btn-danger w-100">Pesquisar</button>
+        </form>
+    </div>
+
 </div>
+
+@section Scripts {
+<script>
+        (function () {
+            const marcaSelect = document.getElementById('marcaId');
+            const modeloSelect = document.getElementById('modeloId');
+            const currentModeloId = "@qModeloId";
+
+            function setModelos(list) {
+                modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                list.forEach(m => {
+                    const id = m.idModelo ?? m.IdModelo;
+                    const nome = m.nome ?? m.Nome;
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = nome;
+                    if (id == currentModeloId) {
+                        opt.selected = true;
+                    }
+                    modeloSelect.appendChild(opt);
+                });
+                modeloSelect.disabled = list.length === 0;
+            }
+
+            marcaSelect.addEventListener('change', function () {
+                const marcaId = this.value;
+                if (!marcaId) {
+                    modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                    modeloSelect.disabled = true;
+                    return;
+                }
+
+                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setModelos(data || []);
+                    })
+                    .catch(() => {
+                        modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                        modeloSelect.disabled = true;
+                    });
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                if (marcaSelect.value) {
+                    marcaSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        })();
+    </script>
+}
