@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="utf-8" />
@@ -12,6 +15,76 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --primary-red: #c41e3a;
+            --dark-bg: #1a1a1a;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            color: #333;
+        }
+
+        /* Navbar */
+        .main-nav {
+            height: 75px;
+        }
+
+        .brand-text {
+            font-weight: 800;
+            font-size: 1.4rem;
+            letter-spacing: -1px;
+            color: var(--primary-red);
+        }
+
+        .navbar-nav .nav-link {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666 !important;
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active {
+            color: var(--primary-red) !important;
+            border-bottom-color: var(--primary-red);
+        }
+
+        /* Dropdown de Perfil */
+        .dropdown-menu {
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .profile-trigger {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .profile-trigger:hover {
+            background: #f8f9fa;
+            transform: scale(1.05);
+        }
+
+        /* Botões Modernos */
+        .rounded-pill {
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <header>
@@ -27,28 +100,40 @@
                 </button>
 
                 <div class="collapse navbar-collapse" id="mainNavbar">
+                    @{
+                        var path = Context.Request.Path.Value?.ToLowerInvariant() ?? "/";
+                        var isHome = path == "/" || path.StartsWith("/home");
+                        var isMeusAnuncios = path.StartsWith("/anuncios") && !path.StartsWith("/anuncios/favoritos");
+                        var isFavoritos = path.StartsWith("/anuncios/favoritos") || path.StartsWith("/favoritos");
+                        var isAdminPanel = path.StartsWith("/admin");
+                    }
+
                     <ul class="navbar-nav mx-auto text-uppercase">
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" href="/">Home</a>
+                            <a class="nav-link @(isHome ? "active" : "")" href="/">Home</a>
                         </li>
 
-						@if (User.IsInRole("Vendedor"))
-						{
-                            <li class="nav-item">
-                                <a class="nav-link" href="/Anuncios">Meus Anúncios</a>
-                            </li>
-						}
+                        @* Se quiser reintroduzir "Carros" coloque aqui novamente *@
+                        @* <li class="nav-item">
+                            <a class="nav-link @(path.StartsWith("/veiculos") ? "active" : "")" href="/Veiculos">Carros</a>
+                        </li> *@
 
-                        <!-- Botão Painel de Controlo ao lado de Carros (visível só a Admin) -->
+                        @if (User.IsInRole("Vendedor"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(isMeusAnuncios ? "active" : "")" href="/Anuncios">Meus Anúncios</a>
+                            </li>
+                        }
+
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-danger fw-bold" href="/Admin">Painel de Controlo</a>
+                                <a class="nav-link text-danger fw-bold @(isAdminPanel ? "active" : "")" href="/Admin">Painel de Controlo</a>
                             </li>
                         }
 
                         <li class="nav-item">
-                            <a class="nav-link" href="/Anuncios/Favoritos">Favoritos</a>
+                            <a class="nav-link @(isFavoritos ? "active" : "")" href="/Anuncios/Favoritos">Favoritos</a>
                         </li>
                     </ul>
 
@@ -73,7 +158,7 @@
                                     </li>
                                     <li><a class="dropdown-item py-2" href="/Identity/Account/Manage"><i class="bi bi-gear me-2"></i> Perfil</a></li>
 
-                                    @if (User.IsInRole("Vendedor") || (User.IsInRole("Comprador")))
+                                    @if (User.IsInRole("Vendedor") || User.IsInRole("Comprador"))
                                     {
                                         <li><a class="dropdown-item py-2 text-primary" href="/Veiculos"><i class="bi bi-car-front-fill me-2"></i> Minha Garagem</a></li>
                                     }
@@ -106,81 +191,11 @@
         @RenderBody()
     </main>
 
-	<script src="~/lib/jquery/dist/jquery.min.js"></script>
-	<script src="~/lib/ajax/jquery.unobtrusive-ajax.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/ajax/jquery.unobtrusive-ajax.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-<style>
-    :root {
-        --primary-red: #c41e3a;
-        --dark-bg: #1a1a1a;
-        --font-main: 'Inter', sans-serif;
-    }
-
-    body {
-        font-family: var(--font-main);
-        color: #333;
-    }
-
-    /* Navbar */
-    .main-nav {
-        height: 75px;
-    }
-
-    .brand-text {
-        font-weight: 800;
-        font-size: 1.4rem;
-        letter-spacing: -1px;
-        color: var(--primary-red);
-    }
-
-    .navbar-nav .nav-link {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #666 !important;
-        padding: 0.5rem 1rem;
-        border-bottom: 2px solid transparent;
-        transition: all 0.3s ease;
-    }
-
-        .navbar-nav .nav-link:hover, .navbar-nav .nav-link.active {
-            color: var(--primary-red) !important;
-            border-bottom-color: var(--primary-red);
-        }
-
-    /* Dropdown de Perfil */
-    .dropdown-menu {
-        border-radius: 12px;
-        padding: 10px;
-    }
-
-    .dropdown-item {
-        border-radius: 8px;
-        font-weight: 500;
-    }
-
-    .profile-trigger {
-        width: 45px;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-
-        .profile-trigger:hover {
-            background: #f8f9fa;
-            transform: scale(1.05);
-        }
-
-    /* Botões Modernos */
-    .rounded-pill {
-        font-weight: 600;
-    }
-
-</style>
