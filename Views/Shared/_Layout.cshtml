@@ -84,6 +84,61 @@
         .rounded-pill {
             font-weight: 600;
         }
+
+        /* Centralização absoluta do menu em desktop (preserva comportamento mobile) */
+        @@media (min-width: 992px) {
+            /* container como referência para absolute */
+            .main-nav .container {
+                position: relative;
+                display: block; /* mantém fluxo normal para mobile; usamos absolute apenas para elementos definidos abaixo */
+                min-height: 75px;
+            }
+
+            /* Marca (esquerda) */
+            .main-nav .navbar-brand {
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 3;
+                display: flex;
+                align-items: center;
+            }
+
+            /* área de ações (direita) */
+            .main-nav > .container .d-flex.align-items-center.gap-3 {
+                position: absolute;
+                right: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 3;
+                display: flex;
+                align-items: center;
+                gap: .75rem;
+            }
+
+            /* ul centralizado com position:absolute dentro do container */
+            .main-nav .navbar-nav {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                display: flex;
+                gap: .25rem;
+                z-index: 2;
+                margin: 0; /* remover margens remanescentes */
+            }
+
+            /* evita que o menu absoluto quebre linha */
+            .main-nav .navbar-nav .nav-item {
+                white-space: nowrap;
+            }
+
+            /* assegura que o collapse em desktop não altere layout quando aberto (mantém compatibilidade) */
+            .main-nav .navbar-collapse {
+                position: static;
+            }
+        }
     </style>
 </head>
 <body class="bg-light">
