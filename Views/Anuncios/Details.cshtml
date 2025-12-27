@@ -1,258 +1,214 @@
 ﻿@model CliCarProject.Models.Classes.Anuncio
 
 @{
-    ViewData["Title"] = "Detalhes do Anúncio";
-
+    ViewData["Title"] = Model.Titulo;
     var veiculo = Model.IdVeiculoNavigation;
-    var imagens = veiculo.Imagems
-        .OrderByDescending(i => i.IdImagem)
-        .ToList();
+    var imagens = veiculo.Imagems.OrderByDescending(i => i.IdImagem).ToList();
 
-    // preço formatado
-    string precoFormatado = Model.Preco.ToString("N0") + " €";
-
-    // data (podes depois trocar para DataAtualizacao se quiseres)
-    string dataCriacao = Model.DataCriacao?.ToString("dd/MM/yyyy");
+    // Recuperamos o estado do favorito da ViewBag (definido no Controller)
+    bool isFavorito = ViewBag.IsFavorito ?? false;
 }
 
-<div class="container mt-4">
-
-    <a href="javascript:history.back()" class="btn btn-secondary mb-3">← Voltar</a>
-
-    <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-        <div>
-            <h2 class="fw-bold mb-1">@Model.Titulo</h2>
-            <h5 class="text-muted mb-1">
-                @veiculo.IdMarcaNavigation.Nome @veiculo.IdModeloNavigation.Nome • @veiculo.Ano
-            </h5>
-            <small class="text-muted">
-                Criado em: @dataCriacao
-                @* // Futuro: substituir por DataAtualizacao quando implementares *@
-            </small>
-        </div>
-
-        <div class="text-end">
-            <div class="fw-bold" style="font-size: 1.8rem; color: #d32f2f;">
-                @precoFormatado
-            </div>
-            @if (Model.Estado != null)
-            {
-                <span class="badge bg-success mt-1">@Model.Estado</span>
-            }
-        </div>
-    </div>
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4 d-flex justify-content-between align-items-center">
+        <a href="javascript:history.back()" class="text-decoration-none text-muted">
+            <i class="bi bi-chevron-left"></i> Voltar à pesquisa
+        </a>
+        <small class="text-muted">Publicado em @Model.DataCriacao?.ToString("dd/MM/yyyy")</small>
+    </nav>
 
     <div class="row g-4">
-
-        <!-- COLUNA ESQUERDA: CARROSSEL -->
         <div class="col-lg-8">
 
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-body">
-
-                    @if (imagens.Any())
-                    {
-                        <div id="carouselAnuncio" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner" style="height: 360px;">
-                                @for (int i = 0; i < imagens.Count; i++)
-                                {
-                                    var img = imagens[i];
-                                    var url = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}");
-
-                                    <div class="carousel-item @(i == 0 ? "active" : "")">
-                                        <img src="@url"
-                                             class="d-block w-100 rounded"
-                                             style="height: 360px; object-fit: cover;" />
-                                    </div>
-                                }
-                            </div>
-
-                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselAnuncio" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon"></span>
-                                <span class="visually-hidden">Anterior</span>
-                            </button>
-
-                            <button class="carousel-control-next" type="button" data-bs-target="#carouselAnuncio" data-bs-slide="next">
-                                <span class="carousel-control-next-icon"></span>
-                                <span class="visually-hidden">Seguinte</span>
-                            </button>
-                        </div>
-
-                        <!-- MINIATURAS -->
-                        <div class="d-flex gap-2 mt-2 flex-wrap">
+            <div class="main-gallery shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                @if (imagens.Any())
+                {
+                    <div id="carouselAnuncio" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
                             @for (int i = 0; i < imagens.Count; i++)
                             {
-                                var img = imagens[i];
-                                var thumbUrl = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}");
-
-                                <img src="@thumbUrl"
-                                     class="rounded"
-                                     style="width: 90px; height: 60px; object-fit: cover; cursor: pointer;"
-                                     data-bs-target="#carouselAnuncio"
-                                     data-bs-slide-to="@i" />
+                                <div class="carousel-item @(i == 0 ? "active" : "")">
+                                    <img src="@Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{imagens[i].Nome}")"
+                                         class="d-block w-100" style="height: 500px; object-fit: cover;" />
+                                </div>
                             }
                         </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted mb-0">Este veículo ainda não tem imagens.</p>
-                    }
-
-                </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselAnuncio" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon shadow-sm rounded-circle"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselAnuncio" data-bs-slide="next">
+                            <span class="carousel-control-next-icon shadow-sm rounded-circle"></span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center justify-content-center bg-light" style="height: 400px;">
+                        <i class="bi bi-camera fs-1 text-muted"></i>
+                    </div>
+                }
             </div>
 
-            <!-- ESPECIFICAÇÕES -->
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0 fw-bold">Especificações do Veículo</h5>
-                </div>
-                <div class="card-body">
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Marca</small>
-                                <span>@veiculo.IdMarcaNavigation.Nome</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Modelo</small>
-                                <span>@veiculo.IdModeloNavigation.Nome</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Ano</small>
-                                <span>@veiculo.Ano</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Quilometragem</small>
-                                <span>@veiculo.Quilometragem?.ToString("N0") km</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Condição</small>
-                                @{
-                                    string condicao =
-                                    veiculo.Condicao == "N" ? "Novo" :
-                                    veiculo.Condicao == "S" ? "Seminovo" :
-                                    veiculo.Condicao == "U" ? "Usado" :
-                                    veiculo.Condicao ?? "N/D";
-                                }
-                                <span>@condicao</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Combustível</small>
-                                <span>@veiculo.IdCombustivelNavigation.Tipo</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Caixa</small>
-                                @{
-                                    string caixa =
-                                    veiculo.Caixa == "M" ? "Manual" :
-                                    veiculo.Caixa == "A" ? "Automático" :
-                                    veiculo.Caixa ?? "N/D";
-                                }
-                                <span>@caixa</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded p-2 h-100">
-                                <small class="text-muted d-block">Categoria</small>
-                                <span>@veiculo.IdClasseNavigation.Nome</span>
-                            </div>
+            <div class="bg-white p-4 rounded-4 shadow-sm mb-4">
+                <h5 class="fw-bold mb-4">Características principais</h5>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="spec-item p-3 border rounded-3 text-center h-100">
+                            <i class="bi bi-calendar3 text-primary fs-4"></i>
+                            <small class="text-muted d-block mt-2">Ano</small>
+                            <span class="fw-bold">@veiculo.Ano</span>
                         </div>
                     </div>
-
+                    <div class="col-6 col-md-3">
+                        <div class="spec-item p-3 border rounded-3 text-center h-100">
+                            <i class="bi bi-speedometer2 text-primary fs-4"></i>
+                            <small class="text-muted d-block mt-2">Quilómetros</small>
+                            <span class="fw-bold">@veiculo.Quilometragem?.ToString("N0") km</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="spec-item p-3 border rounded-3 text-center h-100">
+                            <i class="bi bi-fuel-pump text-primary fs-4"></i>
+                            <small class="text-muted d-block mt-2">Combustível</small>
+                            <span class="fw-bold">@(veiculo.IdCombustivelNavigation?.Tipo ?? "N/D")</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="spec-item p-3 border rounded-3 text-center h-100">
+                            <i class="bi bi-gear-wide-connected text-primary fs-4"></i>
+                            <small class="text-muted d-block mt-2">Caixa</small>
+                            <span class="fw-bold">@(veiculo.Caixa == "M" ? "Manual" : "Auto")</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- DESCRIÇÃO -->
-            <div class="card shadow-sm border-0 mb-5">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0 fw-bold">Descrição</h5>
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrWhiteSpace(Model.Descricao))
-                    {
-                        <p class="mb-0">@Model.Descricao</p>
-                    }
-                    else
-                    {
-                        <p class="text-muted mb-0">Este anúncio ainda não tem descrição detalhada.</p>
-                    }
-                </div>
+            <div class="bg-white p-4 rounded-4 shadow-sm">
+                <h5 class="fw-bold mb-3">Descrição</h5>
+                <p class="text-muted" style="line-height: 1.8; white-space: pre-line;">@Model.Descricao</p>
             </div>
-
         </div>
 
-        <!-- COLUNA DIREITA: INFO DO VENDEDOR / AÇÕES -->
         <div class="col-lg-4">
+            <div class="sticky-top" style="top: 20px; z-index: 10;">
 
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0 fw-bold">Informações do vendedor</h5>
+                <div class="bg-white p-4 rounded-4 shadow-sm border-top border-4 border-primary mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h1 class="h2 fw-bold mb-0 text-primary">@Model.Preco.ToString("N0") €</h1>
+
+                        @if (User.Identity.Name != Model.IdVendedorNavigation?.UserName)
+                        {
+                            <button id="btnFavorito" data-id="@Model.IdAnuncio" class="btn btn-light rounded-circle shadow-sm border p-2">
+                                <i id="iconFavorito" class="bi @(ViewBag.IsFavorito ? "bi-heart-fill text-danger" : "bi-heart") fs-4"></i>
+                            </button>
+                        }
+                    </div>
+
+                    <h4 class="fw-bold mb-1">@Model.Titulo</h4>
+                    <p class="text-muted">@veiculo.IdMarcaNavigation?.Nome @veiculo.IdModeloNavigation?.Nome</p>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        @if (User.Identity.IsAuthenticated && User.Identity.Name == Model.IdVendedorNavigation?.UserName)
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.IdAnuncio" class="btn btn-warning btn-lg rounded-pill fw-bold">
+                                <i class="bi bi-pencil me-2"></i> Editar Anúncio
+                            </a>
+
+                            <form asp-action="Delete" asp-route-id="@Model.IdAnuncio" method="post" onsubmit="return confirm('Tem a certeza que deseja eliminar este anúncio?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                                    <i class="bi bi-trash me-2"></i> Eliminar Anúncio
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a href="mailto:@Model.IdVendedorNavigation?.Email?subject=Interesse no anúncio: @Model.Titulo"
+                               class="btn btn-primary btn-lg rounded-pill fw-bold">
+                                <i class="bi bi-chat-left-text me-2"></i> Contactar Vendedor
+                            </a>
+
+                            <button class="btn btn-outline-dark rounded-pill shadow-sm py-2">
+                                <i class="bi bi-telephone me-2"></i> Ver Telefone
+                            </button>
+                        }
+                    </div>
                 </div>
-                <div class="card-body">
 
-                    <p class="mb-1">
-                        <strong>Vendedor:</strong><br />
-                        @(Model.IdVendedorNavigation?.UserName ?? "Por implementar (nome do vendedor)")
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Email:</strong><br />
-                        @(Model.IdVendedorNavigation?.Email ?? "Por implementar (email do vendedor)")
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Telemóvel:</strong><br />
-                        <span class="text-muted">Por implementar (campo telemóvel / contacto)</span>
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Localização:</strong><br />
-                        @(Model.IdLocalizacaoNavigation?.Distrito ?? "Por implementar (localização)")
-                    </p>
-
+                <div class="bg-dark text-white p-4 rounded-4 shadow-sm">
+                    <h6 class="text-uppercase small fw-bold opacity-50 mb-3 text-white">
+                        @(User.Identity.Name == Model.IdVendedorNavigation?.UserName ? "As minhas informações" : "Vendido por")
+                    </h6>
+                    <div class="d-flex align-items-center mb-3">
+                    </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">@Model.IdVendedorNavigation?.UserName</h6>
+                            <small class="opacity-75">Localização: @(Model.IdLocalizacaoNavigation?.Distrito ?? "Portugal")</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between small opacity-75">
+                        <span><i class="bi bi-eye me-1"></i> @Model.Visualizacoes visualizações</span>
+                    </div>
                 </div>
             </div>
-
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-
-                    <!-- Exemplo: botão só para o dono do anúncio (ajusta a lógica conforme o teu sistema) -->
-                    @* Por implementar: verificar se User.Identity.Name == Model.IdVendedorNavigation?.UserName *@
-                    <a asp-action="Edit" asp-route-id="@Model.IdAnuncio"
-                       class="btn btn-warning w-100 mb-2">
-                        ✏️ Editar este anúncio
-                    </a>
-
-                    <a asp-action="Index"
-                       class="btn btn-outline-secondary w-100">
-                        Voltar à lista de anúncios
-                    </a>
-
-                </div>
-            </div>
-
         </div>
-
     </div>
 </div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .rounded-4 {
+        border-radius: 1.2rem !important;
+    }
+
+    .spec-item {
+        transition: transform 0.2s ease;
+    }
+
+        .spec-item:hover {
+            transform: translateY(-5px);
+            border-color: #0d6efd !important;
+        }
+
+    .btn-light:hover {
+        background-color: #f1f1f1;
+    }
+
+    .sticky-top {
+        top: 100px;
+    }
+    /* Ajusta se tiveres uma navbar fixa */
+</style>
+
+@section Scripts {
+    <script>
+        // Lógica AJAX para o botão de Favoritos
+        document.getElementById('btnFavorito').addEventListener('click', function() {
+            const anuncioId = this.getAttribute('data-id');
+            const icon = document.getElementById('iconFavorito');
+
+            fetch(`/Anuncios/ToggleFavorito?idAnuncio=${anuncioId}`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.isFavorito) {
+                        icon.classList.replace('bi-heart', 'bi-heart-fill');
+                        icon.classList.add('text-danger');
+                    } else {
+                        icon.classList.replace('bi-heart-fill', 'bi-heart');
+                        icon.classList.remove('text-danger');
+                    }
+                }
+            })
+            .catch(err => console.error("Erro ao processar favorito", err));
+        });
+    </script>
+}
