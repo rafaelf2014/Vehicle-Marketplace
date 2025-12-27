@@ -34,7 +34,6 @@ namespace CliCarProject.Controllers
         {
             var userId = _userManager.GetUserId(User); //Obtém o ID do usuário atualmente autenticado
 
-<<<<<<< Updated upstream
             ViewBag.CurrentSort = sortOrder;
 
             var query = _context.Anuncios
@@ -51,21 +50,6 @@ namespace CliCarProject.Controllers
         .ThenInclude(v => v.IdCombustivelNavigation)
     //.Include(a => a.IdLocalizacaoNavigation) // podes manter se usares depois
     .AsQueryable();
-=======
-            var query = _context.Anuncios
-            .Include(a => a.IdVeiculoNavigation)
-                .ThenInclude(v => v.Imagems)
-            .Include(a => a.IdVeiculoNavigation)
-                .ThenInclude(v => v.IdMarcaNavigation)
-            .Include(a => a.IdVeiculoNavigation)
-                .ThenInclude(v => v.IdModeloNavigation)
-            .Include(a => a.IdVeiculoNavigation)
-                .ThenInclude(v => v.IdCombustivelNavigation)
-            .Where(User != null ? a => a.IdVendedor == userId : a => true)
-            //.Include(a => a.IdLocalizacaoNavigation)
-            .AsQueryable();
->>>>>>> Stashed changes
-
 
             query = sortOrder switch
             {
@@ -76,15 +60,12 @@ namespace CliCarProject.Controllers
             var anuncios = await query.ToListAsync();
 
             var destaques = await _context.Anuncios
-            .OrderByDescending(a => a.NVisitas)
+            .OrderByDescending(a => a.Visualizacoes)
             .Take(10)
             .ToListAsync();
 
-
-
             return View(anuncios);
         }
-
 
         // GET: Anuncios/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -122,7 +103,7 @@ namespace CliCarProject.Controllers
             {
                 return NotFound();
             }
-            anuncio.NVisitas++;
+            anuncio.Visualizacoes++;
             await _context.SaveChangesAsync();
 
 

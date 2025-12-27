@@ -27,14 +27,12 @@ public partial class Veiculo
 
     [Required]
     [DefaultValue(true)]
-    public bool Disponível { get; set; } = true;
+    public bool Disponivel { get; set; } = true;
     public int IdMarca { get; set; }
 
     public int IdCombustivel { get; set; }
 
     public int IdClasse { get; set; }
-    public bool Disponivel { get; set; } = true;
-
     public virtual ICollection<Anuncio> Anuncios { get; set; } = new List<Anuncio>();
 
     public virtual Classe? IdClasseNavigation { get; set; }

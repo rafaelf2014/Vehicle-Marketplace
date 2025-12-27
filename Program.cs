@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CliCarProject.Data;
-<<<<<<< Updated upstream
-=======
 using CliCarProject.Services;
 using CliCarProject.Models.Classes;
->>>>>>> Stashed changes
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,12 +34,8 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-<<<<<<< Updated upstream
     options.SignIn.RequireConfirmedAccount = false;
     options.User.RequireUniqueEmail = true;
-=======
-    options.SignIn.RequireConfirmedAccount = false; // mudar para true para confirmação por email
->>>>>>> Stashed changes
 })
 
 .AddRoles<IdentityRole>()

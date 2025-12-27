@@ -109,9 +109,6 @@ namespace CliCarProject.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("ID_Vendedor");
 
-                    b.Property<int>("NVisitas")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("Preco")
                         .HasColumnType("decimal(10, 2)");
 
@@ -459,11 +456,10 @@ namespace CliCarProject.Migrations
                         .HasColumnType("char(1)")
                         .IsFixedLength();
 
-<<<<<<< Updated upstream
                     b.Property<bool>("Disponivel")
-=======
+                        .HasColumnType("bit");
+
                     b.Property<bool>("Disponível")
->>>>>>> Stashed changes
                         .HasColumnType("bit");
 
                     b.Property<int>("IdClasse")
@@ -831,7 +827,6 @@ namespace CliCarProject.Migrations
                     b.Navigation("IdVeiculoNavigation");
 
                     b.Navigation("IdVendedorNavigation");
-<<<<<<< Updated upstream
                 });
 
             modelBuilder.Entity("CliCarProject.Models.Classes.Compra", b =>
@@ -854,8 +849,6 @@ namespace CliCarProject.Migrations
                         .HasConstraintName("FK_Comprador_AspNetUsers");
 
                     b.Navigation("IdUtilizadorNavigation");
-=======
->>>>>>> Stashed changes
                 });
 
             modelBuilder.Entity("CliCarProject.Models.Classes.FiltrosFavorito", b =>

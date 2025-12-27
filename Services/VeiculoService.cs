@@ -59,7 +59,7 @@ namespace CliCarProject.Services
                 }
 
                 // 2. MUDANÇA DE ESTADO (Soft Delete no Veículo)
-                veiculo.Disponível = false; 
+                veiculo.Disponivel = false; 
 
                 // 3. DESATIVAÇÃO EM CASCATA DOS ANÚNCIOS ASSOCIADOS (Regra de Negócio)
                 if (veiculo.Anuncios != null)

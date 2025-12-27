@@ -132,7 +132,6 @@ namespace CliCarProject.Controllers
 
             return View("CarSearch", anuncios);
 
-            return View("CarSearch", anuncios);
         }
 
         // Endpoint para popular os modelos via AJAX quando muda a marca
