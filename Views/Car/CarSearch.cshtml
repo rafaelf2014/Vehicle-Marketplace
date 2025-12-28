@@ -6,20 +6,17 @@
 @model IEnumerable<Anuncio>
 
 @{
-    ViewData["Title"] = "Anúncios";
+    ViewData["Title"] = "Pesquisar Carros";
 
-    // Variáveis de controlo vindas da URL para manter o estado inicial
     var qSearchBox = (string?)Context.Request.Query["searchBox"];
     var qMarcaId = (string?)Context.Request.Query["marcaId"];
     var qModeloId = (string?)Context.Request.Query["modeloId"];
     var qCategoriaId = (string?)Context.Request.Query["categoriaId"];
     var qCombustivelId = (string?)Context.Request.Query["combustivelId"];
     var qCaixa = (string?)Context.Request.Query["caixa"];
-    var qPriceRange = (string?)Context.Request.Query["priceRange"];
-    var currentSort = (string?)ViewBag.CurrentSort ?? "";
     var qLocalizacaoId = (string?)Context.Request.Query["localizacaoId"];
+    var currentSort = (string?)ViewBag.CurrentSort ?? "";
 
-    // Listas para os Dropdowns
     var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
     var modelos = ViewBag.Modelos as List<Modelo> ?? new List<Modelo>();
     var classes = ViewBag.Classes as List<Classe> ?? new List<Classe>();
@@ -28,14 +25,22 @@
     var localizacoes = ViewBag.Localizacoes as List<Localizacao> ?? new List<Localizacao>();
 }
 
-<div class="container-fluid py-4 px-0">
-    <div class="row gx-3">
+<div class="container py-5">
+    <div class="row">
 
-        <div class="col-md-3">
+        <div class="col-lg-3 mb-4">
             <div class="search-box search-box-left">
                 <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="search-box-vertical d-grid gap-2">
 
                     <input name="searchBox" class="form-control" placeholder="Procurar..." value="@qSearchBox" />
+
+                    <select class="form-select" name="localizacaoId">
+                        <option value="">Todo o País</option>
+                        @foreach (var loc in localizacoes)
+                        {
+                            <option value="@loc.IdLocalizacao" selected="@(qLocalizacaoId == loc.IdLocalizacao.ToString() ? "selected" : null)">@loc.Distrito</option>
+                        }
+                    </select>
 
                     <select class="form-select" name="marcaId" id="marcaId">
                         <option value="">Marca</option>
@@ -77,257 +82,147 @@
                         }
                     </select>
 
-                    <select class="form-select" name="localizacaoId">
-                        <option value="">Localização</option>
-                        @foreach (var loc in localizacoes)
-                        {
-                            <option value="@loc.IdLocalizacao"
-                                    selected="@(qLocalizacaoId == loc.IdLocalizacao.ToString() ? "selected" : null)">
-                                @loc.Distrito
-                            </option>
-                        }
-                    </select>
-
-                    <label class="form-label mt-2 text-muted small">Preço (€)</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input type="number"
-                                   name="minPrice"
-                                   class="form-control"
-                                   placeholder="De"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["minPrice"]" />
-                        </div>
-                        <div class="col-6">
-                            <input type="number"
-                                   name="maxPrice"
-                                   class="form-control"
-                                   placeholder="Até"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["maxPrice"]" />
+                    <div>
+                        <label class="form-label small text-muted mt-2">Preço (€)</label>
+                        <div class="row g-1">
+                            <div class="col-6"><input type="number" name="minPrice" class="form-control" placeholder="De" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["minPrice"]" /></div>
+                            <div class="col-6"><input type="number" name="maxPrice" class="form-control" placeholder="Até" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["maxPrice"]" /></div>
                         </div>
                     </div>
 
-                    <label class="form-label mt-2 text-muted small">Ano</label>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <input type="number"
-                                   name="minYear"
-                                   class="form-control"
-                                   placeholder="De"
-                                   min="1900"
-                                   max="2100"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["minYear"]" />
-                        </div>
-                        <div class="col-6">
-                            <input type="number"
-                                   name="maxYear"
-                                   class="form-control"
-                                   placeholder="Até"
-                                   min="1900"
-                                   max="2100"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["maxYear"]" />
+                    <div>
+                        <label class="form-label small text-muted mt-2">Ano</label>
+                        <div class="row g-1">
+                            <div class="col-6"><input type="number" name="minYear" class="form-control" placeholder="De" min="1900" max="2100" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["minYear"]" /></div>
+                            <div class="col-6"><input type="number" name="maxYear" class="form-control" placeholder="Até" min="1900" max="2100" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["maxYear"]" /></div>
                         </div>
                     </div>
 
-                    <label class="form-label mt-2 text-muted small">Quilometros (Km)</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input type="number"
-                                   name="minKm"
-                                   class="form-control"
-                                   placeholder="De"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["minKm"]" />
-                        </div>
-                        <div class="col-6">
-                            <input type="number"
-                                   name="maxKm"
-                                   class="form-control"
-                                   placeholder="Até"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["maxKm"]" />
+                    <div>
+                        <label class="form-label small text-muted mt-2">Quilómetros</label>
+                        <div class="row g-1">
+                            <div class="col-6"><input type="number" name="minKm" class="form-control" placeholder="De" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["minKm"]" /></div>
+                            <div class="col-6"><input type="number" name="maxKm" class="form-control" placeholder="Até" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["maxKm"]" /></div>
                         </div>
                     </div>
 
-                  
-
-
+                    <button type="submit" class="btn btn-danger w-100 mt-3">Pesquisar</button>
                 </form>
             </div>
         </div>
 
+        <div class="col-lg-9">
 
-        <div class="col-md-9">
-
-            <div class="d-flex justify-content-end mb-3">
-                <select name="sortOrder" class="form-select w-auto" form="searchForm">
-                    <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
-                    <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Ano (Recente)</option>
-                    <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Ano (Antigo)</option>
-                    <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (Baixo)</option>
-                    <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (Alto)</option>
-                </select>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="fw-bold text-muted ps-2">Resultados encontrados</span>
+                <div class="d-flex align-items-center">
+                    <select name="sortOrder" class="form-select w-auto" form="searchForm">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
+                        <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Mais Recentes</option>
+                        <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Mais Antigos</option>
+                        <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (Baixo)</option>
+                        <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (Alto)</option>
+                    </select>
+                </div>
             </div>
 
             <div id="results-container">
                 <partial name="_AnunciosGrid" model="Model" />
             </div>
-
         </div>
 
-       
     </div>
 </div>
 
 @section Scripts {
     <script>
         (function () {
-            // --- 1. CONFIGURAÇÃO INICIAL E VARIÁVEIS ---
+            // --- VARIÁVEIS ---
             const form = document.getElementById('searchForm');
             const resultsContainer = document.getElementById('results-container');
             const marcaSelect = document.getElementById('marcaId');
             const modeloSelect = document.getElementById('modeloId');
             const sortSelect = document.querySelector('select[name="sortOrder"]');
-            const currentModeloId = "@qModeloId"; // Guarda o modelo selecionado inicialmente
+            const currentModeloId = "@qModeloId";
             let debounceTimer;
 
-            // --- 2. LÓGICA DE DROPDAWN EM CASCATA (MARCA -> MODELO) ---
+            // --- LÓGICA MODELOS ---
             function setModelos(list) {
                 modeloSelect.innerHTML = '<option value="">Modelo</option>';
                 list.forEach(m => {
                     const id = m.idModelo ?? m.IdModelo;
                     const nome = m.nome ?? m.Nome;
                     const opt = document.createElement('option');
-                    opt.value = id;
-                    opt.textContent = nome;
+                    opt.value = id; opt.textContent = nome;
                     if (id == currentModeloId) opt.selected = true;
                     modeloSelect.appendChild(opt);
                 });
                 modeloSelect.disabled = list.length === 0;
             }
 
-            // --- 3. FUNÇÃO PRINCIPAL: BUSCAR RESULTADOS (AJAX) ---
+            // --- AJAX PRINCIPAL ---
             function fetchResults(page = 1) {
                 const formData = new FormData(form);
-
-                // Adiciona a ordenação ao pedido se existir
                 if (sortSelect) formData.append('sortOrder', sortSelect.value);
-
-                // Adiciona o número da página
                 formData.append('page', page);
 
                 const params = new URLSearchParams(formData).toString();
                 const url = `${form.action}?${params}`;
 
-                // Atualiza a URL do browser (para histórico)
                 window.history.pushState({}, '', url);
+                resultsContainer.style.opacity = '0.6';
 
-                // Animação de "Carregando..." (Opcional: Diminui opacidade)
-                resultsContainer.style.opacity = '0.5';
-
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(response => response.text())
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
                 .then(html => {
                     resultsContainer.innerHTML = html;
                     resultsContainer.style.opacity = '1';
-                    attachPaginationEvents(); // Reconecta os botões da paginação
+                    attachPaginationEvents();
                 })
-                .catch(err => {
-                    console.error(err);
-                    resultsContainer.style.opacity = '1';
-                });
+                .catch(err => { console.error(err); resultsContainer.style.opacity = '1'; });
             }
 
-            // --- 4. EVENT LISTENERS (OUVINTES) ---
-
-            // A. Quando muda a Marca (Carrega modelos e depois filtra)
+            // --- LISTENERS ---
             marcaSelect.addEventListener('change', function () {
                 const marcaId = this.value;
-
-                // 1. Atualiza lista de Modelos
                 if (!marcaId) {
                     modeloSelect.innerHTML = '<option value="">Modelo</option>';
                     modeloSelect.disabled = true;
-                    fetchResults(1); // Filtra logo (sem marca)
+                    fetchResults(1);
                     return;
                 }
-
                 fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
                     .then(r => r.json())
-                    .then(data => {
-                        setModelos(data || []);
-                        // 2. Depois de carregar modelos, atualiza a grelha
-                        fetchResults(1);
-                    });
+                    .then(data => { setModelos(data || []); fetchResults(1); });
             });
 
-            // B. Quando muda qualquer outro Dropdown (exceto Marca)
-            form.querySelectorAll('select:not(#marcaId)').forEach(select => {
-                select.addEventListener('change', () => fetchResults(1));
-            });
+            form.querySelectorAll('select:not(#marcaId)').forEach(s => s.addEventListener('change', () => fetchResults(1)));
+            if (sortSelect) sortSelect.addEventListener('change', () => fetchResults(1));
 
-            // C. Quando muda a Ordenação
-            if (sortSelect) {
-                sortSelect.addEventListener('change', () => fetchResults(1));
-            }
-
-            // D. Quando escreve na SearchBox (Debounce de 500ms)
-            const searchInput = form.querySelector('input[name="searchBox"]');
-            if (searchInput) {
-                searchInput.addEventListener('input', () => {
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
                     clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(() => fetchResults(1), 500);
+                    debounceTimer = setTimeout(() => fetchResults(1), 600);
                 });
-            }
+            });
 
-            // E. Paginação AJAX
             function attachPaginationEvents() {
                 document.querySelectorAll('.ajax-link').forEach(link => {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
                         const page = this.getAttribute('data-page');
                         fetchResults(page);
-                        // Scroll suave para o topo
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     });
                 });
             }
 
-            // F. Previne o Submit tradicional do Form
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                fetchResults(1);
-            });
+            form.addEventListener('submit', (e) => { e.preventDefault(); fetchResults(1); });
 
-            // --- 5. INICIALIZAÇÃO ---
-            // Se já vier com marca selecionada (da Home Page), carrega modelos
             if (marcaSelect.value) {
-                // Dispara evento manualmente para carregar modelos, mas SEM filtrar de novo (pois já vem filtrado do server)
                 fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaSelect.value)}`)
-                    .then(r => r.json())
-                    .then(data => setModelos(data || []));
+                    .then(r => r.json()).then(d => setModelos(d || []));
             }
-
-            // NOVO: Quando escreve nos campos de Preço (minPrice ou maxPrice)
-            const priceInputs = form.querySelectorAll('input[type="number"]');
-            priceInputs.forEach(input => {
-                input.addEventListener('input', () => {
-                    clearTimeout(debounceTimer);
-                    // Espera 800ms depois de parares de escrever para pesquisar
-                    debounceTimer = setTimeout(() => fetchResults(1), 800);
-                });
-            });
-
-            // Liga a paginação inicial
             attachPaginationEvents();
 
         })();
