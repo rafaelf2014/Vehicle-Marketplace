@@ -22,7 +22,8 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 
     public virtual DbSet<Anuncio> Anuncios { get; set; }
 
-    
+    public virtual DbSet<SitePageView> SitePageViews { get; set; }
+
     public virtual DbSet<Classe> Classes { get; set; }
 
     public virtual DbSet<Combustivel> Combustivels { get; set; }
@@ -55,6 +56,15 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<SitePageView>(entity =>
+        {
+            entity.HasKey(e => e.IdSitePageView);
+            entity.ToTable("SitePageView");
+            entity.Property(e => e.IdSitePageView).HasColumnName("ID_SitePageView");
+            entity.Property(e => e.VisitTime).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Path).HasMaxLength(255);
+        });
 
         modelBuilder.Entity<Favorito>(entity =>
         {

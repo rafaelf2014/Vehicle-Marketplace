@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using CliCarProject.Data;
 using CliCarProject.Services;
 using CliCarProject.Models.Classes;
+using CliCarProject.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,8 +101,14 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
+// IMPORTANT: garantir que Session está registado antes do middleware de visitas
 app.UseSession();
+
+// Registar o middleware de visitas imediatamente após o Session
+app.UseSiteVisitMiddleware();
 
 app.UseAuthentication();
 app.UseAuthorization();
