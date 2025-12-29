@@ -3,34 +3,42 @@
 @foreach (var item in Model)
 {
     <div class="col">
-        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative animate-fade-in">
-            @if (item.Estado == "Ativo")
+        @{
+            var isVendido = item.Estado == "Vendido";
+            var borderClass = isVendido ? "border-secondary" : (item.Estado == "Reservado" ? "border-success" : (item.Estado == "Pendente" ? "border-warning" : "border-0"));
+            var borderStyle = borderClass != "border-0" ? "border-top border-4" : "";
+        }
+
+        <div class="card h-100 shadow-sm rounded-4 overflow-hidden position-relative @(isVendido ? "grayscale-filter" : "") @borderClass @borderStyle">
+
+            @* Overlay de Vendido *@
+            @if (isVendido)
             {
-                <div class="position-absolute top-0 start-0 m-2" style="z-index: 5;">
-                    <input type="checkbox" name="ids" value="@item.IdAnuncio" class="form-check-input border-primary shadow-sm" />
+                <div class="position-absolute top-50 start-50 translate-middle" style="z-index: 10;">
+                    <span class="badge bg-dark px-2 py-1 opacity-75">VENDIDO</span>
                 </div>
             }
 
             <img src="@(item.IdVeiculoNavigation?.Imagems?.Any() == true
                         ? Url.Content($"~/uploads/veiculos/{item.IdVeiculo}/{item.IdVeiculoNavigation.Imagems.First().Nome}")
                         : "/images/no-image.png")"
-                 class="card-img-top" style="height: 110px; object-fit: cover;">
+                 class="card-img-top" style="height: 110px; object-fit: cover; @(isVendido ? "opacity: 0.5;" : "")">
 
             <div class="card-body p-2 text-center">
                 <h6 class="fw-bold mb-1 text-truncate" style="font-size: 0.85rem;">@item.Titulo</h6>
-                <p class="text-primary fw-bold mb-2 small" style="font-size: 0.75rem;">@item.Preco.ToString("N0") €</p>
 
-                <div class="d-grid gap-1">
-                    <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-0" style="font-size: 0.65rem;">
-                        Detalhes
-                    </a>
-                    @if (item.Estado == "Ativo")
-                    {
-                        <a asp-action="Edit" asp-route-id="@item.IdAnuncio" class="btn btn-light btn-xs rounded-pill py-0" style="font-size: 0.65rem;">
-                            Editar
-                        </a>
-                    }
-                </div>
+                @if (isVendido)
+                {
+                    <p class="text-muted small mb-0">Vendido por: @item.Preco.ToString("N0") €</p>
+                }
+                else
+                {
+                    <p class="text-primary fw-bold mb-2 small" style="font-size: 0.75rem;">@item.Preco.ToString("N0") €</p>
+                    <div class="d-grid gap-1">
+                        @* ... Seus botões de Confirmar Reserva / Venda / Detalhes ... *@
+                        <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-0" style="font-size: 0.65rem;">Detalhes</a>
+                    </div>
+                }
             </div>
         </div>
     </div>

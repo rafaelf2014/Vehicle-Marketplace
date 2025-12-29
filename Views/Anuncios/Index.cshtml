@@ -47,29 +47,30 @@
 
     @* --- SECÇÃO 2: PEDIDOS DE VISITA --- *@
     <section class="mb-5">
-        <div class="d-flex align-items-center mb-3">
-            <span class="badge bg-warning text-dark rounded-pill me-2">@(((List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Pendentes).Count)</span>
-            <h4 class="fw-bold text-warning mb-0">Pedidos de Visita Pendentes</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <span class="badge bg-warning text-dark rounded-pill me-2">@ViewBag.TotalPendentes</span>
+                <h4 class="fw-bold text-warning mb-0">Pedidos de Visita Pendentes</h4>
+            </div>
+
+            <div class="d-flex gap-2">
+                @* Botões de Carrossel para Pendentes *@
+                <a id="prev-pendentes" asp-action="GetAnunciosPaginados" asp-route-tipo="pendentes" asp-route-pagina="0"
+                   data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaPendentes"
+                   class="btn btn-outline-warning btn-sm rounded-circle disabled">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <a id="next-pendentes" asp-action="GetAnunciosPaginados" asp-route-tipo="pendentes" asp-route-pagina="2"
+                   data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaPendentes"
+                   class="btn btn-outline-warning btn-sm rounded-circle @(ViewBag.HasNextPendentes ? "" : "disabled")">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
         </div>
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach (var item in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Pendentes)
-            {
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-warning">
-                        <div class="card-body">
-                            <h6 class="fw-bold mb-3">@item.Titulo</h6>
-                            <form asp-action="ConfirmarReserva" method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="idAnuncio" value="@item.IdAnuncio" />
-                                <button type="submit" class="btn btn-success btn-sm w-100 rounded-pill mb-2 fw-bold">
-                                    <i class="bi bi-check-lg"></i> Confirmar Reserva
-                                </button>
-                            </form>
-                            <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-light btn-sm w-100 rounded-pill">Ver Pedido</a>
-                        </div>
-                    </div>
-                </div>
-            }
+
+        @* ID TEM DE SER listaPendentes *@
+        <div id="listaPendentes" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
+            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Pendentes" />
         </div>
     </section>
 
@@ -102,28 +103,44 @@
 
     @* --- SECÇÃO 4: Vendidos --- *@
     <section class="mb-5">
-        <div class="d-flex align-items-center mb-3">
-            <span class="badge bg-success rounded-pill me-2">@(((List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Vendidos).Count)</span>
-            <h4 class="fw-bold text-success mb-0">Anúncios Vendidos</h4>
-        </div>
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach (var item in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Vendidos)
-            {
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative">
-                        <img src="@(item.IdVeiculoNavigation.Imagems.Any() ? Url.Content($"~/uploads/veiculos/{item.IdVeiculo}/{item.IdVeiculoNavigation.Imagems.First().Nome}") : "/images/no-image.png")"
-                             class="card-img-top" style="height: 180px; object-fit: cover;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <span class="badge bg-secondary rounded-pill me-2">@ViewBag.TotalVendidos</span>
+                <h4 class="fw-bold text-secondary mb-0">Anúncios Vendidos</h4>
+            </div>
 
-                        <div class="card-body">
-                            <h6 class="fw-bold mb-1">@item.Titulo</h6>
-                            <p class="text-primary fw-bold mb-2">@item.Preco.ToString("N0") €</p>
-                        </div>
-                    </div>
-                </div>
-            }
+            @* Controlos de Paginação para Vendidos *@
+            <div class="d-flex gap-2">
+                <a id="prev-vendidos" asp-action="GetAnunciosPaginados" asp-route-tipo="vendidos" asp-route-pagina="0"
+                   data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaVendidos"
+                   class="btn btn-outline-secondary btn-sm rounded-circle disabled">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <a id="next-vendidos" asp-action="GetAnunciosPaginados" asp-route-tipo="vendidos" asp-route-pagina="2"
+                   data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaVendidos"
+                   class="btn btn-outline-secondary btn-sm rounded-circle @(ViewBag.HasNextVendidos ? "" : "disabled")">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+
+        @* Esta div é o alvo do AJAX *@
+        <div id="listaVendidos" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3 transition-fade">
+            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Vendidos" />
         </div>
     </section>
 </div>
+
+<style>
+    .grayscale-filter img {
+        filter: grayscale(100%);
+    }
+
+    .grayscale-filter {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6 !important;
+    }
+</style>
 
 @section Scripts {
     <script>
