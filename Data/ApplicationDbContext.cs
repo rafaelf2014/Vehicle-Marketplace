@@ -56,6 +56,21 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Venda>(entity =>
+        {
+            entity.HasKey(e => e.IdVenda);
+            entity.ToTable("Venda");
+
+            entity.HasOne(d => d.Anuncio)
+                .WithMany()
+                .HasForeignKey(d => d.IdAnuncio)
+                .OnDelete(DeleteBehavior.NoAction); 
+
+            entity.HasOne(d => d.Comprador)
+                .WithMany()
+                .HasForeignKey(d => d.IdComprador);
+        });
+
         modelBuilder.Entity<Favorito>(entity =>
         {
             // Define a Chave Primária
@@ -429,10 +444,15 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
                 .HasMaxLength(450)
                 .HasColumnName("ID_Comprador");
 
-            entity.HasOne(d => d.IdAnuncioNavigation).WithMany(p => p.VisitaReservas)
+            entity.HasOne(d => d.IdAnuncioNavigation)
+                .WithMany()
                 .HasForeignKey(d => d.IdAnuncio)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__VisitaRes__ID_An__6FE99F9F");
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Comprador)
+                .WithMany()
+                .HasForeignKey(d => d.IdComprador)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         OnModelCreatingPartial(modelBuilder);

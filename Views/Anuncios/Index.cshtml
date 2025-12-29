@@ -1,256 +1,184 @@
 ﻿@model IEnumerable<CliCarProject.Models.Classes.Anuncio>
 
-@{
-    ViewData["Title"] = "Explorar Anúncios";
-}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Gestão dos Meus Anúncios</h2>
+        <a asp-action="Create" class="btn btn-danger rounded-pill px-4 shadow-sm">
+            <i class="bi bi-plus-lg me-2"></i>Novo Anúncio
+        </a>
+    </div>
 
-@Html.AntiForgeryToken()
+    @* --- SECÇÃO 1: DISPONÍVEIS --- *@
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <span class="badge bg-primary rounded-pill me-2">@ViewBag.TotalAtivos</span>
+                <h4 class="mb-0 fw-bold text-primary">Disponíveis</h4>
+            </div>
 
-<div class="container py-5">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
-        <div>
-            <h2 class="fw-bold mb-0">🚀 Explorar Anúncios</h2>
-            <p class="text-muted">Encontre as melhores oportunidades do mercado.</p>
-        </div>
-
-        <div class="d-flex gap-2">
-            <form method="get" class="m-0">
-                <select name="sortOrder" class="form-select rounded-pill shadow-sm" onchange="this.form.submit()" style="min-width: 200px;">
-                    <option value="">Ordenar por...</option>
-                    <option value="ano_desc">Ano (Mais recentes)</option>
-                    <option value="ano_asc">Ano (Mais antigos)</option>
-                    <option value="data_desc">Mais recentes no site</option>
-                </select>
-            </form>
-            @if (User.IsInRole("Vendedor"))
-            {
-                <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
-                    <i class="bi bi-plus-lg me-2"></i>Criar Anúncio
+            @* Controlos Estilo Carrossel *@
+            <div class="d-flex gap-2">
+                <a id="prev-ativos" asp-action="GetAnunciosPaginados" asp-route-tipo="ativos" asp-route-pagina="0"
+                   data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaAtivos"
+                   class="btn btn-outline-primary btn-sm rounded-circle disabled">
+                    <i class="bi bi-chevron-left"></i>
                 </a>
-            }
+                <a id="next-ativos" asp-action="GetAnunciosPaginados" asp-route-tipo="ativos" asp-route-pagina="2"
+                   data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaAtivos"
+                   class="btn btn-outline-primary btn-sm rounded-circle @(ViewBag.HasNextAtivos ? "" : "disabled")">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
         </div>
-    </div>
 
-    <div id="selection-toolbar" class="alert alert-dark border-0 shadow rounded-4 p-3 mb-4 d-flex justify-content-between align-items-center d-none animate-fade-in">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-megaphone-fill fs-4 me-3 text-warning"></i>
-            <span class="fw-bold"><span id="selected-count">0</span> Anúncios selecionados</span>
-        </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-light rounded-pill btn-sm px-3" onclick="deselectAll()">Desmarcar Todos</button>
-            <button type="button" class="btn btn-danger rounded-pill btn-sm px-3" onclick="deleteSelectedAnuncios()">
-                <i class="bi bi-trash me-2"></i>Eliminar Selecionados
-            </button>
-        </div>
-    </div>
+        <form asp-action="DeleteSelected" method="post">
+            @Html.AntiForgeryToken()
+            <div id="listaAtivos" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
+                <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Ativos" />
+            </div>
 
-    @if (!Model.Any())
-    {
-        <div class="text-center py-5 border rounded-4 bg-light shadow-sm">
-            <i class="bi bi-search display-1 text-muted opacity-25"></i>
-            <h3 class="mt-4 fw-bold text-secondary">Nenhum anúncio disponível</h3>
+            <div class="mt-4">
+                <button type="submit" id="btnDeleteSelected" class="btn btn-outline-danger rounded-pill px-4 shadow-sm" disabled>
+                    <i class="bi bi-trash3 me-2"></i>Eliminar Selecionados
+                </button>
+            </div>
+        </form>
+    </section>
+
+    @* --- SECÇÃO 2: PEDIDOS DE VISITA --- *@
+    <section class="mb-5">
+        <div class="d-flex align-items-center mb-3">
+            <span class="badge bg-warning text-dark rounded-pill me-2">@(((List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Pendentes).Count)</span>
+            <h4 class="fw-bold text-warning mb-0">Pedidos de Visita Pendentes</h4>
         </div>
-    }
-    else
-    {
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4" id="anuncios-list">
-            @foreach (var anuncio in Model)
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var item in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Pendentes)
             {
-                var veiculo = anuncio.IdVeiculoNavigation;
-                var capa = veiculo?.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
-                var imagemUrl = capa != null
-                ? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{capa.Nome}")
-                : Url.Content("~/images/Image_not_available.png");
-
-                // Verifica se o utilizador logado é o dono do anúncio
-                bool isOwner = User.Identity.Name == anuncio.IdVendedorNavigation?.UserName;
-
-                <div class="col animate-fade-in">
-                    @* A classe 'owner-card' permite a seleção apenas nos teus anúncios *@
-                    <div class="card h-100 border-0 shadow-sm premium-card rounded-4 overflow-hidden position-relative @(isOwner ? "owner-card" : "")">
-
-                        @if (isOwner)
-                        {
-                            <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
-                                <input type="checkbox" class="form-check-input anuncio-checkbox border-primary shadow-sm"
-                                       value="@anuncio.IdAnuncio" style="transform: scale(1.4); cursor: pointer;">
-                            </div>
-                        }
-
-                        <div class="price-badge">@anuncio.Preco.ToString("N0") €</div>
-
-                        <div class="card-img-wrapper">
-                            <img src="@imagemUrl" class="card-img-top" onerror="this.src='/images/Image_not_available.png'" alt="Carro" />
-                        </div>
-
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold text-truncate mb-1">@anuncio.Titulo</h6>
-                            <p class="small text-muted mb-2">
-                                <i class="bi bi-geo-alt me-1 text-primary"></i>
-                                @(anuncio.IdLocalizacaoNavigation?.Distrito ?? "Portugal")
-                            </p>
-
-                            <div class="d-flex justify-content-between border-top pt-2 mt-2 small text-muted">
-                                <span><i class="bi bi-calendar3 me-1 text-primary"></i> @veiculo?.Ano</span>
-                                <span><i class="bi bi-speedometer2 me-1 text-primary"></i> @veiculo?.Quilometragem?.ToString("N0") km</span>
-                            </div>
-                        </div>
-
-                        <div class="card-footer bg-white border-0 p-3 pt-0">
-                            <a asp-action="Details" asp-route-id="@anuncio.IdAnuncio" class="btn btn-dark w-100 rounded-pill btn-sm py-2 btn-details">
-                                Ver Detalhes
-                            </a>
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-warning">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">@item.Titulo</h6>
+                            <form asp-action="ConfirmarReserva" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idAnuncio" value="@item.IdAnuncio" />
+                                <button type="submit" class="btn btn-success btn-sm w-100 rounded-pill mb-2 fw-bold">
+                                    <i class="bi bi-check-lg"></i> Confirmar Reserva
+                                </button>
+                            </form>
+                            <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-light btn-sm w-100 rounded-pill">Ver Pedido</a>
                         </div>
                     </div>
                 </div>
             }
         </div>
-    }
+    </section>
+
+    @* --- SECÇÃO 3: RESERVADOS --- *@
+    <section class="mb-5">
+        <div class="d-flex align-items-center mb-3">
+            <span class="badge bg-primary rounded-pill me-2">@(((List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Reservados).Count)</span>
+            <h4 class="fw-bold text-primary mb-0">Reservas Confirmadas</h4>
+        </div>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var item in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Reservados)
+            {
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-success">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">@item.Titulo</h6>
+                            <form asp-action="ConfirmarVenda" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.IdAnuncio" />
+                                <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill fw-bold">
+                                    <i class="bi bi-cash-stack"></i> Confirmar Venda
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    @* --- SECÇÃO 4: Vendidos --- *@
+    <section class="mb-5">
+        <div class="d-flex align-items-center mb-3">
+            <span class="badge bg-success rounded-pill me-2">@(((List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Vendidos).Count)</span>
+            <h4 class="fw-bold text-success mb-0">Anúncios Vendidos</h4>
+        </div>
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var item in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Vendidos)
+            {
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative">
+                        <img src="@(item.IdVeiculoNavigation.Imagems.Any() ? Url.Content($"~/uploads/veiculos/{item.IdVeiculo}/{item.IdVeiculoNavigation.Imagems.First().Nome}") : "/images/no-image.png")"
+                             class="card-img-top" style="height: 180px; object-fit: cover;">
+
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-1">@item.Titulo</h6>
+                            <p class="text-primary fw-bold mb-2">@item.Preco.ToString("N0") €</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
 </div>
-
-<style>
-    /* Estilos herdados da Garagem */
-    .premium-card {
-        transition: all 0.3s ease;
-        border: 2px solid transparent !important;
-        user-select: none;
-    }
-
-    .owner-card {
-        cursor: pointer;
-    }
-
-    .premium-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
-
-    .card-selected {
-        border: 2px solid #0d6efd !important;
-        background-color: #f0f7ff !important;
-    }
-
-    .card-img-wrapper {
-        height: 160px;
-        overflow: hidden;
-    }
-
-    .card-img-top {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
-    }
-
-    .price-badge {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        background: #0d6efd;
-        color: white;
-        padding: 2px 10px;
-        border-radius: 50px;
-        font-weight: bold;
-        font-size: 0.8rem;
-        z-index: 5;
-    }
-
-    .owner-badge {
-        position: absolute;
-        bottom: 100px;
-        left: 12px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        z-index: 5;
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.4s ease forwards;
-    }
-
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-
-        to {
-            opacity: 1;
-        }
-    }
-</style>
 
 @section Scripts {
     <script>
-        // Lógica de seleção unificada
-        document.getElementById('anuncios-list').addEventListener('click', function (e) {
-            // Se o clique for no botão de detalhes, ignora a seleção
-            if (e.target.closest('.btn-details')) return;
+                $(document).on('ajaxSuccess', function (event, xhr, settings) {
+            const url = new URL(settings.url, window.location.origin);
+            const tipo = url.searchParams.get('tipo');
+            const paginaAtual = parseInt(url.searchParams.get('pagina'));
 
-            // Só permite seleção se o card for 'owner-card' (do próprio utilizador)
-            const card = e.target.closest('.owner-card');
-            if (!card) return;
+            // Lemos o cabeçalho enviado pelo Controller
+            const temProxima = xhr.getResponseHeader("X-Has-Next") === "true";
 
-            const checkbox = card.querySelector('.anuncio-checkbox');
-            if (checkbox) {
-                if (e.target !== checkbox) {
-                    checkbox.checked = !checkbox.checked;
+            if (tipo) {
+                const nextBtn = document.getElementById(`next-${tipo}`);
+                const prevBtn = document.getElementById(`prev-${tipo}`);
+
+                if (nextBtn) {
+                    // Atualiza o link para a próxima página
+                    const nextUrl = new URL(nextBtn.href, window.location.origin);
+                    nextUrl.searchParams.set('pagina', paginaAtual + 1);
+                    nextBtn.href = nextUrl.pathname + nextUrl.search;
+
+                    // DESATIVAR se não houver próxima página
+                    if (!temProxima) nextBtn.classList.add('disabled');
+                    else nextBtn.classList.remove('disabled');
                 }
-                card.classList.toggle('card-selected', checkbox.checked);
-                updateToolbar();
+
+                if (prevBtn) {
+                    const prevUrl = new URL(prevBtn.href, window.location.origin);
+                    prevUrl.searchParams.set('pagina', paginaAtual - 1);
+                    prevBtn.href = prevUrl.pathname + prevUrl.search;
+
+                    if (paginaAtual <= 1) prevBtn.classList.add('disabled');
+                    else prevBtn.classList.remove('disabled');
+                }
             }
+            configurarCheckboxes();
         });
 
-        function updateToolbar() {
-            const selectedCount = document.querySelectorAll('.anuncio-checkbox:checked').length;
-            const toolbar = document.getElementById('selection-toolbar');
-            const countSpan = document.getElementById('selected-count');
+        // Função separada para as checkboxes funcionarem em elementos carregados por AJAX
+        function configurarCheckboxes() {
+            const checkboxes = document.querySelectorAll('input[name="ids"]');
+            const deleteBtn = document.getElementById('btnDeleteSelected');
 
-            if (selectedCount > 0) {
-                toolbar.classList.remove('d-none');
-                countSpan.innerText = selectedCount;
-            } else {
-                toolbar.classList.add('d-none');
-            }
-        }
-
-        function deselectAll() {
-            document.querySelectorAll('.anuncio-checkbox:checked').forEach(cb => {
-                cb.checked = false;
-                cb.closest('.card').classList.remove('card-selected');
-            });
-            updateToolbar();
-        }
-
-        async function deleteSelectedAnuncios() {
-            const selectedCheckboxes = document.querySelectorAll('.anuncio-checkbox:checked');
-            const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
-
-            if (!confirm(`Tem a certeza que deseja eliminar permanentemente estes ${selectedIds.length} anúncios?`)) return;
-
-            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-            const response = await fetch('/Anuncios/DeleteMultiple', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': token
-                },
-                body: JSON.stringify(selectedIds)
-            });
-
-            if (response.ok) {
-                selectedCheckboxes.forEach(cb => {
-                    const col = cb.closest('.col');
-                    col.style.opacity = '0';
-                    setTimeout(() => col.remove(), 300);
+            if (deleteBtn) {
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        const anyChecked = Array.from(checkboxes).some(c => c.checked);
+                        deleteBtn.disabled = !anyChecked;
+                    });
                 });
-                setTimeout(updateToolbar, 350);
-            } else {
-                alert("Erro ao eliminar. Certifique-se de que é o dono destes anúncios.");
             }
         }
+
+        // Correr ao carregar a página pela primeira vez
+        document.addEventListener('DOMContentLoaded', configurarCheckboxes);
     </script>
+}
 }

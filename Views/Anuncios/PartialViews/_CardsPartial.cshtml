@@ -1,0 +1,37 @@
+﻿@model IEnumerable<CliCarProject.Models.Classes.Anuncio>
+
+@foreach (var item in Model)
+{
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative animate-fade-in">
+            @if (item.Estado == "Ativo")
+            {
+                <div class="position-absolute top-0 start-0 m-2" style="z-index: 5;">
+                    <input type="checkbox" name="ids" value="@item.IdAnuncio" class="form-check-input border-primary shadow-sm" />
+                </div>
+            }
+
+            <img src="@(item.IdVeiculoNavigation?.Imagems?.Any() == true
+                        ? Url.Content($"~/uploads/veiculos/{item.IdVeiculo}/{item.IdVeiculoNavigation.Imagems.First().Nome}")
+                        : "/images/no-image.png")"
+                 class="card-img-top" style="height: 110px; object-fit: cover;">
+
+            <div class="card-body p-2 text-center">
+                <h6 class="fw-bold mb-1 text-truncate" style="font-size: 0.85rem;">@item.Titulo</h6>
+                <p class="text-primary fw-bold mb-2 small" style="font-size: 0.75rem;">@item.Preco.ToString("N0") €</p>
+
+                <div class="d-grid gap-1">
+                    <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-0" style="font-size: 0.65rem;">
+                        Detalhes
+                    </a>
+                    @if (item.Estado == "Ativo")
+                    {
+                        <a asp-action="Edit" asp-route-id="@item.IdAnuncio" class="btn btn-light btn-xs rounded-pill py-0" style="font-size: 0.65rem;">
+                            Editar
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

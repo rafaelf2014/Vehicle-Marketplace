@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pag
 using CliCarProject.Models.Classes;
 using static System.Net.Mime.MediaTypeNames;
 using Microsoft.Data.SqlClient;
+using NuGet.Packaging.Signing;
 
 namespace CliCarProject.Controllers
 {
@@ -33,36 +34,99 @@ namespace CliCarProject.Controllers
         public async Task<IActionResult> Index(string sortOrder)
         {
             var userId = _userManager.GetUserId(User);
-            ViewBag.CurrentSort = sortOrder;
+            int pageSize = 3; // O limite que definiste para teste
 
-            var query = _context.Anuncios
-                .Include(a => a.IdVendedorNavigation)
-                .Include(a => a.IdLocalizacaoNavigation)
-                .Include(a => a.IdVeiculoNavigation)
-                    .ThenInclude(v => v.Imagems)
-                .Include(a => a.IdVeiculoNavigation)
-                    .ThenInclude(v => v.IdMarcaNavigation)
-                .Include(a => a.IdVeiculoNavigation)
-                    .ThenInclude(v => v.IdModeloNavigation)
-                .Where(a => a.Estado == "Ativo")
-                .Where(a => a.IdVeiculoNavigation.Disponivel == true)
-                .Where(a => a.IdVendedor == userId)
-                .AsQueryable();
+            // Base da Query com os Includes necessários
+            var baseQuery = _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation).ThenInclude(v => v.Imagems)
+                .Where(a => a.IdVendedor == userId && a.Estado != "Inativo");
 
-            // Lógica de ordenação (switch)
-            query = sortOrder switch
+            // APLICAR ORDENAÇÃO PRIMEIRO
+            baseQuery = sortOrder switch
             {
-                "ano_asc" => query.OrderBy(a => a.IdVeiculoNavigation.Ano),
-                "ano_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation.Ano),
-                _ => query.OrderByDescending(a => a.DataCriacao)
+                "ano_asc" => baseQuery.OrderBy(a => a.IdVeiculoNavigation.Ano),
+                "ano_desc" => baseQuery.OrderByDescending(a => a.IdVeiculoNavigation.Ano),
+                _ => baseQuery.OrderByDescending(a => a.IdAnuncio) // Ou DataCriacao
             };
 
-            return View(await query.ToListAsync());
+            // 1. Ativos (Sem reservas e sem pedidos)
+            var ativos = await baseQuery
+                .Where(a => a.Estado == "Ativo" && !_context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio))
+                .ToListAsync();
+
+            ViewBag.Ativos = ativos.Take(pageSize).ToList();
+            ViewBag.TotalAtivos = ativos.Count;
+            ViewBag.HasNextAtivos = ativos.Count > pageSize;
+
+            // 2. Pendentes (Anúncio Ativo mas com pedido na tabela VisitaReserva)
+            var pendentes = await baseQuery
+                .Where(a => a.Estado == "Ativo" && _context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio))
+                .ToListAsync();
+
+            ViewBag.Pendentes = pendentes.Take(pageSize).ToList();
+            ViewBag.TotalPendentes = pendentes.Count;
+            ViewBag.HasNextPendentes = pendentes.Count > pageSize;
+
+            // 3. Reservados (Vendedor já confirmou a reserva)
+            var reservados = await baseQuery
+                .Where(a => a.Estado == "Reservado")
+                .ToListAsync();
+
+            ViewBag.Reservados = reservados.Take(pageSize).ToList();
+            ViewBag.TotalReservados = reservados.Count;
+            ViewBag.HasNextReservados = reservados.Count > pageSize;
+
+            // 4. Vendidos
+            var vendidos = await baseQuery
+                .Where(a => a.Estado == "Vendido")
+                .ToListAsync();
+
+            ViewBag.Vendidos = vendidos.Take(pageSize).ToList();
+            ViewBag.TotalVendidos = vendidos.Count;
+            ViewBag.HasNextVendidos = vendidos.Count > pageSize;
+
+            return View(); 
+        }
+
+        public async Task<IActionResult> GetAnunciosPaginados(string tipo, int pagina = 1)
+        {
+            var userId = _userManager.GetUserId(User);
+            int pageSize = 3; // Limite por página
+
+            var query = _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation).ThenInclude(v => v.Imagems)
+                .Where(a => a.IdVendedor == userId);
+            
+
+            // Filtragem baseada no tipo (Ativos, Pendentes, Reservados, Vendidos)
+            switch (tipo.ToLower())
+            {
+                case "ativos": query = query.Where(a => a.Estado == "Ativo" && !_context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio)); break;
+                case "pendentes": query = query.Where(a => a.Estado == "Ativo" && _context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio)); break;
+                case "reservados": query = query.Where(a => a.Estado == "Reservado"); break;
+                case "vendidos": query = query.Where(a => a.Estado == "Vendido"); break;
+            }
+
+            if (tipo == "ativos")
+                query = query.Where(a => a.Estado == "Ativo" && !_context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio));
+
+            var totalItens = await query.CountAsync();
+            var lista = await query
+                .Skip((pagina - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Enviamos para o JS se existe uma página seguinte
+            Response.Headers.Add("X-Has-Next", (totalItens > pagina * pageSize).ToString().ToLower());
+
+            return PartialView("~/Views/Anuncios/PartialViews/_CardsPartial.cshtml", lista);
         }
 
         // GET: Anuncios/Details/5 (Inclui incremento de visualizações)
         public async Task<IActionResult> Details(int? id)
         {
+            var userId = _userManager.GetUserId(User);
+
             if (id == null) return NotFound();
 
             var anuncio = await _context.Anuncios
@@ -74,10 +138,34 @@ namespace CliCarProject.Controllers
                 .Include(a => a.IdVendedorNavigation)
                 .FirstOrDefaultAsync(m => m.IdAnuncio == id);
 
+            var reservaAtiva = await _context.VisitaReservas
+                .FirstOrDefaultAsync(r => r.IdAnuncio == id && r.Estado == "Pendente" && r.DataExpiracao > DateTime.Now);
+
+            if (reservaAtiva != null)
+            {
+                ViewBag.IsReservado = true;
+                ViewBag.ReservadoPorMim = (reservaAtiva.IdComprador == userId);
+                ViewBag.DataExpiracao = reservaAtiva.DataExpiracao;
+            }
+            else
+            {
+                ViewBag.IsReservado = false;
+                if (anuncio.Estado == "Reservado")
+                {
+                    anuncio.Estado = "Ativo";
+                    
+                    var reservaObsoleta = await _context.VisitaReservas
+                        .FirstOrDefaultAsync(r => r.IdAnuncio == id && r.Estado == "Pendente");
+                    if (reservaObsoleta != null) reservaObsoleta.Estado = "Expirada";
+
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             if (anuncio == null) return NotFound();
 
             // Lógica de Favoritos
-            var userId = _userManager.GetUserId(User);
+            
             ViewBag.IsFavorito = false;
 
             if (userId != null)
@@ -216,7 +304,10 @@ namespace CliCarProject.Controllers
 
             // Carrega as localizações mostrando o nome do Distrito
             ViewData["IdLocalizacao"] = new SelectList(_context.Localizacaos, "IdLocalizacao", "Distrito", anuncio.IdLocalizacao);
-
+            if(userId != anuncio.IdVendedor)
+            {
+                return Unauthorized();
+            }
             return View(anuncio);
         }
 
@@ -232,6 +323,16 @@ namespace CliCarProject.Controllers
                 .FirstOrDefaultAsync(a => a.IdAnuncio == id);
 
             if (anuncioOriginal == null) return NotFound();
+
+            if (anuncioOriginal.Estado == "Reservado")
+            {
+                // Permite editar apenas título e descrição, mas não o preço
+                if (anuncio.Preco != anuncioOriginal.Preco)
+                {
+                    ModelState.AddModelError("Preco", "Não pode alterar o preço de um veículo com reserva ativa.");
+                    return View(anuncio);
+                }
+            }
 
             if (ModelState.IsValid)
             {
@@ -323,31 +424,253 @@ namespace CliCarProject.Controllers
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int[] ids)
         {
-            // Procuramos o anúncio na base de dados
-            var anuncio = await _context.Anuncios.FindAsync(id);
-
-            if (anuncio != null)
+            foreach (var id in ids)
             {
-                // Verificar se quem está a tentar eliminar é o dono do anúncio
-                var currentUserId = _userManager.GetUserId(User);
-                if (anuncio.IdVendedor != currentUserId)
+                var anuncio = await _context.Anuncios
+                    .Include(a => a.VisitaReservas)
+                    .FirstOrDefaultAsync(a => a.IdAnuncio == id);
+
+                
+                if (anuncio != null && anuncio.Estado != "Reservado" && !anuncio.VisitaReservas.Any())
                 {
-                    return Unauthorized();
+                    anuncio.Estado = "Inativo";
                 }
+                else
+                {
+                    TempData["Error"] = "Alguns anúncios não puderam ser apagados por terem reservas ou pedidos.";
+                }
+            }
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
 
-                // EM VEZ DE: _context.Anuncios.Remove(anuncio);
-                // FAZEMOS: Alterar o estado para Inativo
-                anuncio.Estado = "Inativo";
-                anuncio.DataAtualizacao = DateTime.Now;
-
-                _context.Update(anuncio);
-                await _context.SaveChangesAsync();
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reservar(int idAnuncio, DateTime? dataSugerida)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Se entrar aqui, a data ou o ID vieram em formato errado
+                var erros = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = "Erro de validação: " + erros;
+                return RedirectToAction(nameof(Details), new { id = idAnuncio });
             }
 
-            // Retorna para a página Index dos anúncios
+            var userId = _userManager.GetUserId(User);
+
+            var anuncio = await _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation)
+                .FirstOrDefaultAsync(a => a.IdAnuncio == idAnuncio);
+
+            if (anuncio == null) return NotFound();
+            //Verifica se o usuário é o vendedor do anúncio
+            if (anuncio.IdVendedor == userId)
+            {
+                TempData["Error"] = "Não pode reservar o seu próprio veículo.";
+                return RedirectToAction(nameof(Details), new { id = idAnuncio });
+            }
+            //Verifica se o anúncio já está vendido ou se o veículo não está disponível
+            if (anuncio.Estado == "Vendido" || anuncio.IdVeiculoNavigation.Disponivel == false)
+            {
+                TempData["Error"] = "Este veículo já não está disponível para reserva.";
+                return RedirectToAction(nameof(Details), new { id = idAnuncio });
+            }
+            //Verifica se já existe uma reserva pendente para este anúncio
+            var reservaExistente = await _context.VisitaReservas
+                    .FirstOrDefaultAsync(r => r.IdAnuncio == idAnuncio &&
+                                 r.Estado == "Pendente" &&
+                                 r.DataExpiracao > DateTime.Now);
+
+            if (reservaExistente != null)
+            {
+                TempData["Error"] = "Este veículo acabou de ser reservado por outro utilizador.";
+                return RedirectToAction(nameof(Details), new { id = idAnuncio });
+            }
+            //Cria uma nova reserva
+            var novaReserva = new VisitaReserva
+            {
+                IdAnuncio = idAnuncio,
+                IdComprador = userId,
+                DataVisita = dataSugerida ?? DateTime.Now.AddDays(1), // Data em que o interesse foi manifestado
+                DataExpiracao = (dataSugerida ?? DateTime.Now).AddDays(2),
+                Estado = "Pendente"
+            };
+
+            anuncio.Estado = "Pendente";
+            anuncio.Notificacao = true;
+
+            try
+            {
+                _context.VisitaReservas.Add(novaReserva);
+                _context.Update(anuncio);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Veículo reservado! Tem 24h para contactar o vendedor.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Ocorreu um erro ao processar a reserva. Tente novamente.";
+            }
+
+            return RedirectToAction(nameof(Details), new { id = idAnuncio });
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarReserva(int idAnuncio)
+        {
+            var userId = _userManager.GetUserId(User);
+            var anuncio = await _context.Anuncios
+                .Include(a => a.VisitaReservas)
+                .FirstOrDefaultAsync(a => a.IdAnuncio == idAnuncio && a.IdVendedor == userId);
+
+            if (anuncio == null) return NotFound();
+
+            // 1. Atualizar o estado do anúncio
+            anuncio.Estado = "Reservado";
+
+            // 2. Atualizar o estado da visita/reserva na tabela relacionada
+            var reserva = anuncio.VisitaReservas.FirstOrDefault(r => r.Estado == "Pendente");
+            if (reserva != null)
+            {
+                reserva.Estado = "Confirmada";
+                reserva.DataExpiracao = DateTime.Now.AddDays(2); // Dá 48h após confirmação
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Reserva confirmada com sucesso!";
             return RedirectToAction(nameof(Index));
+        }
+
+       
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSelected(int[] ids)
+        {
+            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
+
+            try
+            {
+                var anunciosParaApagar = await _context.Anuncios
+                    .Where(a => ids.Contains(a.IdAnuncio) && a.Estado == "Ativo")
+                    .ToListAsync();
+
+                foreach (var anuncio in anunciosParaApagar)
+                {
+                    // Verifica se realmente não tem reservas antes de apagar
+                    var temReserva = await _context.VisitaReservas.AnyAsync(r => r.IdAnuncio == anuncio.IdAnuncio);
+                    if (!temReserva)
+                    {
+                        anuncio.Estado = "Inativo";
+                    }
+                }
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Anúncios eliminados com sucesso.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Erro ao eliminar anúncios.";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelarReserva(int idAnuncio)
+        {
+            var userId = _userManager.GetUserId(User);
+            var anuncio = await _context.Anuncios.FindAsync(idAnuncio);
+
+            // Verifica se é o comprador da reserva ou o vendedor do anúncio
+            var reserva = await _context.VisitaReservas
+                .FirstOrDefaultAsync(r => r.IdAnuncio == idAnuncio && r.Estado == "Pendente");
+
+            if (reserva == null) return NotFound();
+
+            if (reserva.IdComprador != userId && anuncio.IdVendedor != userId)
+                return Unauthorized();
+
+            // Reset do estado
+            reserva.Estado = "Cancelada";
+            anuncio.Estado = "Ativo";
+            anuncio.Notificacao = false;
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Reserva cancelada com sucesso.";
+            return RedirectToAction(nameof(Details), new { id = idAnuncio });
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmarVenda(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            // Procura o anúncio e inclui o veículo para o podermos atualizar
+            var anuncio = await _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation)
+                .FirstOrDefaultAsync(a => a.IdAnuncio == id && a.IdVendedor == userId);
+
+            if (anuncio == null) return NotFound();
+
+            // 1. Atualizar o estado do Anúncio
+            anuncio.Estado = "Vendido";
+            anuncio.DataAtualizacao = DateTime.Now;
+
+            // 2. Retirar o veículo de circulação (Disponibilidade = false ou 0)
+            if (anuncio.IdVeiculoNavigation != null)
+            {
+                anuncio.IdVeiculoNavigation.Disponivel = false;
+            }
+
+            // 3. Fechar a reserva na tabela VisitaReserva
+            var reservaAtiva = await _context.VisitaReservas
+                .FirstOrDefaultAsync(v => v.IdAnuncio == id && v.Estado == "Pendente");
+
+            var veiculo = anuncio.IdVeiculoNavigation;
+
+            if (veiculo != null)
+            {
+                // O veículo agora pertence ao comprador que fez a reserva
+                veiculo.IdVendedor = reservaAtiva.IdComprador;
+
+                // Marcamos como Disponível para que apareça na "Garagem" do novo dono, 
+                veiculo.Disponivel = true;
+            }
+
+            reservaAtiva.Estado = "Concluida";
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Venda concluída! O veículo foi transferido para o novo proprietário.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Erro ao processar a transferência do veículo.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize]
+        public async Task<IActionResult> MinhasReservas()
+        {
+            var userId = _userManager.GetUserId(User);
+
+            // Listar todas as visitas/reservas feitas pelo utilizador logado
+            var reservas = await _context.VisitaReservas
+                .Include(v => v.IdAnuncioNavigation)
+                    .ThenInclude(a => a.IdVeiculoNavigation)
+                .Where(v => v.IdComprador == userId)
+                .OrderByDescending(v => v.DataVisita)
+                .ToListAsync();
+
+            return View(reservas);
         }
     }
 }
