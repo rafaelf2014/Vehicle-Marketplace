@@ -32,6 +32,7 @@
             <div class="search-box search-box-left">
                 <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="search-box-vertical d-grid gap-2">
 
+                    <input type="hidden" name="condicao" id="condicaoInput" value="@Context.Request.Query["condicao"]" />
                     <input name="searchBox" class="form-control" placeholder="Procurar..." value="@qSearchBox" />
 
                     <select class="form-select" name="localizacaoId">
@@ -113,10 +114,36 @@
 
         <div class="col-lg-9">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="fw-bold text-muted ps-2">Resultados encontrados</span>
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+
+                @{
+                    var currentCond = (string?)ViewBag.CurrentCondicao ?? "";
+                }
+                <ul class="nav nav-tabs-custom">
+
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(string.IsNullOrEmpty(currentCond) ? "active" : "")"
+                           data-val="">Todos</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(currentCond == "U" ? "active" : "")"
+                           data-val="U">Usados</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(currentCond == "S" ? "active" : "")"
+                           data-val="S">Semi-novos</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(currentCond == "N" ? "active" : "")"
+                           data-val="N">Novos</a>
+                    </li>
+                </ul>
+
                 <div class="d-flex align-items-center">
-                    <select name="sortOrder" class="form-select w-auto" form="searchForm">
+                    <select name="sortOrder" class="form-select form-select-sm border-0 bg-light fw-bold" form="searchForm" style="width: auto; cursor:pointer;">
                         <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
                         <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Mais Recentes</option>
                         <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Mais Antigos</option>
@@ -130,6 +157,7 @@
                 <partial name="_AnunciosGrid" model="Model" />
             </div>
         </div>
+        </div>
 
     </div>
 </div>
@@ -137,16 +165,38 @@
 @section Scripts {
     <script>
         (function () {
-            // --- VARIÁVEIS ---
+            // --- VARIÁVEIS PRINCIPAIS ---
             const form = document.getElementById('searchForm');
             const resultsContainer = document.getElementById('results-container');
             const marcaSelect = document.getElementById('marcaId');
             const modeloSelect = document.getElementById('modeloId');
             const sortSelect = document.querySelector('select[name="sortOrder"]');
+            const searchInput = form.querySelector('input[name="searchBox"]');
+            const condicaoInput = document.getElementById('condicaoInput');
+
             const currentModeloId = "@qModeloId";
             let debounceTimer;
 
-            // --- LÓGICA MODELOS ---
+            // --- 1. LÓGICA DAS ABAS (NOVO/USADO) ---
+            // Agora usamos "querySelectorAll" em vez de "onclick", é mais seguro.
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault(); // <--- IMPEDE O RECARREGAMENTO DA PÁGINA
+
+                    // 1. Atualiza o input escondido
+                    const valor = this.getAttribute('data-val');
+                    if (condicaoInput) condicaoInput.value = valor;
+
+                    // 2. Atualiza o visual (active)
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // 3. Dispara a pesquisa
+                    fetchResults(1);
+                });
+            });
+
+            // --- 2. LÓGICA DE MODELOS ---
             function setModelos(list) {
                 modeloSelect.innerHTML = '<option value="">Modelo</option>';
                 list.forEach(m => {
@@ -160,7 +210,7 @@
                 modeloSelect.disabled = list.length === 0;
             }
 
-            // --- AJAX PRINCIPAL ---
+            // --- 3. AJAX PRINCIPAL (BUSCAR CARROS) ---
             function fetchResults(page = 1) {
                 const formData = new FormData(form);
                 if (sortSelect) formData.append('sortOrder', sortSelect.value);
@@ -169,8 +219,8 @@
                 const params = new URLSearchParams(formData).toString();
                 const url = `${form.action}?${params}`;
 
-                window.history.pushState({}, '', url);
-                resultsContainer.style.opacity = '0.6';
+                // window.history.pushState({}, '', url); // Opcional: muda o URL do browser
+                resultsContainer.style.opacity = '0.5';
 
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(r => r.text())
@@ -179,10 +229,31 @@
                     resultsContainer.style.opacity = '1';
                     attachPaginationEvents();
                 })
-                .catch(err => { console.error(err); resultsContainer.style.opacity = '1'; });
+                .catch(err => {
+                    console.error(err);
+                    resultsContainer.style.opacity = '1';
+                });
             }
 
-            // --- LISTENERS ---
+            // --- 4. LISTENERS (PESQUISA EM TEMPO REAL) ---
+
+            // A. Pesquisa de Texto (Com atraso de 500ms)
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => fetchResults(1), 500);
+                });
+            }
+
+            // B. Inputs Numéricos (Preço, Ano, Km)
+            form.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => fetchResults(1), 600);
+                });
+            });
+
+            // C. Dropdowns (Mudança imediata)
             marcaSelect.addEventListener('change', function () {
                 const marcaId = this.value;
                 if (!marcaId) {
@@ -196,16 +267,13 @@
                     .then(data => { setModelos(data || []); fetchResults(1); });
             });
 
-            form.querySelectorAll('select:not(#marcaId)').forEach(s => s.addEventListener('change', () => fetchResults(1)));
-            if (sortSelect) sortSelect.addEventListener('change', () => fetchResults(1));
-
-            form.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', () => {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(() => fetchResults(1), 600);
-                });
+            form.querySelectorAll('select:not(#marcaId)').forEach(s => {
+                s.addEventListener('change', () => fetchResults(1));
             });
 
+            if (sortSelect) sortSelect.addEventListener('change', () => fetchResults(1));
+
+            // D. Paginação
             function attachPaginationEvents() {
                 document.querySelectorAll('.ajax-link').forEach(link => {
                     link.addEventListener('click', function(e) {
@@ -217,8 +285,13 @@
                 });
             }
 
-            form.addEventListener('submit', (e) => { e.preventDefault(); fetchResults(1); });
+            // E. Prevenir submit tradicional do form (tecla Enter, etc)
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                fetchResults(1);
+            });
 
+            // --- 5. INICIALIZAÇÃO ---
             if (marcaSelect.value) {
                 fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaSelect.value)}`)
                     .then(r => r.json()).then(d => setModelos(d || []));

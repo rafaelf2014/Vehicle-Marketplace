@@ -150,7 +150,7 @@ body {
     
     width: auto;            /* Deixa o flex controlar a largura */
     min-width: 250px;       /* Garante que nunca fica pequena demais */
-    max-width: none;        /* REMOVIDO o limite máximo para ela poder encher a barra */
+    max-width: 250px;        /* REMOVIDO o limite máximo para ela poder encher a barra */
     
     height: 34px;
     padding: 10px 12px;
@@ -331,3 +331,37 @@ body {
     margin-top: auto;
     padding-top: 10px;
 }
+
+/* =========================================
+   ABAS DE CONDIÇÃO (Tabs Custom)
+   ========================================= */
+.nav-tabs-custom {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 20px; /* Espaço entre as palavras */
+}
+
+    .nav-tabs-custom .nav-link {
+        text-decoration: none;
+        color: #6c757d; /* Cinza (Inativo) */
+        font-size: 1.1rem;
+        font-weight: 500;
+        padding: 0 0 10px 0; /* Espaço em baixo para a linha */
+        border: none;
+        background: transparent;
+        border-bottom: 3px solid transparent; /* Linha invisível */
+        transition: all 0.2s ease;
+    }
+
+        .nav-tabs-custom .nav-link:hover {
+            color: #212529;
+        }
+
+        /* Estado Ativo (Selecionado) */
+        .nav-tabs-custom .nav-link.active {
+            color: #212529; /* Preto */
+            font-weight: 700;
+            border-bottom: 3px solid #212529; /* Linha preta grossa em baixo */
+        }
