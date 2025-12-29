@@ -34,11 +34,12 @@ namespace CliCarProject.Controllers
         public async Task<IActionResult> Index(string sortOrder)
         {
             var userId = _userManager.GetUserId(User);
-            int pageSize = 3; // O limite que definiste para teste
+            int pageSize = 5;
 
-            // Base da Query com os Includes necessários
             var baseQuery = _context.Anuncios
                 .Include(a => a.IdVeiculoNavigation).ThenInclude(v => v.Imagems)
+                // Adiciona Include das Reservas para a Partial View poder validar o estado
+                .Include(a => a.VisitaReservas)
                 .Where(a => a.IdVendedor == userId && a.Estado != "Inativo");
 
             // APLICAR ORDENAÇÃO PRIMEIRO
@@ -49,23 +50,21 @@ namespace CliCarProject.Controllers
                 _ => baseQuery.OrderByDescending(a => a.IdAnuncio) // Ou DataCriacao
             };
 
-            // 1. Ativos (Sem reservas e sem pedidos)
-            var ativos = await baseQuery
-                .Where(a => a.Estado == "Ativo" && !_context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio))
-                .ToListAsync();
+            var ativosQuery = baseQuery.Where(a => a.Estado == "Ativo" &&
+                !a.VisitaReservas.Any(r => r.Estado == "Pendente"));
 
-            ViewBag.Ativos = ativos.Take(pageSize).ToList();
-            ViewBag.TotalAtivos = ativos.Count;
-            ViewBag.HasNextAtivos = ativos.Count > pageSize;
+            var ativosLista = await ativosQuery.ToListAsync();
+            ViewBag.Ativos = ativosLista.Take(pageSize).ToList();
+            ViewBag.TotalAtivos = ativosLista.Count;
+            ViewBag.HasNextAtivos = ativosLista.Count > pageSize;
 
-            // 2. Pendentes (Anúncio Ativo mas com pedido na tabela VisitaReserva)
-            var pendentes = await baseQuery
-                .Where(a => a.Estado == "Ativo" && _context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio))
-                .ToListAsync();
+            // 2. PENDENTES: Estado Ativo E TEM de ter pelo menos uma reserva pendente
+            var pendentesQuery = baseQuery.Where(a => a.Estado == "Pendente");
 
-            ViewBag.Pendentes = pendentes.Take(pageSize).ToList();
-            ViewBag.TotalPendentes = pendentes.Count;
-            ViewBag.HasNextPendentes = pendentes.Count > pageSize;
+            var pendentesLista = await pendentesQuery.ToListAsync();
+            ViewBag.Pendentes = pendentesLista.Take(pageSize).ToList();
+            ViewBag.TotalPendentes = pendentesLista.Count;
+            ViewBag.HasNextPendentes = pendentesLista.Count > pageSize;
 
             // 3. Reservados (Vendedor já confirmou a reserva)
             var reservados = await baseQuery
@@ -91,24 +90,37 @@ namespace CliCarProject.Controllers
         public async Task<IActionResult> GetAnunciosPaginados(string tipo, int pagina = 1)
         {
             var userId = _userManager.GetUserId(User);
-            int pageSize = 3; // Limite por página
+            int pageSize = 5;
 
+            // 1. Base Query com TODOS os Includes necessários para a Partial View
             var query = _context.Anuncios
                 .Include(a => a.IdVeiculoNavigation).ThenInclude(v => v.Imagems)
-                .Where(a => a.IdVendedor == userId);
-            
+                .Include(a => a.VisitaReservas) // ESSENCIAL para os botões de reserva aparecerem
+                .Where(a => a.IdVendedor == userId && a.Estado != "Inativo");
 
-            // Filtragem baseada no tipo (Ativos, Pendentes, Reservados, Vendidos)
+            
             switch (tipo.ToLower())
             {
-                case "ativos": query = query.Where(a => a.Estado == "Ativo" && !_context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio)); break;
-                case "pendentes": query = query.Where(a => a.Estado == "Ativo" && _context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio)); break;
-                case "reservados": query = query.Where(a => a.Estado == "Reservado"); break;
-                case "vendidos": query = query.Where(a => a.Estado == "Vendido"); break;
+                case "ativos":
+                    query = query.Where(a => a.Estado == "Ativo" &&
+                            !a.VisitaReservas.Any(r => r.Estado == "Pendente"));
+                    break;
+                case "pendentes":
+                    query = query.Where(a => a.Estado == "Ativo" &&
+                            a.VisitaReservas.Any(r => r.Estado == "Pendente"));
+                    break;
+                case "reservados":
+                    query = query.Where(a => a.Estado == "Reservado");
+                    break;
+                case "vendidos":
+                    query = query.Where(a => a.Estado == "Vendido")
+                        .Include(a => a.IdVeiculoNavigation)
+                        .ThenInclude(v => v.Imagems);
+                    break;
             }
 
-            if (tipo == "ativos")
-                query = query.Where(a => a.Estado == "Ativo" && !_context.VisitaReservas.Any(r => r.IdAnuncio == a.IdAnuncio));
+            // 3. Ordenação (Importante para o novo anúncio não "saltar" de página)
+            query = query.OrderByDescending(a => a.IdAnuncio);
 
             var totalItens = await query.CountAsync();
             var lista = await query
@@ -116,7 +128,7 @@ namespace CliCarProject.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Enviamos para o JS se existe uma página seguinte
+            // 4. Cabeçalho para o JavaScript gerir os botões Next/Prev
             Response.Headers.Add("X-Has-Next", (totalItens > pagina * pageSize).ToString().ToLower());
 
             return PartialView("~/Views/Anuncios/PartialViews/_CardsPartial.cshtml", lista);
