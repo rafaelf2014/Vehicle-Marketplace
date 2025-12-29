@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using CliCarProject.Models.Classes;
 
-namespace CliCarProject.Models;
+namespace CliCarProject.Models.Classes;
 
 public partial class Compra
 {

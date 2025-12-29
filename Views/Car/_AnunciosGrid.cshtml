@@ -1,0 +1,47 @@
+﻿@using System.Globalization
+@using CliCarProject.Models.Classes
+@model IEnumerable<Anuncio>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+
+	@if (!Model.Any())
+	{
+		<div class="col-12 text-center py-5">
+			<h3> Nenhum carro encontrado</h3>
+		</div>
+	}
+
+	@foreach (var item in Model)
+	{
+		var veiculo = item.IdVeiculoNavigation;
+		var img = veiculo?.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
+		var imageSrc = (veiculo != null && img != null && !string.IsNullOrWhiteSpace(img.Nome))
+					? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}")
+					: Url.Content("~/img/placeholder-car.png");
+		var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + "€";
+
+        <div class="col">
+            <div class="card shadow-sm border-0 h-100">
+                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio">
+                    <img src="@imageSrc" class="card-img-top" alt="Carro" style="height:180px; object-fit:cover; border-radius:6px;" />
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title mb-1">@item.Titulo</h5>
+                    <div class="fw-bold mb-2" style="color:#d32f2f;">@precoFormatado</div>
+                    <p class="card-text text-muted mb-0">
+                        @veiculo?.IdMarcaNavigation?.Nome @veiculo?.IdModeloNavigation?.Nome
+                        @if (veiculo != null)
+                        {
+                            <text> • @veiculo.Ano • @veiculo.Quilometragem km • @veiculo.Caixa</text>
+                        }
+                    </p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-primary w-100">Ver Detalhes</a>
+                </div>
+            </div>
+        </div>
+	}
+
+
+</div>
