@@ -32,30 +32,37 @@
         </div>
     </div>
 
-    <div id="selection-toolbar" class="alert alert-dark border-0 shadow rounded-4 p-3 mb-4 d-flex justify-content-between align-items-center d-none animate-fade-in">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-check2-circle fs-4 me-3 text-primary"></i>
-            <span class="fw-bold"><span id="selected-count">0</span> Veículos selecionados</span>
+    @if (User.IsInRole("Vendedor"))
+    {
+        <div id="selection-toolbar" class="alert alert-dark border-0 shadow rounded-4 p-3 mb-4 d-flex justify-content-between align-items-center d-none animate-fade-in">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check2-circle fs-4 me-3 text-primary"></i>
+                <span class="fw-bold"><span id="selected-count">0</span> Veículos selecionados</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-light rounded-pill btn-sm px-3" onclick="deselectAll()">
+                    Desmarcar Todos
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill btn-sm px-3" onclick="deleteSelected()">
+                    <i class="bi bi-trash me-2"></i>Eliminar Selecionados
+                </button>
+            </div>
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-light rounded-pill btn-sm px-3" onclick="deselectAll()">
-                Desmarcar Todos
-            </button>
-            <button type="button" class="btn btn-danger rounded-pill btn-sm px-3" onclick="deleteSelected()">
-                <i class="bi bi-trash me-2"></i>Eliminar Selecionados
-            </button>
-        </div>
-    </div>
+    }
+
 
     @if (!Model.Any())
     {
         <div class="text-center py-5 border rounded-4 bg-light shadow-sm">
             <i class="bi bi-car-front display-1 text-muted opacity-25"></i>
             <h3 class="mt-4 fw-bold text-secondary">A sua garagem está vazia</h3>
-            <p class="text-muted">Comece por adicionar o seu primeiro veículo para venda.</p>
-            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 mt-2">
-                Adicionar Veículo
-            </a>
+            @if(User.IsInRole("Vendedor"))
+            {
+                <p class="text-muted">Comece por adicionar o seu primeiro veículo para venda.</p>
+                <a asp-action="Create" class="btn btn-primary rounded-pill px-4 mt-2">
+                    Adicionar Veículo
+                </a>
+            }
         </div>
     }
     else
@@ -73,7 +80,7 @@
 
                         <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
                             <input type="checkbox" class="form-check-input vehicle-checkbox border-primary shadow-sm"
-                                   value="@item.IdVeiculo" style="transform: scale(1.4); cursor: pointer;">
+                            value="@item.IdVeiculo" style="transform: scale(1.4); cursor: pointer;">
                         </div>
 
                         <div class="condition-badge">
@@ -102,12 +109,14 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="card-footer bg-white border-0 p-3 pt-0">
-                            <a asp-action="Details" asp-route-id="@item.IdVeiculo" class="btn btn-outline-dark w-100 rounded-pill btn-sm">
-                                Gerir Veículo
-                            </a>
-                        </div>
+                        @if (User.IsInRole("Vendedor"))
+                        {
+                            <div class="card-footer bg-white border-0 p-3 pt-0">
+                                <a asp-action="Details" asp-route-id="@item.IdVeiculo" class="btn btn-outline-dark w-100 rounded-pill btn-sm">
+                                    Gerir Veículo
+                                </a>
+                            </div>
+                        }
                     </div>
                 </div>
             }
