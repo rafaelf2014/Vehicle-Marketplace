@@ -17,100 +17,161 @@ namespace CliCarProject.Controllers
         }
 
         [HttpGet]
-        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, int? priceRange)
+        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, decimal? minPrice,decimal? maxPrice, string sortOrder, int? minYear, int? maxYear, int? localizacaoId, int? minKm, int? maxKm, int page = 1)
         {
-            // Se o utilizador escolheu um modelo mas não especificou marca,
-            // inferimos a marca a partir do modelo (evita estado inconsistente).
             if (modeloId.HasValue && !marcaId.HasValue)
             {
                 var modelo = _context.Modelos.Find(modeloId.Value);
                 if (modelo != null)
-                {
                     marcaId = modelo.IdMarca;
-                }
             }
 
-            // Se foram passados ambos, garantimos consistência:
             if (modeloId.HasValue && marcaId.HasValue)
             {
                 var modelo = _context.Modelos.Find(modeloId.Value);
                 if (modelo != null && modelo.IdMarca != marcaId.Value)
-                {
-                    // modelo não pertence à marca selecionada → ignorar o modelo
                     modeloId = null;
-                }
             }
 
-            Debug.WriteLine($"CarSearch called: searchBox={searchBox}, marcaId={marcaId}, modeloId={modeloId}, categoriaId={categoriaId}, combustivelId={combustivelId}, caixa={caixa}, priceRange={priceRange}");
-
-            var query = _context.Veiculos
-                .Include(v => v.IdModeloNavigation).ThenInclude(m => m.IdMarcaNavigation)
-                .Include(v => v.Imagems)
-                .Include(v => v.Anuncios)
+            var query = _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.Imagems)
+                .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.IdMarcaNavigation)
+                .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.IdModeloNavigation)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchBox))
             {
-                query = query.Where(v =>
-                    v.IdModeloNavigation.Nome.Contains(searchBox) ||
-                    v.IdModeloNavigation.IdMarcaNavigation.Nome.Contains(searchBox));
+                query = query.Where(a =>
+                    a.Titulo.Contains(searchBox) ||
+                    a.IdVeiculoNavigation!.IdModeloNavigation!.Nome.Contains(searchBox) ||
+                    a.IdVeiculoNavigation!.IdMarcaNavigation!.Nome.Contains(searchBox));
             }
 
             if (marcaId.HasValue)
-                query = query.Where(v => v.IdModeloNavigation.IdMarca == marcaId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdMarca == marcaId.Value);
 
             if (modeloId.HasValue)
-                query = query.Where(v => v.IdModelo == modeloId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdModelo == modeloId.Value);
 
             if (categoriaId.HasValue)
-                query = query.Where(v => v.IdClasse == categoriaId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdClasse == categoriaId.Value);
 
             if (combustivelId.HasValue)
-                query = query.Where(v => v.IdCombustivel == combustivelId.Value);
+                query = query.Where(a => a.IdVeiculoNavigation!.IdCombustivel == combustivelId.Value);
 
-            if (priceRange.HasValue)
+            if (!string.IsNullOrWhiteSpace(caixa))
+                query = query.Where(a => a.IdVeiculoNavigation!.Caixa.ToLower() == caixa.ToLower());
+
+             //PREÇO MINIMO
+             if (minPrice.HasValue)
+             {
+                query = query.Where(a => a.Preco >= minPrice.Value);
+             }
+
+             //PREÇO MAXIMO
+             if (maxPrice.HasValue)
+             {
+                query = query.Where(a => a.Preco <= maxPrice.Value);
+             }
+
+            // FILTRO DE ANO MÍNIMO 
+            if (minYear.HasValue)
             {
-                switch (priceRange.Value)
-                {
-                    case 1:
-                        query = query.Where(v => v.Anuncios.Any(a => a.Preco <= 10000));
-                        break;
-                    case 2:
-                        query = query.Where(v => v.Anuncios.Any(a => a.Preco > 10000 && a.Preco <= 30000));
-                        break;
-                    case 3:
-                        query = query.Where(v => v.Anuncios.Any(a => a.Preco > 30000));
-                        break;
-                }
+                query = query.Where(a => a.IdVeiculoNavigation!.Ano >= minYear.Value);
             }
 
-            try
+            // FILTRO DE ANO MÁXIMO 
+            if (maxYear.HasValue)
             {
-                Debug.WriteLine("Generated SQL: " + query.ToQueryString());
+                query = query.Where(a => a.IdVeiculoNavigation!.Ano <= maxYear.Value);
             }
-            catch { }
 
-            var resultados = query.ToList();
-
-            // popular dados para a view
-            ViewBag.Resultados = resultados;
-            ViewBag.Marcas = _context.Marcas.ToList();
-
-            // Se houver marca selecionada, devolve só os modelos dessa marca.
-            ViewBag.Modelos = marcaId.HasValue
-                ? _context.Modelos.Where(m => m.IdMarca == marcaId.Value).ToList()
-                : _context.Modelos.ToList();
-
-            ViewBag.Classes = _context.Classes.ToList();
-            ViewBag.Combustiveis = _context.Combustivels.ToList();
-            ViewBag.Caixas = new List<SelectListItem>
+            if (localizacaoId.HasValue)
             {
-                new SelectListItem("Todas", ""),
-                new SelectListItem("Manual", "Manual"),
-                new SelectListItem("Automática", "Automática")
+                // Nota: Confirma se na tua classe Anuncio o campo é 'IdLocalizacao'
+                query = query.Where(a => a.IdLocalizacao == localizacaoId.Value);
+            }
+
+            if (minKm.HasValue)
+            {
+               
+                query = query.Where(a => a.IdVeiculoNavigation!.Quilometragem >= minKm.Value);
+            }
+
+            if (maxKm.HasValue)
+            {
+                query = query.Where(a => a.IdVeiculoNavigation!.Quilometragem <= maxKm.Value);
+            }
+
+            query = sortOrder switch
+            {
+                "ano_asc" => query.OrderBy(a => a.IdVeiculoNavigation!.Ano),
+                "ano_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation!.Ano),
+
+                "km_asc" => query.OrderBy(a => a.IdVeiculoNavigation!.Quilometragem),
+                "km_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation!.Quilometragem),
+
+                "modelo_asc" => query.OrderBy(a => a.IdVeiculoNavigation!.IdModeloNavigation!.Nome),
+                "modelo_desc" => query.OrderByDescending(a => a.IdVeiculoNavigation!.IdModeloNavigation!.Nome),
+
+                "preco_asc" => query.OrderBy(a => a.Preco),
+                "preco_desc" => query.OrderByDescending(a => a.Preco),
+
+                "data_asc" => query.OrderBy(a => a.DataCriacao),
+                _ => query.OrderByDescending(a => a.DataCriacao),
             };
 
-            return View("CarSearch");
+            const int pageSize = 9;
+            var totalItems = query.Count();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+            var anuncios = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewData["Page"] = page;
+            ViewData["TotalPages"] = totalPages;
+
+            ViewBag.CurrentSort = sortOrder ?? "";
+            ViewBag.Page = page;
+            ViewBag.TotalPages = Math.Max(1, totalPages);
+
+            // ... código de paginação ...
+
+            // PREENCHER OS DADOS PARA OS DROPDOWNS LATERAIS
+            ViewBag.Marcas = _context.Marcas.OrderBy(m => m.Nome).ToList();
+            ViewBag.Classes = _context.Classes.OrderBy(c => c.Nome).ToList(); // Categoria
+            ViewBag.Combustiveis = _context.Combustivels.OrderBy(c => c.Tipo).ToList();
+            ViewBag.Localizacoes = _context.Localizacaos.OrderBy(l => l.Distrito).ToList();
+
+            // Lista manual para as Caixas (se não vier da BD)
+            ViewBag.Caixas = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "M", Text = "Manual" },
+                new SelectListItem { Value = "A", Text = "Automática" }
+            };
+
+            // Se tiveres uma marca selecionada, carrega os modelos dela para o filtro não ficar vazio
+            if (marcaId.HasValue)
+            {
+                ViewBag.Modelos = _context.Modelos.Where(m => m.IdMarca == marcaId).OrderBy(m => m.Nome).ToList();
+            }
+            else
+            {
+                ViewBag.Modelos = new List<Modelo>();
+            }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_AnunciosGrid", anuncios);
+            }
+
+            return View("CarSearch", anuncios);
+
+            
         }
 
         // Endpoint para popular os modelos via AJAX quando muda a marca

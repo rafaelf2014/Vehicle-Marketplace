@@ -20,11 +20,16 @@ namespace CliCarProject.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
+            ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -114,38 +119,41 @@ namespace CliCarProject.Areas.Identity.Pages.Account
             var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
             if (user == null)
             {
-                user = await _signInManager.UserManager.FindByNameAsync(Input.Email);
+                // Encontrar o utilizador pelo email (no registo o UserName e Email são distintos)
+                var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user == null)
                 {
-                    ModelState.AddModelError(string.Empty, "Credenciais inválidas.");
+                    // não revelar qual campo está errado
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    return Page();
+                }
+
+                // Verifica a password diretamente no utilizador encontrado
+                var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+                if (result.Succeeded)
+                {
+                    // Efetua o sign-in
+                    await _signInManager.SignInAsync(user, Input.RememberMe);
+                    _logger.LogInformation("User logged in.");
+                    return LocalRedirect(returnUrl);
+                }
+                if (result.RequiresTwoFactor)
+                {
+                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+                }
+                if (result.IsLockedOut)
+                {
+                    _logger.LogWarning("User account locked out.");
+                    return RedirectToPage("./Lockout");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();
                 }
             }
-            // Faz o sign-in usando o UserName real do utilizador
-            // Isto permite que o utilizador informe o email no formulário
-            var result = await _signInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
-            if (result.Succeeded)
-            {
-                _logger.LogInformation("User logged in.");
-                return LocalRedirect(returnUrl);
-            }
-            if (result.RequiresTwoFactor)
-            {
-                return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-            }
-            if (result.IsLockedOut)
-            {
-                _logger.LogWarning("User account locked out.");
-                return RedirectToPage("./Lockout");
-            }
-            if (result.IsNotAllowed)
-            {
-                ModelState.AddModelError(string.Empty, "Credenciais inválidas.");
-                return Page();
-            }
-            // Normalmente significa que o email não está confirmado quando RequireConfirmedAccount = true
-            ModelState.AddModelError(string.Empty, "Conta não confirmada. Verifique o seu email.");
+            // If we got this far, something failed, redisplay form
             return Page();
         }
     }

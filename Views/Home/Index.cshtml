@@ -1,6 +1,8 @@
 ﻿@using CliCarProject.Models.Classes
 @using Microsoft.AspNetCore.Mvc.Rendering
 
+@model IEnumerable<CliCarProject.Models.Classes.Anuncio>
+
 @{
     ViewData["Title"] = "Home";
     var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
@@ -21,7 +23,7 @@
 
         <div class="search-box">
             <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="d-flex gap-2 align-items-center flex-wrap">
-                <input name="searchBox" class="form-control" placeholder="Procurar..." />
+                <input name="searchBox" class="form-control" placeholder="Procurar..."/>
 
                 <select class="form-select" name="marcaId" id="marcaId">
                     <option value="">Marca</option>
@@ -44,14 +46,9 @@
                 </select>
 
                 <select class="form-select" name="caixa">
-                    @foreach (var cx in caixas) { <option value="@cx.Value">@cx.Text</option> }
-                </select>
-
-                <select class="form-select" name="priceRange">
-                    <option value="">Preço</option>
-                    <option value="1">Até 10.000 €</option>
-                    <option value="2">10.000 € – 30.000 €</option>
-                    <option value="3">Acima de 30.000 €</option>
+                    <option value="">Caixa</option>
+                    <option value="M">Manual</option>
+                    <option value="A">Automática</option>
                 </select>
 
                 <button type="submit" class="btn btn-danger">Pesquisar</button>
@@ -61,46 +58,91 @@
 </div>
 
 <!-- Secção Destaques -->
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold">Destaques</h3>
-        <a href="#" class="text-decoration-none">Mais →</a>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 fw-bold">🔥 Destaques</h2>
+        <a asp-controller="Car" asp-action="CarSearch" class="btn-more">
+            Mais <i class="bi bi-arrow-right-short"></i>
+        </a>
     </div>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        @foreach (var anuncio in Model)
+        {
+            var veiculo = anuncio.IdVeiculoNavigation;
 
-    <div class="row g-4">
+            // Imagem de capa
+            var capa = veiculo.Imagems
+            .OrderByDescending(i => i.IdImagem)
+            .FirstOrDefault();
 
-        <!-- Card de exemplo -->
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <img src="/images/cars/sample1.jpg" class="card-img-top" />
-                <div class="card-body">
-                    <h5 class="card-title">Honda Civic</h5>
-                    <p class="card-text fw-bold text-danger">42 100 EUR</p>
-                    <p class="text-muted small">2016 • 125 631 km • Diesel • Manual</p>
+            string imagemUrl;
+
+            if (capa != null)
+            {
+                imagemUrl = Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{capa.Nome}");
+            }
+            else
+            {
+                imagemUrl = Url.Content("~/images/Image_not_available.png");
+            }
+
+            <div class="col">
+                <div class="card h-100 border-primary shadow">
+                    <span class="position-absolute top-0 end-0 m-2 badge rounded-pill bg-fire text-white"
+                          style="background-color: #ff4500; z-index: 10;">
+                        <i class="bi bi-graph-up"></i> Popular
+                    </span>
+
+                    <img src="@imagemUrl"
+                         class="card-img-top"
+                         style="height: 190px; object-fit: cover;" />
+
+                    <div class="card-body">
+
+                        <!-- TÍTULO -->
+                        <h5 class="fw-bold">@anuncio.Titulo</h5>
+
+                        <!-- MARCA + MODELO -->
+                        <p class="mb-1 text-muted">
+                            🚗 @veiculo.IdMarcaNavigation.Nome @veiculo.IdModeloNavigation.Nome
+                        </p>
+
+                        <!-- ANO + COMUSTÍVEL -->
+                        <p class="mb-1">
+                            📅 @veiculo.Ano • ⛽ @veiculo.IdCombustivelNavigation.Tipo
+                        </p>
+
+                        <!-- QUILÓMETROS -->
+                        <p class="mb-1">
+                            🛣️ @veiculo.Quilometragem?.ToString("N0") km
+                        </p>
+
+                        <!-- PREÇO -->
+                        <h4 class="fw-bold text-danger mt-3">
+                            @anuncio.Preco.ToString("N0") €
+                        </h4>
+
+                        <!-- BOTÃO -->
+                        <div class="card-footer bg-white border-0">
+                            <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@anuncio.IdAnuncio"
+                               class="btn btn-primary w-100 mt-3">
+                                Ver Anúncio
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Copia os cards para mostrar mais veículos -->
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <img src="/images/cars/sample2.jpg" class="card-img-top" />
-                <div class="card-body">
-                    <h5 class="card-title">VW Golf MK7</h5>
-                    <p class="card-text fw-bold text-danger">31 276 EUR</p>
-                    <p class="text-muted small">2019 • 92 190 km • Diesel • Manual</p>
-                </div>
-            </div>
-        </div>
-
+        }
     </div>
 </div>
 
 <!-- Secção Favoritos -->
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold">Favoritos</h3>
-        <a href="#" class="text-decoration-none">Mais →</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 fw-bold">❤️ Favoritos</h2>
+        <a href="#" class="btn-more">
+            Mais <i class="bi bi-arrow-right-short"></i>
+        </a>
     </div>
 
     <p class="text-muted">Ainda não tens favoritos.</p>
@@ -156,4 +198,30 @@
             });
         })();
     </script>
+
+    <style>
+        /* Estilo para o link "Mais" */
+        .btn-more {
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+            .btn-more:hover {
+                background-color: #f0f7ff;
+                border-color: #0d6efd;
+                color: #0a58ca;
+                transform: translateX(5px); /* Pequeno efeito de movimento */
+            }
+
+        /* Badge de Popularidade Personalizada */
+        .bg-fire {
+            background: linear-gradient(45deg, #ff4500, #ff8c00);
+            box-shadow: 0 2px 5px rgba(255, 69, 0, 0.3);
+        }</style>
 }

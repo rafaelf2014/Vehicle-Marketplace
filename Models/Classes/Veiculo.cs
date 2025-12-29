@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace CliCarProject.Models.Classes;
@@ -11,8 +13,8 @@ public partial class Veiculo
 
     public string? IdVendedor { get; set; } = null!;
 
-    public int Ano { get; set; }
-
+    public int? Ano { get; set; }
+    
     public int? Quilometragem { get; set; }
     [Required]
     [RegularExpression("N|S|U", ErrorMessage = "Condição inválida.")]
@@ -23,12 +25,14 @@ public partial class Veiculo
     public string? Caixa { get; set; }
     public int IdModelo { get; set; }
 
+    [Required]
+    [DefaultValue(true)]
+    public bool Disponivel { get; set; } = true;
     public int IdMarca { get; set; }
 
     public int IdCombustivel { get; set; }
 
     public int IdClasse { get; set; }
-
     public virtual ICollection<Anuncio> Anuncios { get; set; } = new List<Anuncio>();
 
     public virtual Classe? IdClasseNavigation { get; set; }
@@ -36,6 +40,7 @@ public partial class Veiculo
     public virtual Combustivel? IdCombustivelNavigation { get; set; }
 
     public virtual Modelo? IdModeloNavigation { get; set; }
+    [ForeignKey(nameof(IdMarca))]   
     public virtual Marca? IdMarcaNavigation { get; set; }
     public virtual IdentityUser? IdVendedorNavigation { get; set; } 
 
