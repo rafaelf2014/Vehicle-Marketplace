@@ -162,6 +162,51 @@ body {
     object-fit: contain;
     margin-right: 8px;
 }
+.reg-tabs-container {
+    display: flex;
+    justify-content: center;
+    text-decoration: none; /* remove underline */
+    color: #777; /* cor padrão igual aos botões */
+    font-size: 14px;
+    padding: 8px 0;
+    cursor: pointer;
+    background: none;
+    border: none;
+    gap: 50px;
+}
+
+    .reg-tab {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #777;
+        font-size: 14px;
+        padding: 8px 0;
+        position: relative;
+        transition: color 0.3s ease;
+    }
+
+        /* Hover */
+    .reg-tab:hover {
+        color: #5a2fd8;
+    }
+
+     /* Ativo */
+    .reg-tab.active {
+        color: #5a2fd8;
+        font-weight: 500;
+    }
+
+     /* Linha por baixo */
+    .reg-tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: -11px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: #5a2fd8;
+    }
 
 /* para ecrãs muito largos mantém uma linha única e ajusta larguras */
 @media (min-width: 1200px) {
@@ -200,55 +245,13 @@ body {
         min-width: auto;
         height: 40px;
     }
-.tabs-container {
 
-    display: flex;
-    justify-content: center;
-    gap: 50px;
-    margin: 30px 0 40px 0;
-    border-bottom: 1px solid #dcdcdc;
-    padding-bottom: 10px;
-}
-
-    .tabs-container > a {
-        text-decoration: none; /* remove underline */
-        color: #777; /* cor padrão igual aos botões */
-        font-size: 14px;
-        padding: 8px 0;
-        cursor: pointer;
-        background: none;
-        border: none;
-    }
-
-.tab {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #777;
-    font-size: 14px;
-    padding: 8px 0;
-    position: relative;
-    transition: color 0.3s ease;
-}
-
-/* Hover */
-.tab:hover {
-    color: #5a2fd8;
-}
-
-/* Ativo */
-.tab.active {
-   color: #5a2fd8;
-   font-weight: 500;
-}
-
-        /* Linha por baixo */
-        .tab.active::after {
-            content: "";
-            position: absolute;
-            bottom: -11px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: #5a2fd8;
+    .tabs-container {
+        display: flex;
+        justify-content: center;
+        gap: 50px;
+        margin: 30px 0 40px 0;
+        border-bottom: 1px solid #dcdcdc;
+        padding-bottom: 10px;
+    }  
 }

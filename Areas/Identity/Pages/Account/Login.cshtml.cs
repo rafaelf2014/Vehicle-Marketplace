@@ -107,33 +107,45 @@ namespace CliCarProject.Areas.Identity.Pages.Account
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return Page();
+
+            // Tenta encontrar o utilizador por email (aceitar login por email)
+            var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+            if (user == null)
             {
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-                if (result.Succeeded)
+                user = await _signInManager.UserManager.FindByNameAsync(Input.Email);
+                if (user == null)
                 {
-                    _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
-                }
-                if (result.RequiresTwoFactor)
-                {
-                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-                }
-                if (result.IsLockedOut)
-                {
-                    _logger.LogWarning("User account locked out.");
-                    return RedirectToPage("./Lockout");
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Credenciais inválidas.");
                     return Page();
                 }
             }
+            // Faz o sign-in usando o UserName real do utilizador
+            // Isto permite que o utilizador informe o email no formulário
+            var result = await _signInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
-            // If we got this far, something failed, redisplay form
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("User logged in.");
+                return LocalRedirect(returnUrl);
+            }
+            if (result.RequiresTwoFactor)
+            {
+                return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+            }
+            if (result.IsLockedOut)
+            {
+                _logger.LogWarning("User account locked out.");
+                return RedirectToPage("./Lockout");
+            }
+            if (result.IsNotAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Credenciais inválidas.");
+                return Page();
+            }
+            // Normalmente significa que o email não está confirmado quando RequireConfirmedAccount = true
+            ModelState.AddModelError(string.Empty, "Conta não confirmada. Verifique o seu email.");
             return Page();
         }
     }

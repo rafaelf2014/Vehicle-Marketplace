@@ -1,18 +1,18 @@
 ﻿@page
 @model RegisterModel
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Registar Conta";
     var initialRole = Model?.Input?.Role ?? (string.IsNullOrEmpty(Request.Query["role"]) ? "Comprador" : Request.Query["role"].ToString());
 }
 
 <h1>@ViewData["Title"]</h1>
 
-<div class="tabs-container">
-    <a asp-page="/Account/Login" class="tab">Login</a>
+<div class="reg-tabs-container" >
+    <a asp-page="/Account/Login" class="reg-tab">Login</a>
 
     <!-- Buttons now toggle client-side (no duplicate inputs in DOM) -->
-    <button type="button" class="tab @(initialRole == "Comprador" ? "active" : "")" data-role="Comprador">Criar Conta Comprador</button>
-    <button type="button" class="tab @(initialRole == "Vendedor" ? "active" : "")" data-role="Vendedor">Criar Conta Vendedor</button>
+    <button type="button" class="reg-tab @(initialRole == "Comprador" ? "active" : "")" data-role="Comprador">Criar Conta Comprador</button>
+    <button type="button" class="reg-tab @(initialRole == "Vendedor" ? "active" : "")" data-role="Vendedor">Criar Conta Vendedor</button>
 </div>
 
 <div class="row justify-content-center">
@@ -97,7 +97,7 @@
 
     <script>
         (function () {
-            const tabs = document.querySelectorAll('.tabs-container .tab[data-role]');
+            const tabs = document.querySelectorAll('.reg-tabs-container .reg-tab[data-role]');
             const roleInput = document.getElementById('roleInput');
             const roleFields = document.getElementById('roleFields');
             const compradorTpl = document.getElementById('comprador-template');

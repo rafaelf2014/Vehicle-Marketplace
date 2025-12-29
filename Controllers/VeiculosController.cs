@@ -14,6 +14,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace CliCarProject.Controllers
 {
+    [Authorize]
     public class VeiculosController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -29,6 +29,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
 //builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 //builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, SmtpEmailSender>();
 
