@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using CliCarProject.Services;
 using System.IO;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 namespace CliCarProject.Controllers
 {
@@ -106,6 +107,7 @@ namespace CliCarProject.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Vendedor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Veiculo veiculo, List<IFormFile> Imagens)
         {
@@ -140,14 +142,22 @@ namespace CliCarProject.Controllers
 
         public async Task<IActionResult> Edit(int? id)
         {
+            var userId = _userManager.GetUserId(User);
+
             if (id == null) return NotFound();
             var veiculo = await _context.Veiculos.Include(v => v.Imagems).FirstOrDefaultAsync(v => v.IdVeiculo == id);
             if (veiculo == null) return NotFound();
             CarregarDropdowns();
+
+            if (userId != veiculo.IdVendedor)
+            {
+                return Unauthorized();
+            }
             return View(veiculo);
         }
 
         [HttpPost]
+        [Authorize(Roles = "Vendedor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Veiculo veiculo)
         {
@@ -181,6 +191,7 @@ namespace CliCarProject.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Vendedor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditImages(int id, int[] RemoverIds, List<IFormFile> NovasImagens)
         {
@@ -228,6 +239,7 @@ namespace CliCarProject.Controllers
 
         [HttpPost]
         [Route("Veiculos/DeleteMultiple")]
+        [Authorize(Roles = "Vendedor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMultiple([FromBody] List<int> ids)
         {
@@ -239,6 +251,15 @@ namespace CliCarProject.Controllers
             var veiculos = await _context.Veiculos
                 .Where(v => ids.Contains(v.IdVeiculo) && v.IdVendedor == userId)
                 .ToListAsync();
+
+            var temReserva = await _context.Anuncios
+                .AnyAsync(a => ids.Contains(a.IdVeiculo) && a.Estado == "Reservado");
+
+            if (temReserva)
+            {
+                TempData["Error"] = "Não pode eliminar veículos que têm reservas ativas nos anúncios.";
+                return RedirectToAction(nameof(Index));
+            }
 
             if (veiculos.Any())
             {
