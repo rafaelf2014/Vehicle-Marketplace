@@ -9,7 +9,7 @@ public partial class Imagem
 
     public int IdVeiculo { get; set; }
 
-    public string? Nome { get; set; }
+    public string Nome { get; set; }
 
-    public virtual Veiculo IdVeiculoNavigation { get; set; } = null!;
+    public virtual Veiculo? IdVeiculoNavigation { get; set; }
 }

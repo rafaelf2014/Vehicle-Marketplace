@@ -1,60 +1,142 @@
-@model CliCarProject.Models.Classes.Veiculo
+﻿@model CliCarProject.Models.Classes.Veiculo
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = $"{Model?.Ano} {Model?.IdModeloNavigation?.Nome}";
+    var imagens = Model.Imagems.OrderByDescending(v => v.IdImagem).ToList();
 }
 
-<h1>Details</h1>
+<div class="container py-4">
+    <a asp-action="Index" class="btn btn-secondary mb-3">
+        ← Voltar à Lista
+    </a>
 
-<div>
-    <h4>Veiculo</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Ano)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Ano)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Quilometragem)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Quilometragem)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Condicao)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Condicao)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdClasseNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdClasseNavigation.IdClasse)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdCombustivelNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdCombustivelNavigation.IdCombustivel)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdModeloNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdModeloNavigation.IdModelo)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdVendedorNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdVendedorNavigation.IdUtilizador)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.IdVeiculo">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <!-- Título -->
+    <h2 class="mb-4">@Model.Ano @Model.IdModeloNavigation?.Nome</h2>
+
+    <!-- Layout principal -->
+    <div class="row g-4">
+
+        <!-- ========================= -->
+        <!-- COLUNA ESQUERDA: CARROSSEL -->
+        <!-- ========================= -->
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+
+                    <div id="carouselVeiculo" class="carousel slide" data-bs-ride="carousel">
+
+                        <!-- Slides -->
+                        <div class="carousel-inner" style="height:420px;">
+                            @for (int i = 0; i < imagens.Count; i++)
+                            {
+                                var img = imagens[i];
+                                <div class="carousel-item @(i == 0 ? "active" : "")">
+                                    <img src="~/uploads/veiculos/@Model.IdVeiculo/@img.Nome"
+                                         class="d-block w-100 rounded"
+                                         style="height:420px; object-fit:cover;" />
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Controls -->
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselVeiculo" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselVeiculo" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                        </button>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Miniaturas -->
+            <div class="d-flex mt-2 gap-2">
+                @foreach (var img in imagens)
+                {
+                    <img src="~/uploads/veiculos/@Model.IdVeiculo/@img.Nome"
+                         class="rounded"
+                         style="width:120px; height:80px; object-fit:cover; cursor:pointer;"
+                         data-bs-target="#carouselVeiculo"
+                         data-bs-slide-to="@imagens.IndexOf(img)" />
+                }
+            </div>
+
+        </div>
+
+        <!-- ========================== -->
+        <!-- COLUNA DIREITA: INFO RÁPIDA -->
+        <!-- ========================== -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 p-3">
+
+                <h5 class="mb-3">Informações principais</h5>
+
+                <p><strong>Ano:</strong> @Model.Ano</p>
+                <p><strong>Quilometragem:</strong> @Model.Quilometragem km</p>
+                <p><strong>Condição:</strong> @Model.Condicao</p>
+                <p><strong>Combustível:</strong> @Model.IdCombustivelNavigation?.Tipo</p>
+                <p><strong>Modelo:</strong> @Model.IdModeloNavigation?.Nome</p>
+
+                <hr />
+
+                <!-- Botão Editar -->
+                <a asp-action="Edit" asp-route-id="@Model.IdVeiculo"
+                   class="btn btn-primary w-100">
+                    Editar Veículo
+                </a>
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- OVERVIEW (Tabela grid) -->
+    <!-- ========================= -->
+    <div class="mt-5">
+        <h4>Overview</h4>
+        <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
+
+            <div class="col">
+                <div class="p-3 border rounded bg-light">
+                    <strong>Classe:</strong><br /> @Model.IdClasseNavigation?.Nome
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="p-3 border rounded bg-light">
+                    <strong>Combustível:</strong><br /> @Model.IdCombustivelNavigation?.Tipo
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="p-3 border rounded bg-light">
+                    <strong>Quilometragem:</strong><br /> @Model.Quilometragem km
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="p-3 border rounded bg-light">
+                    <strong>Condição:</strong><br /> @Model.Condicao
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <!-- DESCRIÇÃO -->
+ 
+    <div class="mt-5">
+        <h4>Descrição</h4>
+        <p class="text-muted">
+            Descrição do veículo ainda não foi preenchida.
+        </p>
+    </div>
+
 </div>

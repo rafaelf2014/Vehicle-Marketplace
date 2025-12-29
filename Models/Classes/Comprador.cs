@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 
-namespace CliCarProject.Models;
+namespace CliCarProject.Models.Classes;
 
 public partial class Comprador
 {
