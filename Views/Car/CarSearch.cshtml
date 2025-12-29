@@ -17,6 +17,7 @@
     var qCaixa = (string?)Context.Request.Query["caixa"];
     var qPriceRange = (string?)Context.Request.Query["priceRange"];
     var currentSort = (string?)ViewBag.CurrentSort ?? "";
+    var qLocalizacaoId = (string?)Context.Request.Query["localizacaoId"];
 
     // Listas para os Dropdowns
     var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
@@ -24,10 +25,11 @@
     var classes = ViewBag.Classes as List<Classe> ?? new List<Classe>();
     var combustiveis = ViewBag.Combustiveis as List<Combustivel> ?? new List<Combustivel>();
     var caixas = ViewBag.Caixas as List<SelectListItem> ?? new List<SelectListItem>();
+    var localizacoes = ViewBag.Localizacoes as List<Localizacao> ?? new List<Localizacao>();
 }
 
-<div class="container py-4">
-    <div class="row">
+<div class="container-fluid py-4 px-0">
+    <div class="row gx-3">
 
         <div class="col-md-3">
             <div class="search-box search-box-left">
@@ -75,15 +77,92 @@
                         }
                     </select>
 
-                    <select class="form-select" name="priceRange">
-                        <option value="">Preço</option>
-                        <option value="1" selected="@(qPriceRange == "1" ? "selected" : null)">Até 10.000 €</option>
-                        <option value="2" selected="@(qPriceRange == "2" ? "selected" : null)">10.000 € – 30.000 €</option>
-                        <option value="3" selected="@(qPriceRange == "3" ? "selected" : null)">Acima de 30.000 €</option>
-                    </select>                
+                    <select class="form-select" name="localizacaoId">
+                        <option value="">Localização</option>
+                        @foreach (var loc in localizacoes)
+                        {
+                            <option value="@loc.IdLocalizacao"
+                                    selected="@(qLocalizacaoId == loc.IdLocalizacao.ToString() ? "selected" : null)">
+                                @loc.Distrito
+                            </option>
+                        }
+                    </select>
+
+                    <label class="form-label mt-2 text-muted small">Preço (€)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number"
+                                   name="minPrice"
+                                   class="form-control"
+                                   placeholder="De"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["minPrice"]" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number"
+                                   name="maxPrice"
+                                   class="form-control"
+                                   placeholder="Até"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["maxPrice"]" />
+                        </div>
+                    </div>
+
+                    <label class="form-label mt-2 text-muted small">Ano</label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <input type="number"
+                                   name="minYear"
+                                   class="form-control"
+                                   placeholder="De"
+                                   min="1900"
+                                   max="2100"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["minYear"]" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number"
+                                   name="maxYear"
+                                   class="form-control"
+                                   placeholder="Até"
+                                   min="1900"
+                                   max="2100"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["maxYear"]" />
+                        </div>
+                    </div>
+
+                    <label class="form-label mt-2 text-muted small">Quilometros (Km)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number"
+                                   name="minKm"
+                                   class="form-control"
+                                   placeholder="De"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["minKm"]" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number"
+                                   name="maxKm"
+                                   class="form-control"
+                                   placeholder="Até"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["maxKm"]" />
+                        </div>
+                    </div>
+
+                  
+
+
                 </form>
             </div>
         </div>
+
 
         <div class="col-md-9">
 
@@ -102,6 +181,8 @@
             </div>
 
         </div>
+
+       
     </div>
 </div>
 
@@ -235,6 +316,16 @@
                     .then(r => r.json())
                     .then(data => setModelos(data || []));
             }
+
+            // NOVO: Quando escreve nos campos de Preço (minPrice ou maxPrice)
+            const priceInputs = form.querySelectorAll('input[type="number"]');
+            priceInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    // Espera 800ms depois de parares de escrever para pesquisar
+                    debounceTimer = setTimeout(() => fetchResults(1), 800);
+                });
+            });
 
             // Liga a paginação inicial
             attachPaginationEvents();

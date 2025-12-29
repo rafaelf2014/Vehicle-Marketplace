@@ -17,7 +17,7 @@ namespace CliCarProject.Controllers
         }
 
         [HttpGet]
-        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, int? priceRange, string sortOrder, int page = 1)
+        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, decimal? minPrice,decimal? maxPrice, string sortOrder, int? minYear, int? maxYear, int? localizacaoId, int? minKm, int? maxKm, int page = 1)
         {
             if (modeloId.HasValue && !marcaId.HasValue)
             {
@@ -62,15 +62,45 @@ namespace CliCarProject.Controllers
             if (!string.IsNullOrWhiteSpace(caixa))
                 query = query.Where(a => a.IdVeiculoNavigation!.Caixa.ToLower() == caixa.ToLower());
 
-            if (priceRange.HasValue)
+             //PREÇO MINIMO
+             if (minPrice.HasValue)
+             {
+                query = query.Where(a => a.Preco >= minPrice.Value);
+             }
+
+             //PREÇO MAXIMO
+             if (maxPrice.HasValue)
+             {
+                query = query.Where(a => a.Preco <= maxPrice.Value);
+             }
+
+            // FILTRO DE ANO MÍNIMO 
+            if (minYear.HasValue)
             {
-                query = priceRange.Value switch
-                {
-                    1 => query.Where(a => a.Preco <= 10000),
-                    2 => query.Where(a => a.Preco > 10000 && a.Preco <= 30000),
-                    3 => query.Where(a => a.Preco > 30000),
-                    _ => query
-                };
+                query = query.Where(a => a.IdVeiculoNavigation!.Ano >= minYear.Value);
+            }
+
+            // FILTRO DE ANO MÁXIMO 
+            if (maxYear.HasValue)
+            {
+                query = query.Where(a => a.IdVeiculoNavigation!.Ano <= maxYear.Value);
+            }
+
+            if (localizacaoId.HasValue)
+            {
+                // Nota: Confirma se na tua classe Anuncio o campo é 'IdLocalizacao'
+                query = query.Where(a => a.IdLocalizacao == localizacaoId.Value);
+            }
+
+            if (minKm.HasValue)
+            {
+               
+                query = query.Where(a => a.IdVeiculoNavigation!.Quilometragem >= minKm.Value);
+            }
+
+            if (maxKm.HasValue)
+            {
+                query = query.Where(a => a.IdVeiculoNavigation!.Quilometragem <= maxKm.Value);
             }
 
             query = sortOrder switch
@@ -115,6 +145,7 @@ namespace CliCarProject.Controllers
             ViewBag.Marcas = _context.Marcas.OrderBy(m => m.Nome).ToList();
             ViewBag.Classes = _context.Classes.OrderBy(c => c.Nome).ToList(); // Categoria
             ViewBag.Combustiveis = _context.Combustivels.OrderBy(c => c.Tipo).ToList();
+            ViewBag.Localizacoes = _context.Localizacaos.OrderBy(l => l.Distrito).ToList();
 
             // Lista manual para as Caixas (se não vier da BD)
             ViewBag.Caixas = new List<SelectListItem>

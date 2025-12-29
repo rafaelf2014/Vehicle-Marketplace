@@ -92,16 +92,16 @@ body {
 /* caixa branca dos filtros: TORNAR MENOR */
 .search-box {
     background: rgba(255, 255, 255, 0.95);
-    padding: 14px;               /* reduzido */
-    margin-top: 20px;            /* ligeiro ajuste */
+    padding: 26px;               /* reduzido */
+    margin-top: 22px;            /* ligeiro ajuste */
     border-radius: 14px;
     display: block;
-    max-width: 1400px;           /* reduzido para ficar mais compacto */
+    max-width: 1200px;           /* reduzido para ficar mais compacto */
     width: 95%;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-}
+}   
 
 .search-box form {
     display: flex;
@@ -111,8 +111,9 @@ body {
     justify-content: center;
     margin: 0;
     padding: 0;
-    overflow-x: auto; /* permite rolar horizontalmente se n„o couber */
-    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: visible;     /* garante que n„o corta em Y */
+    padding: 6px 0;          /* cria folga p/ o focus ring */
 }
 
 /* Comportamento dos inputs/selects ÅEmais compactos */
@@ -130,19 +131,25 @@ body {
 
 .search-box input[name="searchBox"],
 .search-box input[type="search"] {
-    flex: 0 0 100px;    /* flex-basis fixo ÅEajusta para 280px/300px se quiseres ainda menor */
+    flex: 0 0 100px;
     width: 100px;
     min-width: 100px;
     max-width: 260px;
-    height: 36px;
-    padding: 6px 10px;
+
+    height: 34px;        /* <- era 36px */
+    padding: 10px 12px;  /* <- ajuste para centralizar melhor */
 }
 
-/* bot„o mantÈm tamanho compacto */
+/* bot„o: mesmo tamanho dos inputs/selects e texto centrado */
 .search-box button {
     flex: 0 0 auto;
-    height: 32px;
-    padding: 6px 10px;
+    height: 34px;              /* era 32px -> igual aos outros */
+    padding: 0 14px;           /* padding horizontal; vertical fica via flex */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 /* estilo adicional */
@@ -163,7 +170,7 @@ body {
     margin-right: 8px;
 }
 
-/* para ecr„s muito largos mantÈm uma linha ˙nica e ajusta larguras */
+/* para ecr„s muito largos mantÈm uma linha ˙nico e ajusta larguras */
 @media (min-width: 1200px) {
     .search-box form {
         gap: 10px;
@@ -198,7 +205,13 @@ body {
 
     .search-box input[name="searchBox"] {
         min-width: auto;
-        height: 40px;
+        height: 44px;       /* <- era 40px */
+        padding: 12px 12px;
+    }
+
+    .search-box button {
+        height: 40px;          /* igual aos selects no mobile */
+        padding: 0 16px;
     }
 }
 
@@ -240,14 +253,28 @@ body {
 
 /* Searchbox: lado esquerdo e vertical */
 .search-box.search-box-left {
-    position: absolute;
-    top: 50%;
-    left: 20px;
-    transform: translateY(-50%);
-    width: 320px;
-    max-width: calc(100vw - 40px);
-    margin: 0;
-    z-index: 2;
+    position: static;
+    transform: none;
+    left: auto;
+    top: auto;
+    margin-top: 0;      /* remove ajustes antigos */
+    width: 100%;        /* ocupa a col-md-3 */
+    max-width: none;
+}
+
+/* CarSearch: n„o centralizar a caixa dentro da coluna */
+.search-box.search-box-left {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* opcional: deixa "colada" ao scroll (agrad·vel para filtros) */
+@media (min-width: 992px) {
+    .search-box.search-box-left {
+        position: sticky;
+        top: 90px;       /* ajusta conforme altura da navbar */
+    }
 }
 
 .search-box.search-box-left .search-box-vertical {
@@ -281,5 +308,75 @@ body {
 @media (max-width: 991px) {
     .carsearch-content {
         margin-left: 0;
+    }
+}
+
+.search-box.search-box-left,
+.search-box.search-box-right {
+    overflow: visible;         /* em vez de hidden */
+}
+
+/* d· folga para o azul n„o encostar no limite de cima/baixo */
+.search-box.search-box-left .search-box-vertical,
+.search-box.search-box-right .search-box-vertical {
+    padding: 8px;            /* antes era 6px 0 */
+    box-sizing: border-box;
+}
+
+.search-box-left .row,
+.search-box-right .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.search-box.search-box-left form,
+.search-box.search-box-right form {
+    overflow: visible;       /* sem hidden nem auto */
+}
+
+.search-box.search-box-left {
+    margin-top: 6px; /* cria espaÁo externo caso algum pai esteja justo demais */
+}
+
+/* Remove spinners dos inputs number (min/max preÁo) */
+.search-box input[type="number"]::-webkit-outer-spin-button,
+.search-box input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.search-box input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
+    appearance: textfield;
+}
+
+.carsearch-content {
+  grid-column: span 9;    /* ocupa 9 das 12 colunas disponÌveis */
+  padding-left: 15px;     /* mantÈm o espaÁamento interno */
+  padding-right: 15px;    /* mantÈm o espaÁamento interno */
+}
+
+@media (max-width: 991px) {
+  .carsearch-content {
+    grid-column: span 12;  /* ocupa toda a largura disponÌvel */
+    padding-left: 0;        /* remove espaÁamento interno */
+    padding-right: 0;       /* remove espaÁamento interno */
+  }
+}
+
+
+
+/* CarSearch: searchbox fica fixa na p·gina (n„o acompanha o scroll) */
+.search-box.search-box-left {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+}
+
+@media (min-width: 992px) {
+    /* desfaz qualquer margem reservada para o fixed */
+    .carsearch-content {
+        margin-left: 0 !important;
     }
 }
