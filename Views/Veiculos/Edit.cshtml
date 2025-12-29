@@ -1,64 +1,334 @@
-@model CliCarProject.Models.Classes.Veiculo
+﻿@model CliCarProject.Models.Classes.Veiculo
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Editar Veículo";
+    var imagens = Model.Imagems.OrderByDescending(i => i.IdImagem).ToList();
 }
 
-<h1>Edit</h1>
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a href="javascript:history.back()" class="btn btn-light rounded-pill px-3 shadow-sm text-muted mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+            <h2 class="fw-bold text-dark mb-0">🔧 Editar Veículo</h2>
+            <p class="text-muted">Atualize as especificações técnicas e a galeria do seu carro.</p>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <i class="bi bi-car-front text-primary display-4 opacity-25"></i>
+        </div>
+    </div>
 
-<h4>Veiculo</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="IdVeiculo" />
-            <div class="form-group">
-                <label asp-for="IdVendedor" class="control-label"></label>
-                <select asp-for="IdVendedor" class="form-control" asp-items="ViewBag.IdVendedor"></select>
-                <span asp-validation-for="IdVendedor" class="text-danger"></span>
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Edit" asp-controller="Veiculos" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="IdVeiculo" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 mb-4" role="alert"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Ano" class="form-control border-0 bg-light rounded-3" placeholder="Ano" />
+                                    <label asp-for="Ano">Ano do Veículo</label>
+                                    <span asp-validation-for="Ano" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select asp-for="IdMarca" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdMarca">
+                                        <option value="">Selecione a Marca</option>
+                                    </select>
+                                    <label>Marca</label>
+                                    <span asp-validation-for="IdMarca" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select asp-for="IdModelo" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdModelo">
+                                        <option value="">Selecione o Modelo</option>
+                                    </select>
+                                    <label>Modelo</label>
+                                    <span asp-validation-for="IdModelo" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select asp-for="IdClasse" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdClasse">
+                                        <option value="">Categoria</option>
+                                    </select>
+                                    <label>Categoria</label>
+                                    <span asp-validation-for="IdClasse" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select asp-for="Caixa" class="form-select border-0 bg-light rounded-3">
+                                        <option value="">Tipo de Caixa</option>
+                                        <option value="M">Manual</option>
+                                        <option value="A">Automático</option>
+                                    </select>
+                                    <label>Caixa</label>
+                                    <span asp-validation-for="Caixa" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select asp-for="IdCombustivel" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdCombustivel">
+                                        <option value="">Combustível</option>
+                                    </select>
+                                    <label>Combustível</label>
+                                    <span asp-validation-for="IdCombustivel" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Quilometragem" class="form-control border-0 bg-light rounded-3" placeholder="KM" />
+                                    <label>Quilometragem (km)</label>
+                                    <span asp-validation-for="Quilometragem" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select asp-for="Condicao" class="form-select border-0 bg-light rounded-3">
+                                        <option value="">Condição</option>
+                                        <option value="N">Novo</option>
+                                        <option value="S">Seminovo</option>
+                                        <option value="U">Usado</option>
+                                    </select>
+                                    <label>Condição</label>
+                                    <span asp-validation-for="Condicao" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow w-100">
+                                <i class="bi bi-check-circle me-2"></i> Guardar Alterações Técnicas
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Ano" class="control-label"></label>
-                <input asp-for="Ano" class="form-control" />
-                <span asp-validation-for="Ano" class="text-danger"></span>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0 fw-bold small text-uppercase tracking-wider">
+                        <i class="bi bi-images me-2"></i> Galeria Atual
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (imagens.Any())
+                    {
+                        <div id="carouselEditVeiculo" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @for (int i = 0; i < imagens.Count; i++)
+                                {
+                                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                                        <img src="~/uploads/veiculos/@Model.IdVeiculo/@imagens[i].Nome"
+                                             class="d-block w-100" style="height:320px; object-fit:cover;" />
+                                    </div>
+                                }
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselEditVeiculo" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon shadow rounded-circle"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carouselEditVeiculo" data-bs-slide="next">
+                                <span class="carousel-control-next-icon shadow rounded-circle"></span>
+                            </button>
+                        </div>
+                        <div class="p-3 d-flex gap-2 overflow-auto bg-light border-top">
+                            @foreach (var img in imagens)
+                            {
+                                <img src="~/uploads/veiculos/@Model.IdVeiculo/@img.Nome"
+                                     class="rounded-3 border shadow-sm thumb-preview"
+                                     data-bs-target="#carouselEditVeiculo"
+                                     data-bs-slide-to="@imagens.IndexOf(img)" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 bg-light">
+                            <i class="bi bi-camera display-4 text-muted opacity-25"></i>
+                            <p class="text-muted mt-2">Sem imagens disponíveis.</p>
+                        </div>
+                    }
+                </div>
+                <div class="card-footer p-3 bg-white border-0">
+                    <button class="btn btn-outline-primary w-100 rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#modalEditarImagens">
+                        <i class="bi bi-pencil-square me-2"></i> Gerir Fotos do Veículo
+                    </button>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Quilometragem" class="control-label"></label>
-                <input asp-for="Quilometragem" class="form-control" />
-                <span asp-validation-for="Quilometragem" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Condicao" class="control-label"></label>
-                <input asp-for="Condicao" class="form-control" />
-                <span asp-validation-for="Condicao" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdModelo" class="control-label"></label>
-                <select asp-for="IdModelo" class="form-control" asp-items="ViewBag.IdModelo"></select>
-                <span asp-validation-for="IdModelo" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdCombustivel" class="control-label"></label>
-                <select asp-for="IdCombustivel" class="form-control" asp-items="ViewBag.IdCombustivel"></select>
-                <span asp-validation-for="IdCombustivel" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdClasse" class="control-label"></label>
-                <select asp-for="IdClasse" class="form-control" asp-items="ViewBag.IdClasse"></select>
-                <span asp-validation-for="IdClasse" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+<div class="modal fade" id="modalEditarImagens" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold px-2 pt-2">Gestão de Média</h5>
+                <button type="button" class="btn-close me-2" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-action="EditImages" asp-controller="Veiculos" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.IdVeiculo" />
+
+                <div class="modal-body p-4">
+                    <h6 class="text-muted small text-uppercase fw-bold mb-3 px-1">Remover Imagens</h6>
+                    <div class="row g-3 mb-4">
+                        @foreach (var img in imagens)
+                        {
+                            <div class="col-6 col-md-4">
+                                <div class="position-relative img-delete-wrapper rounded-3 overflow-hidden shadow-sm">
+                                    <img src="~/uploads/veiculos/@Model.IdVeiculo/@img.Nome" class="w-100" style="height:120px; object-fit:cover;" />
+                                    <div class="img-overlay d-flex align-items-center justify-content-center">
+                                        <div class="form-check p-0 m-0">
+                                            <input class="form-check-input d-none" type="checkbox" name="RemoverIds" value="@img.IdImagem" id="rem_@img.IdImagem" />
+                                            <label class="btn btn-sm btn-danger rounded-pill px-3 py-1 label-remover" for="rem_@img.IdImagem">
+                                                <i class="bi bi-trash me-1"></i> Remover
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <h6 class="text-muted small text-uppercase fw-bold mb-3 px-1">Adicionar Novas</h6>
+                    <div class="upload-container border border-2 border-dashed rounded-4 p-4 text-center bg-light">
+                        <i class="bi bi-cloud-arrow-up text-primary display-6"></i>
+                        <p class="text-muted small mt-2 mb-3">Clique para selecionar várias fotos de uma vez</p>
+                        <input type="file" name="NovasImagens" id="inputNovasImagens" multiple accept="image/*" class="form-control rounded-pill border-0 shadow-sm" />
+                    </div>
+                    <div id="previewNovasImagens" class="mt-4 d-flex flex-wrap gap-2 justify-content-center"></div>
+                </div>
+
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4">Confirmar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        border: 1px solid #0d6efd !important;
+    }
+
+    .rounded-4 {
+        border-radius: 1.25rem !important;
+    }
+
+    .thumb-preview {
+        width: 80px;
+        height: 50px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: 0.2s;
+        opacity: 0.7;
+    }
+
+        .thumb-preview:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+    /* Overlay para remoção de imagens */
+    .img-delete-wrapper {
+        transition: 0.3s;
+        border: 2px solid transparent;
+    }
+
+    .img-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.4);
+        opacity: 0;
+        transition: 0.3s;
+    }
+
+    .img-delete-wrapper:hover .img-overlay {
+        opacity: 1;
+    }
+
+    /* Estilo quando o checkbox está marcado (via JS simples) */
+    .img-selected-delete {
+        border: 2px solid #dc3545;
+        filter: grayscale(1);
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.05em;
+    }
+</style>
+
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Feedback visual ao marcar para remover
+        document.querySelectorAll('.form-check-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const wrapper = this.closest('.img-delete-wrapper');
+                const label = this.nextElementSibling;
+                if (this.checked) {
+                    wrapper.classList.add('img-selected-delete');
+                    label.innerHTML = '<i class="bi bi-x-circle me-1"></i> Marcada';
+                    label.classList.replace('btn-danger', 'btn-dark');
+                } else {
+                    wrapper.classList.remove('img-selected-delete');
+                    label.innerHTML = '<i class="bi bi-trash me-1"></i> Remover';
+                    label.classList.replace('btn-dark', 'btn-danger');
+                }
+            });
+        });
+
+        // Preview de novas imagens
+        document.getElementById("inputNovasImagens")?.addEventListener("change", function () {
+            const preview = document.getElementById("previewNovasImagens");
+            preview.innerHTML = "";
+            const files = Array.from(this.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.className = "rounded-3 shadow-sm";
+                    img.style = "width: 70px; height: 70px; object-fit: cover;";
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
 }

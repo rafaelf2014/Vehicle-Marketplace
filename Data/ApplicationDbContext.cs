@@ -4,16 +4,13 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using CliCarProject.Models.Classes;
 using CliCarProject.Models;
+using Microsoft.AspNetCore.Identity;
 
 
 namespace CliCarProject.Data;
 
-public partial class ApplicationDbContext : IdentityDbContext
+public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
-    public ApplicationDbContext()
-    {
-    }
-
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
@@ -53,10 +50,43 @@ public partial class ApplicationDbContext : IdentityDbContext
     public virtual DbSet<Vendedor> Vendedors { get; set; }
 
     public virtual DbSet<VisitaReserva> VisitaReservas { get; set; }
+    public DbSet<Favorito> Favoritos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Favorito>(entity =>
+        {
+            // Define a Chave Primária
+            entity.HasKey(e => e.IdFavorito);
+
+            // Define o nome da tabela
+            entity.ToTable("Favorito");
+
+            // Configura as colunas
+            entity.Property(e => e.IdFavorito).HasColumnName("ID_Favorito");
+            entity.Property(e => e.IdUtilizador).HasColumnName("ID_Utilizador");
+            entity.Property(e => e.IdAnuncio).HasColumnName("ID_Anuncio");
+
+            // Cria um índice único para evitar duplicados (Mesmo User + Mesmo Anúncio)
+            entity.HasIndex(e => new { e.IdUtilizador, e.IdAnuncio }, "IX_Favorito_User_Anuncio")
+                .IsUnique();
+
+            // Configura a relação com AspNetUsers (IdentityUser)
+            entity.HasOne(d => d.Utilizador)
+                .WithMany() // Um utilizador pode ter muitos favoritos
+                .HasForeignKey(d => d.IdUtilizador)
+                .OnDelete(DeleteBehavior.Cascade) // Se o user for apagado, apaga os favoritos
+                .HasConstraintName("FK_Favorito_AspNetUsers");
+
+            // Configura a relação com a tabela Anuncio
+            entity.HasOne(d => d.Anuncio)
+                .WithMany() // Um anúncio pode estar nos favoritos de muitos users
+                .HasForeignKey(d => d.IdAnuncio)
+                .OnDelete(DeleteBehavior.Cascade) // Se o anúncio for apagado, remove-o dos favoritos
+                .HasConstraintName("FK_Favorito_Anuncio");
+        });
 
         modelBuilder.Entity<Acao>(entity =>
         {
@@ -120,6 +150,11 @@ public partial class ApplicationDbContext : IdentityDbContext
                 .HasForeignKey(d => d.IdVeiculo)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Anuncio__ID_Veic__5FB337D6");
+
+            entity.HasOne(d => d.IdVendedorNavigation).WithMany()
+                .HasForeignKey(d => d.IdVendedor)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Anuncio_AspNetUsers");
         });
 
         modelBuilder.Entity<Classe>(entity =>
@@ -333,6 +368,18 @@ public partial class ApplicationDbContext : IdentityDbContext
                 .HasForeignKey(d => d.IdModelo)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Veiculo__ID_Mode__5812160E");
+
+            entity.HasOne(d => d.IdMarcaNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdMarca)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Veiculo_Marca");
+
+            entity.HasOne(d => d.IdVendedorNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdVendedor)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Veiculo_AspNetUsers");
         });
 
         modelBuilder.Entity<Vendedor>(entity =>

@@ -1,71 +1,289 @@
-@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
-
+﻿@model IEnumerable<CliCarProject.Models.Classes.Veiculo>
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "A Minha Garagem";
 }
 
-<h1>Index</h1>
+@Html.AntiForgeryToken()
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Ano)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Quilometragem)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Condicao)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdClasseNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdCombustivelNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdModeloNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdVendedorNavigation)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Ano)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Quilometragem)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Condicao)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdClasseNavigation.IdClasse)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdCombustivelNavigation.IdCombustivel)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdModeloNavigation.IdModelo)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdVendedorNavigation.IdUtilizador)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdVeiculo">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdVeiculo">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdVeiculo">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+<div class="container py-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div>
+            <h2 class="fw-bold mb-0">🏎️ A Minha Garagem</h2>
+            <p class="text-muted">Gerencie a sua coleção de veículos e anúncios.</p>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            <form method="get" class="m-0">
+                <select name="sortOrder" class="form-select rounded-pill shadow-sm" onchange="this.form.submit()" style="min-width: 200px;">
+                    <option value="">Ordenar por...</option>
+                    <option value="ano_desc">Ano (Mais recentes)</option>
+                    <option value="ano_asc">Ano (Mais antigos)</option>
+                    <option value="km_asc">Quilometragem (Menor)</option>
+                    <option value="km_desc">Quilometragem (Maior)</option>
+                </select>
+            </form>
+
+            @if (User.IsInRole("Vendedor"))
+            {
+                <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-plus-lg me-2"></i>Novo Veículo
+                </a>
+            }
+        </div>
+    </div>
+
+    <div id="selection-toolbar" class="alert alert-dark border-0 shadow rounded-4 p-3 mb-4 d-flex justify-content-between align-items-center d-none animate-fade-in">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check2-circle fs-4 me-3 text-primary"></i>
+            <span class="fw-bold"><span id="selected-count">0</span> Veículos selecionados</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light rounded-pill btn-sm px-3" onclick="deselectAll()">
+                Desmarcar Todos
+            </button>
+            <button type="button" class="btn btn-danger rounded-pill btn-sm px-3" onclick="deleteSelected()">
+                <i class="bi bi-trash me-2"></i>Eliminar Selecionados
+            </button>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 border rounded-4 bg-light shadow-sm">
+            <i class="bi bi-car-front display-1 text-muted opacity-25"></i>
+            <h3 class="mt-4 fw-bold text-secondary">A sua garagem está vazia</h3>
+            <p class="text-muted">Comece por adicionar o seu primeiro veículo para venda.</p>
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 mt-2">
+                Adicionar Veículo
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4" id="veiculos-list">
+            @foreach (var item in Model)
+            {
+                var capa = item.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
+                var imagemPath = (capa != null)
+                ? $"/uploads/veiculos/{item.IdVeiculo}/{capa.Nome}"
+                : "/images/Image_not_available.png";
+
+                <div class="col animate-fade-in">
+                    <div class="card h-100 border-0 shadow-sm premium-card rounded-4 overflow-hidden position-relative">
+
+                        <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
+                            <input type="checkbox" class="form-check-input vehicle-checkbox border-primary shadow-sm"
+                                   value="@item.IdVeiculo" style="transform: scale(1.4); cursor: pointer;">
+                        </div>
+
+                        <div class="condition-badge">
+                            @item.Condicao
+                        </div>
+
+                        <div class="card-img-wrapper" style="cursor: pointer;">
+                            <img src="@imagemPath" class="card-img-top" alt="Veículo" />
+                        </div>
+
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold text-truncate mb-1">@item.IdMarcaNavigation?.Nome @item.IdModeloNavigation?.Nome</h6>
+
+                            <div class="row g-0 mt-3 pt-3 border-top">
+                                <div class="col-6 mb-2">
+                                    <div class="d-flex align-items-center small text-muted">
+                                        <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                        <span>@item.Ano</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2 text-end">
+                                    <div class="d-flex align-items-center justify-content-end small text-muted">
+                                        <i class="bi bi-speedometer2 me-2 text-primary"></i>
+                                        <span>@item.Quilometragem?.ToString("N0") km</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-0 p-3 pt-0">
+                            <a asp-action="Details" asp-route-id="@item.IdVeiculo" class="btn btn-outline-dark w-100 rounded-pill btn-sm">
+                                Gerir Veículo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(ViewBag.Page == 1 ? "disabled" : "")">
+                    <a class="page-link rounded-circle mx-1" href="?page=@(ViewBag.Page - 1)&sortOrder=@ViewBag.CurrentSort shadow-sm">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                        <a class="page-link rounded-circle mx-1 shadow-sm" href="?page=@i&sortOrder=@ViewBag.CurrentSort">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(ViewBag.Page == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link rounded-circle mx-1 shadow-sm" href="?page=@(ViewBag.Page + 1)&sortOrder=@ViewBag.CurrentSort">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<style>
+    /* ESTILOS PREMIUM */
+    .premium-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+        border: 2px solid transparent !important;
+    }
+
+        .premium-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    /* Estilo de Seleção */
+    .card-selected {
+        border: 2px solid #0d6efd !important;
+        background-color: #f0f7ff !important;
+    }
+
+    .card-img-wrapper {
+        height: 170px;
+        overflow: hidden;
+    }
+
+    .card-img-top {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .condition-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 10px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        z-index: 5;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Paginação Customizada */
+    .page-link {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+        border: none;
+    }
+
+    .page-item.active .page-link {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease forwards;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    // Gerenciamento de Seleção e Toolbar
+    document.getElementById('veiculos-list').addEventListener('click', function (e) {
+        if (e.target.closest('.btn')) return;
+
+        const card = e.target.closest('.card');
+        if (!card) return;
+
+        const checkbox = card.querySelector('.vehicle-checkbox');
+        if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+
+        card.classList.toggle('card-selected', checkbox.checked);
+        updateToolbar();
+    });
+
+    function updateToolbar() {
+        const selectedCount = document.querySelectorAll('.vehicle-checkbox:checked').length;
+        const toolbar = document.getElementById('selection-toolbar');
+        const countSpan = document.getElementById('selected-count');
+
+        if (selectedCount > 0) {
+            toolbar.classList.remove('d-none');
+            countSpan.innerText = selectedCount;
+        } else {
+            toolbar.classList.add('d-none');
+        }
+    }
+
+    function deselectAll() {
+        document.querySelectorAll('.vehicle-checkbox:checked').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.card').classList.remove('card-selected');
+        });
+        updateToolbar();
+    }
+
+    async function deleteSelected() {
+        const selectedCheckboxes = document.querySelectorAll('.vehicle-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+
+        if (!confirm(`Tem a certeza que deseja eliminar estes ${selectedIds.length} veículos? Esta ação é irreversível.`)) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const response = await fetch('/Veiculos/DeleteMultiple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify(selectedIds)
+            });
+
+            if (response.ok) {
+                selectedCheckboxes.forEach(cb => {
+                    const col = cb.closest('.col');
+                    col.classList.add('animate-fade-out');
+                    setTimeout(() => col.remove(), 400);
+                });
+                setTimeout(updateToolbar, 450);
+            } else {
+                alert("Erro ao eliminar veículos. Verifique se existem anúncios ativos associados.");
+            }
+        } catch (error) {
+            console.error("Erro:", error);
+        }
+    }
+</script>

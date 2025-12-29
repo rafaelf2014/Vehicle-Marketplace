@@ -1,87 +1,335 @@
-﻿@{
-    ViewData["Title"] = "CarSearch";
+﻿@using System.Globalization
+@using System.Linq
+@using CliCarProject.Models.Classes
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@model IEnumerable<Anuncio>
+
+@{
+    ViewData["Title"] = "Anúncios";
+
+    // Variáveis de controlo vindas da URL para manter o estado inicial
+    var qSearchBox = (string?)Context.Request.Query["searchBox"];
+    var qMarcaId = (string?)Context.Request.Query["marcaId"];
+    var qModeloId = (string?)Context.Request.Query["modeloId"];
+    var qCategoriaId = (string?)Context.Request.Query["categoriaId"];
+    var qCombustivelId = (string?)Context.Request.Query["combustivelId"];
+    var qCaixa = (string?)Context.Request.Query["caixa"];
+    var qPriceRange = (string?)Context.Request.Query["priceRange"];
+    var currentSort = (string?)ViewBag.CurrentSort ?? "";
+    var qLocalizacaoId = (string?)Context.Request.Query["localizacaoId"];
+
+    // Listas para os Dropdowns
+    var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
+    var modelos = ViewBag.Modelos as List<Modelo> ?? new List<Modelo>();
+    var classes = ViewBag.Classes as List<Classe> ?? new List<Classe>();
+    var combustiveis = ViewBag.Combustiveis as List<Combustivel> ?? new List<Combustivel>();
+    var caixas = ViewBag.Caixas as List<SelectListItem> ?? new List<SelectListItem>();
+    var localizacoes = ViewBag.Localizacoes as List<Localizacao> ?? new List<Localizacao>();
 }
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- 🔹 Secção de filtros -->
-        <aside class="col-md-3 bg-light p-3 rounded shadow-sm">
-            <h4>Filtrar pesquisa</h4>
-            <form>
-                <div class="mb-3">
-                    <label for="searchBox" class="form-label">Pesquisar veículo</label>
-                    <input type="text" class="form-control" id="searchBox" placeholder="Ex: BMW, Toyota...">
-                </div>
+<div class="container-fluid py-4 px-0">
+    <div class="row gx-3">
 
-                <div class="mb-3">
-                    <label for="brandSelect" class="form-label">Marca</label>
-                    <select id="brandSelect" class="form-select">
-                        <option value="">Todas</option>
-                        <option value="Toyota">Toyota</option>
-                        <option value="BMW">BMW</option>
-                        <option value="Audi">Audi</option>
+        <div class="col-md-3">
+            <div class="search-box search-box-left">
+                <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="search-box-vertical d-grid gap-2">
+
+                    <input name="searchBox" class="form-control" placeholder="Procurar..." value="@qSearchBox" />
+
+                    <select class="form-select" name="marcaId" id="marcaId">
+                        <option value="">Marca</option>
+                        @foreach (var m in marcas)
+                        {
+                            <option value="@m.IdMarca" selected="@(qMarcaId == m.IdMarca.ToString() ? "selected" : null)">@m.Nome</option>
+                        }
                     </select>
-                </div>
 
-                <div class="mb-3">
-                    <label for="priceRange" class="form-label">Faixa de preço</label>
-                    <select id="priceRange" class="form-select">
-                        <option value="">Qualquer</option>
-                        <option value="1">Até 10.000 €</option>
-                        <option value="2">10.000 € – 30.000 €</option>
-                        <option value="3">Acima de 30.000 €</option>
+                    <select class="form-select" name="modeloId" id="modeloId" disabled>
+                        <option value="">Modelo</option>
+                        @foreach (var mo in modelos)
+                        {
+                            <option value="@mo.IdModelo" selected="@(qModeloId == mo.IdModelo.ToString() ? "selected" : null)">@mo.Nome</option>
+                        }
                     </select>
-                </div>
 
-                <button type="button" class="btn btn-primary w-100">Aplicar filtros</button>
-            </form>
-        </aside>
+                    <select class="form-select" name="categoriaId">
+                        <option value="">Categoria</option>
+                        @foreach (var c in classes)
+                        {
+                            <option value="@c.IdClasse" selected="@(qCategoriaId == c.IdClasse.ToString() ? "selected" : null)">@c.Nome</option>
+                        }
+                    </select>
 
-        <!-- 🔹 Secção dos anúncios -->
-        <main class="col-md-9">
-            <h3 class="mb-3">Anúncios disponíveis</h3>
+                    <select class="form-select" name="combustivelId">
+                        <option value="">Combustível</option>
+                        @foreach (var cb in combustiveis)
+                        {
+                            <option value="@cb.IdCombustivel" selected="@(qCombustivelId == cb.IdCombustivel.ToString() ? "selected" : null)">@cb.Tipo</option>
+                        }
+                    </select>
 
-            <!-- Barra de pesquisa global -->
-            <div class="input-group mb-4">
-                <input type="text" class="form-control" placeholder="Procurar um veículo...">
-                <button class="btn btn-outline-primary" type="button">Pesquisar</button>
+                    <select class="form-select" name="caixa">
+                        <option value="">Qualquer Caixa</option>
+                        @foreach (var cx in caixas)
+                        {
+                            <option value="@cx.Value" selected="@(qCaixa == cx.Value ? "selected" : null)">@cx.Text</option>
+                        }
+                    </select>
+
+                    <select class="form-select" name="localizacaoId">
+                        <option value="">Localização</option>
+                        @foreach (var loc in localizacoes)
+                        {
+                            <option value="@loc.IdLocalizacao"
+                                    selected="@(qLocalizacaoId == loc.IdLocalizacao.ToString() ? "selected" : null)">
+                                @loc.Distrito
+                            </option>
+                        }
+                    </select>
+
+                    <label class="form-label mt-2 text-muted small">Preço (€)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number"
+                                   name="minPrice"
+                                   class="form-control"
+                                   placeholder="De"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["minPrice"]" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number"
+                                   name="maxPrice"
+                                   class="form-control"
+                                   placeholder="Até"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["maxPrice"]" />
+                        </div>
+                    </div>
+
+                    <label class="form-label mt-2 text-muted small">Ano</label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <input type="number"
+                                   name="minYear"
+                                   class="form-control"
+                                   placeholder="De"
+                                   min="1900"
+                                   max="2100"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["minYear"]" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number"
+                                   name="maxYear"
+                                   class="form-control"
+                                   placeholder="Até"
+                                   min="1900"
+                                   max="2100"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["maxYear"]" />
+                        </div>
+                    </div>
+
+                    <label class="form-label mt-2 text-muted small">Quilometros (Km)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number"
+                                   name="minKm"
+                                   class="form-control"
+                                   placeholder="De"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["minKm"]" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number"
+                                   name="maxKm"
+                                   class="form-control"
+                                   placeholder="Até"
+                                   min="0"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   value="@Context.Request.Query["maxKm"]" />
+                        </div>
+                    </div>
+
+                  
+
+
+                </form>
+            </div>
+        </div>
+
+
+        <div class="col-md-9">
+
+            <div class="d-flex justify-content-end mb-3">
+                <select name="sortOrder" class="form-select w-auto" form="searchForm">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
+                    <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Ano (Recente)</option>
+                    <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Ano (Antigo)</option>
+                    <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (Baixo)</option>
+                    <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (Alto)</option>
+                </select>
             </div>
 
-            <!-- Cards de exemplo -->
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Carro">
-                        <div class="card-body">
-                            <h5 class="card-title">Toyota Corolla 2020</h5>
-                            <p class="card-text text-muted">15.000 €</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Ver detalhes</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Carro">
-                        <div class="card-body">
-                            <h5 class="card-title">BMW 320i 2021</h5>
-                            <p class="card-text text-muted">30.000 €</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Ver detalhes</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Carro">
-                        <div class="card-body">
-                            <h5 class="card-title">Audi A4 2022</h5>
-                            <p class="card-text text-muted">28.000 €</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Ver detalhes</a>
-                        </div>
-                    </div>
-                </div>
+            <div id="results-container">
+                <partial name="_AnunciosGrid" model="Model" />
             </div>
-        </main>
+
+        </div>
+
+       
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // --- 1. CONFIGURAÇÃO INICIAL E VARIÁVEIS ---
+            const form = document.getElementById('searchForm');
+            const resultsContainer = document.getElementById('results-container');
+            const marcaSelect = document.getElementById('marcaId');
+            const modeloSelect = document.getElementById('modeloId');
+            const sortSelect = document.querySelector('select[name="sortOrder"]');
+            const currentModeloId = "@qModeloId"; // Guarda o modelo selecionado inicialmente
+            let debounceTimer;
+
+            // --- 2. LÓGICA DE DROPDAWN EM CASCATA (MARCA -> MODELO) ---
+            function setModelos(list) {
+                modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                list.forEach(m => {
+                    const id = m.idModelo ?? m.IdModelo;
+                    const nome = m.nome ?? m.Nome;
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = nome;
+                    if (id == currentModeloId) opt.selected = true;
+                    modeloSelect.appendChild(opt);
+                });
+                modeloSelect.disabled = list.length === 0;
+            }
+
+            // --- 3. FUNÇÃO PRINCIPAL: BUSCAR RESULTADOS (AJAX) ---
+            function fetchResults(page = 1) {
+                const formData = new FormData(form);
+
+                // Adiciona a ordenação ao pedido se existir
+                if (sortSelect) formData.append('sortOrder', sortSelect.value);
+
+                // Adiciona o número da página
+                formData.append('page', page);
+
+                const params = new URLSearchParams(formData).toString();
+                const url = `${form.action}?${params}`;
+
+                // Atualiza a URL do browser (para histórico)
+                window.history.pushState({}, '', url);
+
+                // Animação de "Carregando..." (Opcional: Diminui opacidade)
+                resultsContainer.style.opacity = '0.5';
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    resultsContainer.innerHTML = html;
+                    resultsContainer.style.opacity = '1';
+                    attachPaginationEvents(); // Reconecta os botões da paginação
+                })
+                .catch(err => {
+                    console.error(err);
+                    resultsContainer.style.opacity = '1';
+                });
+            }
+
+            // --- 4. EVENT LISTENERS (OUVINTES) ---
+
+            // A. Quando muda a Marca (Carrega modelos e depois filtra)
+            marcaSelect.addEventListener('change', function () {
+                const marcaId = this.value;
+
+                // 1. Atualiza lista de Modelos
+                if (!marcaId) {
+                    modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                    modeloSelect.disabled = true;
+                    fetchResults(1); // Filtra logo (sem marca)
+                    return;
+                }
+
+                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setModelos(data || []);
+                        // 2. Depois de carregar modelos, atualiza a grelha
+                        fetchResults(1);
+                    });
+            });
+
+            // B. Quando muda qualquer outro Dropdown (exceto Marca)
+            form.querySelectorAll('select:not(#marcaId)').forEach(select => {
+                select.addEventListener('change', () => fetchResults(1));
+            });
+
+            // C. Quando muda a Ordenação
+            if (sortSelect) {
+                sortSelect.addEventListener('change', () => fetchResults(1));
+            }
+
+            // D. Quando escreve na SearchBox (Debounce de 500ms)
+            const searchInput = form.querySelector('input[name="searchBox"]');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => fetchResults(1), 500);
+                });
+            }
+
+            // E. Paginação AJAX
+            function attachPaginationEvents() {
+                document.querySelectorAll('.ajax-link').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const page = this.getAttribute('data-page');
+                        fetchResults(page);
+                        // Scroll suave para o topo
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                });
+            }
+
+            // F. Previne o Submit tradicional do Form
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                fetchResults(1);
+            });
+
+            // --- 5. INICIALIZAÇÃO ---
+            // Se já vier com marca selecionada (da Home Page), carrega modelos
+            if (marcaSelect.value) {
+                // Dispara evento manualmente para carregar modelos, mas SEM filtrar de novo (pois já vem filtrado do server)
+                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaSelect.value)}`)
+                    .then(r => r.json())
+                    .then(data => setModelos(data || []));
+            }
+
+            // NOVO: Quando escreve nos campos de Preço (minPrice ou maxPrice)
+            const priceInputs = form.querySelectorAll('input[type="number"]');
+            priceInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    // Espera 800ms depois de parares de escrever para pesquisar
+                    debounceTimer = setTimeout(() => fetchResults(1), 800);
+                });
+            });
+
+            // Liga a paginação inicial
+            attachPaginationEvents();
+
+        })();
+    </script>
+}

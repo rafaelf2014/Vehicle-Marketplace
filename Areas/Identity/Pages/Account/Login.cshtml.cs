@@ -112,14 +112,10 @@ namespace CliCarProject.Areas.Identity.Pages.Account
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            if (!ModelState.IsValid)
-                return Page();
-
-            // Tenta encontrar o utilizador por email (aceitar login por email)
-            var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
-            if (user == null)
+            if (ModelState.IsValid)
             {
-                
+                // Encontrar o utilizador pelo email (no registo o UserName e Email são distintos)
+                var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user == null)
                 {
                     // não revelar qual campo está errado
