@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using System.Security.Claims; // adicionado
 
 namespace CliCarProject.Areas.Identity.Pages.Account
 {
@@ -97,7 +98,6 @@ namespace CliCarProject.Areas.Identity.Pages.Account
             [RegularExpression(@"^[0-9]{4}-[0-9]{3}$", ErrorMessage = "Formato inválido (ex.: 1234-567)")]
             public string CodigoPostal { get; set; }
 
-            // Mantém [Required] para validação cliente quando o template do vendedor for injetado.
             [Required(ErrorMessage = "Campo Obrigatório!!")]
             [Display(Name = "NIF")]
             [RegularExpression(@"^[0-9]{9}$", ErrorMessage = "Formato inválido (ex.: 123456789)")]
@@ -112,7 +112,7 @@ namespace CliCarProject.Areas.Identity.Pages.Account
             [Display(Name = "Tipo de Conta")]
             public string Role { get; set; }
 
-            [Required(ErrorMessage = "Campo Obrigatório!!")]
+            [Required(ErrorMessage = "Campo Obligatório!!")]
             [Display(Name = "Morada")]
             [StringLength(100, ErrorMessage = "A {0} deve ter no máximo {1} caracteres.")]
             public string Morada { get; set; }
@@ -188,6 +188,10 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                 return Page();
             }
 
+            // Adiciona claim com a data de criação do utilizador (opção escolhida)
+            var createdAtClaim = new Claim("CreatedAt", DateTime.UtcNow.ToString("o"));
+            await _userManager.AddClaimAsync(user, createdAtClaim);
+
             _logger.LogInformation("Usuário criado com sucesso: {UserName}", Input.UserName);
             _logger.LogInformation("Usuário criado com sucesso: {Id}", user.Id);
 
@@ -233,7 +237,6 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                     Tipo = Input.TypeSeller
                 };
                 
-
                 _dbContext.Vendedors.Add(vendedor);
                 await _dbContext.SaveChangesAsync();
                 SuccessMessage = "Conta criada com sucesso";
@@ -253,7 +256,6 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                 SuccessMessage = "Conta criada com sucesso";
 
             }
-            
 
             // ----------------- EMAIL DE CONFIRMAÇÃO --------------------
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
