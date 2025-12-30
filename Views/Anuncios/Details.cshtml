@@ -92,6 +92,29 @@
         <div class="col-lg-4">
             <div class="sticky-top" style="top: 20px; z-index: 10;">
 
+                @* 1. BADGE DE ESTADO DO ANÚNCIO *@
+                <div class="mb-3">
+                    @if (Model.Estado == "Ativo")
+                    {
+                        <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">
+                            <i class="bi bi-check-circle me-1"></i> Disponível
+                        </span>
+                    }
+                    else if (Model.Estado == "Reservado")
+                    {
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm">
+                            <i class="bi bi-clock-history me-1"></i> Reservado
+                        </span>
+                    }
+                    else if (Model.Estado == "Vendido")
+                    {
+                        <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm">
+                            <i class="bi bi-hand-thumbs-up me-1"></i> Vendido
+                        </span>
+                    }
+                </div>
+
+                @* 2. CAIXA DE PREÇO E AÇÕES *@
                 <div class="bg-white p-4 rounded-4 shadow-sm border-top border-4 border-primary mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h1 class="h2 fw-bold mb-0 text-primary">@Model.Preco.ToString("N0") €</h1>
@@ -112,37 +135,92 @@
                     <div class="d-grid gap-2">
                         @if (User.Identity.IsAuthenticated && User.Identity.Name == Model.IdVendedorNavigation?.UserName)
                         {
-                            <a asp-action="Edit" asp-route-id="@Model.IdAnuncio" class="btn btn-warning btn-lg rounded-pill fw-bold">
-                                <i class="bi bi-pencil me-2"></i> Editar Anúncio
-                            </a>
+                            @if (Model.Estado == "Reservado")
+                            {
+                                @* AÇÕES DO VENDEDOR QUANDO RESERVADO *@
+                                <form asp-action="ConfirmarVenda" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.IdAnuncio" />
+                                    <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill fw-bold mb-2 shadow-sm">
+                                        <i class="bi bi-cash-stack me-2"></i> Confirmar Venda
+                                    </button>
+                                </form>
 
-                            <form asp-action="Delete" asp-route-id="@Model.IdAnuncio" method="post" onsubmit="return confirm('Tem a certeza que deseja eliminar este anúncio?');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
-                                    <i class="bi bi-trash me-2"></i> Eliminar Anúncio
-                                </button>
-                            </form>
+                                <form asp-action="CancelarReserva" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idAnuncio" value="@Model.IdAnuncio" />
+                                    <button type="submit" class="btn btn-outline-secondary w-100 rounded-pill mb-3"
+                                            onclick="return confirm('Tem a certeza que deseja cancelar a reserva atual?')">
+                                        <i class="bi bi-x-circle me-2"></i> Cancelar Reserva
+                                    </button>
+                                </form>
+                            }
+                            else if (Model.Estado == "Ativo")
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.IdAnuncio" class="btn btn-warning btn-lg rounded-pill fw-bold shadow-sm">
+                                    <i class="bi bi-pencil me-2"></i> Editar Anúncio
+                                </a>
+
+                                <form asp-action="Delete" asp-route-id="@Model.IdAnuncio" method="post" onsubmit="return confirm('Tem a certeza que deseja eliminar este anúncio?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                                        <i class="bi bi-trash me-2"></i> Eliminar Anúncio
+                                    </button>
+                                </form>
+                            }
                         }
                         else
                         {
-                            <a href="mailto:@Model.IdVendedorNavigation?.Email?subject=Interesse no anúncio: @Model.Titulo"
-                               class="btn btn-primary btn-lg rounded-pill fw-bold">
-                                <i class="bi bi-chat-left-text me-2"></i> Contactar Vendedor
-                            </a>
+                            @if (Model.Estado == "Reservado")
+                            {
+                                <div class="alert alert-warning rounded-4 border-0 shadow-sm d-flex align-items-center mb-0">
+                                    <i class="bi bi-clock-history fs-4 me-3"></i>
+                                    <div>
+                                        <small class="d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Veículo Reservado</small>
+                                        <span class="fw-bold">@ViewBag.TempoRestante restante</span>
+                                    </div>
+                                </div>
 
-                            <button class="btn btn-outline-dark rounded-pill shadow-sm py-2">
-                                <i class="bi bi-telephone me-2"></i> Ver Telefone
-                            </button>
+                                @if (ViewBag.ReservadoPorMim == true)
+                                {
+                                    <p class="text-success small mt-2 text-center fw-bold">
+                                        <i class="bi bi-check2-circle"></i> A reserva é sua!
+                                    </p>
+                                    <form asp-action="CancelarReserva" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idAnuncio" value="@Model.IdAnuncio" />
+                                        <button type="submit" class="btn btn-link btn-sm text-muted w-100 text-decoration-none">
+                                            Cancelar a minha reserva
+                                        </button>
+                                    </form>
+                                }
+                            }
+                            else if (Model.Estado == "Ativo")
+                            {
+                                <button type="button" class="btn btn-primary btn-lg rounded-pill fw-bold shadow" data-bs-toggle="modal" data-bs-target="#modalReserva">
+                                    <i class="bi bi-calendar-check me-2"></i> Reservar e Agendar Visita
+                                </button>
+
+                                <button class="btn btn-outline-dark rounded-pill shadow-sm py-2">
+                                    <i class="bi bi-telephone me-2"></i> Ver Telefone
+                                </button>
+                            }
+                            else if (Model.Estado == "Vendido")
+                            {
+                                <button class="btn btn-secondary btn-lg rounded-pill fw-bold disabled w-100">
+                                    <i class="bi bi-lock-fill me-2"></i> Já Vendido
+                                </button>
+                            }
                         }
                     </div>
                 </div>
 
+                @* 3. CAIXA DE INFORMAÇÕES DO VENDEDOR *@
                 <div class="bg-dark text-white p-4 rounded-4 shadow-sm">
                     <h6 class="text-uppercase small fw-bold opacity-50 mb-3 text-white">
                         @(User.Identity.Name == Model.IdVendedorNavigation?.UserName ? "As minhas informações" : "Vendido por")
                     </h6>
                     <div class="d-flex align-items-center mb-3">
-                    </div>
                         <div>
                             <h6 class="mb-0 fw-bold">@Model.IdVendedorNavigation?.UserName</h6>
                             <small class="opacity-75">Localização: @(Model.IdLocalizacaoNavigation?.Distrito ?? "Portugal")</small>
@@ -153,6 +231,40 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReserva" tabindex="-1" aria-labelledby="modalReservaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold" id="modalReservaLabel">Agendar Visita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            @* O FORM DEVE ENVOLVER O BODY E O FOOTER *@
+            <form asp-action="Reservar" asp-controller="Anuncios" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idAnuncio" value="@Model.IdAnuncio" />
+
+                <div class="modal-body">
+                    <p class="text-muted small">Escolha uma data e hora para visitar o veículo. O anúncio ficará bloqueado para outros interessados.</p>
+
+                    <div class="form-group">
+                        <label class="fw-bold mb-2">Data e Hora da Visita</label>
+                        @* O NAME deve ser exatamente dataSugerida *@
+                        <input type="datetime-local" name="dataSugerida" class="form-control rounded-3"
+                               min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    @* ESTE BOTÃO TEM DE SER TYPE SUBMIT *@
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Confirmar Reserva</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -182,7 +294,28 @@
     .sticky-top {
         top: 100px;
     }
-    /* Ajusta se tiveres uma navbar fixa */
+
+    .price-badge-floating {
+        
+        transition: all 0.3s ease;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .main-nav {
+        z-index: 1050 !important; 
+    }
+
+    .dropdown-menu {
+        z-index: 1100 !important;
+    }
+
+    .sticky-top {
+        z-index: 1000 !important;
+    }
 </style>
 
 @section Scripts {

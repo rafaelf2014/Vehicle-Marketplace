@@ -213,7 +213,14 @@
                                         <span class="fw-bold">@User.Identity.Name</span>
                                     </li>
                                     <li><a class="dropdown-item py-2" href="/Identity/Account/Manage"><i class="bi bi-gear me-2"></i> Perfil</a></li>
-
+									@if (User.IsInRole("Comprador"))
+									{
+                                        <li>
+                                            <a class="dropdown-item py-2 text-dark" href="@Url.Action("MinhasReservas", "Anuncios")">
+                                                <i class="bi bi-calendar2-check me-2"></i> Minhas Reservas
+                                            </a>
+                                        </li>
+									}
                                     @if (User.IsInRole("Vendedor") || User.IsInRole("Comprador"))
                                     {
                                         <li><a class="dropdown-item py-2 text-primary" href="/Veiculos"><i class="bi bi-car-front-fill me-2"></i> Minha Garagem</a></li>
