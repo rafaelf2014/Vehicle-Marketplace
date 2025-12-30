@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251229094512_AddTableVenda")]
-    partial class AddTableVenda
+    [Migration("20251230204041_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -111,6 +111,9 @@ namespace CliCarProject.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("ID_Vendedor");
+
+                    b.Property<bool>("Notificacao")
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("Preco")
                         .HasColumnType("decimal(10, 2)");
@@ -272,6 +275,9 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdFiltroFavorito"));
 
+                    b.Property<string>("FiltrosJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("IdClasse")
                         .HasColumnType("int")
                         .HasColumnName("ID_Classe");
@@ -293,6 +299,10 @@ namespace CliCarProject.Migrations
                     b.Property<int?>("IdMarca")
                         .HasColumnType("int")
                         .HasColumnName("ID_Marca");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("IdFiltroFavorito")
                         .HasName("PK__FiltrosF__410905C7C5E79498");
@@ -444,6 +454,29 @@ namespace CliCarProject.Migrations
                     b.ToTable("Modelo", (string)null);
                 });
 
+            modelBuilder.Entity("CliCarProject.Models.Classes.SitePageView", b =>
+                {
+                    b.Property<int>("IdSitePageView")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("ID_SitePageView");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdSitePageView"));
+
+                    b.Property<string>("Path")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("VisitTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("(sysdatetime())");
+
+                    b.HasKey("IdSitePageView");
+
+                    b.ToTable("SitePageView", (string)null);
+                });
+
             modelBuilder.Entity("CliCarProject.Models.Classes.TipoAcao", b =>
                 {
                     b.Property<int>("IdTipoAcao")
@@ -574,6 +607,9 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdReserva"));
 
+                    b.Property<int?>("AnuncioIdAnuncio")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DataExpiracao")
                         .HasColumnType("datetime2");
 
@@ -601,7 +637,11 @@ namespace CliCarProject.Migrations
                     b.HasKey("IdReserva")
                         .HasName("PK__VisitaRe__12CAD9F4E4121AE5");
 
+                    b.HasIndex("AnuncioIdAnuncio");
+
                     b.HasIndex("IdAnuncio");
+
+                    b.HasIndex("IdComprador");
 
                     b.ToTable("VisitaReserva", (string)null);
                 });
@@ -1049,11 +1089,23 @@ namespace CliCarProject.Migrations
 
             modelBuilder.Entity("CliCarProject.Models.Classes.VisitaReserva", b =>
                 {
-                    b.HasOne("CliCarProject.Models.Classes.Anuncio", "IdAnuncioNavigation")
+                    b.HasOne("CliCarProject.Models.Classes.Anuncio", null)
                         .WithMany("VisitaReservas")
+                        .HasForeignKey("AnuncioIdAnuncio");
+
+                    b.HasOne("CliCarProject.Models.Classes.Anuncio", "IdAnuncioNavigation")
+                        .WithMany()
                         .HasForeignKey("IdAnuncio")
-                        .IsRequired()
-                        .HasConstraintName("FK__VisitaRes__ID_An__6FE99F9F");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Comprador")
+                        .WithMany()
+                        .HasForeignKey("IdComprador")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Comprador");
 
                     b.Navigation("IdAnuncioNavigation");
                 });
