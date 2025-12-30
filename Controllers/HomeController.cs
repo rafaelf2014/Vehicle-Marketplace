@@ -30,10 +30,12 @@ public class HomeController : Controller
         // Inicializamos modelos como lista vazia (será preenchida via AJAX no browser)
         ViewBag.Modelos = new List<Modelo>();
 
+        //var todosAtivos = await _context.Anuncios.Where(a => a.Estado == "Ativo").CountAsync();
+
         // 2. Carregar Anúncios em Destaque para o Model
-        // Ordenamos por visualizações e pegamos nos 6 principais
         var destaques = await _context.Anuncios
             .Where(a => a.Estado == "Ativo")
+            .Where(a => a.IdVeiculoNavigation != null && a.IdVeiculoNavigation.Disponivel)
             .Include(a => a.IdVeiculoNavigation)
                 .ThenInclude(v => v.Imagems)
             .Include(a => a.IdVeiculoNavigation)
@@ -41,6 +43,8 @@ public class HomeController : Controller
             .OrderByDescending(a => a.Visualizacoes)
             .Take(4)
             .ToListAsync();
+
+        //System.Diagnostics.Debug.WriteLine($"DEBUG: Anúncios Ativos: {todosAtivos} | Destaques encontrados: {destaques.Count}");
 
         return View(destaques);
     }

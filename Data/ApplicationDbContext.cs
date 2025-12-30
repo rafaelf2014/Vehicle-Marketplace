@@ -22,7 +22,8 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 
     public virtual DbSet<Anuncio> Anuncios { get; set; }
 
-    
+    public virtual DbSet<SitePageView> SitePageViews { get; set; }
+
     public virtual DbSet<Classe> Classes { get; set; }
 
     public virtual DbSet<Combustivel> Combustivels { get; set; }
@@ -55,6 +56,30 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Venda>(entity =>
+        {
+            entity.HasKey(e => e.IdVenda);
+            entity.ToTable("Venda");
+
+            entity.HasOne(d => d.Anuncio)
+                .WithMany()
+                .HasForeignKey(d => d.IdAnuncio)
+                .OnDelete(DeleteBehavior.NoAction); 
+
+            entity.HasOne(d => d.Comprador)
+                .WithMany()
+                .HasForeignKey(d => d.IdComprador);
+        });
+
+        modelBuilder.Entity<SitePageView>(entity =>
+        {
+            entity.HasKey(e => e.IdSitePageView);
+            entity.ToTable("SitePageView");
+            entity.Property(e => e.IdSitePageView).HasColumnName("ID_SitePageView");
+            entity.Property(e => e.VisitTime).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Path).HasMaxLength(255);
+        });
 
         modelBuilder.Entity<Favorito>(entity =>
         {
@@ -429,10 +454,15 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
                 .HasMaxLength(450)
                 .HasColumnName("ID_Comprador");
 
-            entity.HasOne(d => d.IdAnuncioNavigation).WithMany(p => p.VisitaReservas)
+            entity.HasOne(d => d.IdAnuncioNavigation)
+                .WithMany()
                 .HasForeignKey(d => d.IdAnuncio)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__VisitaRes__ID_An__6FE99F9F");
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Comprador)
+                .WithMany()
+                .HasForeignKey(d => d.IdComprador)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         OnModelCreatingPartial(modelBuilder);

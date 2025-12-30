@@ -14,6 +14,7 @@ public partial class Anuncio
     public string? Descricao { get; set; }
 
     public decimal Preco { get; set; }
+    public bool Notificacao { get; set; }
 
     public string? Estado { get; set; }
     public int Visualizacoes { get; set; }

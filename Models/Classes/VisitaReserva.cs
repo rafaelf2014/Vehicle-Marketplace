@@ -18,4 +18,5 @@ public partial class VisitaReserva
     public string IdComprador { get; set; } = null!;
 
     public virtual Anuncio IdAnuncioNavigation { get; set; } = null!;
+    public virtual Microsoft.AspNetCore.Identity.IdentityUser Comprador { get; set; } = null!; //Navegação para o Comprador
 }
