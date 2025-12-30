@@ -52,6 +52,7 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 
     public virtual DbSet<VisitaReserva> VisitaReservas { get; set; }
     public DbSet<Favorito> Favoritos { get; set; }
+    public virtual DbSet<UserBlock> UserBlocks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -464,6 +465,14 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
                 .HasForeignKey(d => d.IdComprador)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<UserBlock>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+            entity.HasIndex(e => e.UserId).IsUnique();
+});
 
         OnModelCreatingPartial(modelBuilder);
     }

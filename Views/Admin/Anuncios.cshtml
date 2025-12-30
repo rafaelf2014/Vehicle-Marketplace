@@ -14,14 +14,36 @@
 
         <main class="col-12 col-md-8 col-lg-9">
             <div class="card shadow-sm rounded-4 p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h2 class="fw-bold mb-1">Anúncios</h2>
-                        <p class="text-muted mb-0">Total de anúncios registados e listagem completa.</p>
+                <div class="mb-3">
+                    <h2 class="fw-bold mb-1">Anúncios</h2>
+                    <p class="text-muted mb-0">Total de anúncios ativos e listagem completa.</p>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center border rounded-3 p-3 h-100">
+                            <div class="me-3">
+                                <i class="bi bi-card-list fs-3 text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Anúncios ativos</div>
+                                <div class="h5 mb-0">@Model.TotalAnuncios</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="text-end">
-                        <span class="badge bg-primary rounded-pill fs-6">Total: @Model.TotalAnuncios</span>
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex align-items-center border rounded-3 p-3 h-100 bg-light">
+                            <div class="me-3">
+                                <i class="bi bi-award fs-3 text-success"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Marca mais presente</div>
+                                <div class="h5 mb-0">
+                                    @(string.IsNullOrEmpty(Model.MarcaMaisPresente) ? "-" : Model.MarcaMaisPresente)
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

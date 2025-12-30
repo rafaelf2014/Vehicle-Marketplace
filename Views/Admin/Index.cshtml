@@ -20,7 +20,7 @@
                 <!-- Estatísticas rápidas abaixo de "Visão Geral" -->
                 <div class="row g-3">
 
-                    <div class="col-12 col-md-6 col-lg-3">
+                    <div class="col-12 col-sm-6 col-lg">
                         <div class="d-flex align-items-center border rounded-3 p-3 h-100">
                             <div class="me-3">
                                 <i class="bi bi-eye fs-3 text-primary"></i>
@@ -32,7 +32,7 @@
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-6 col-lg-3">
+                    <div class="col-12 col-sm-6 col-lg">
                         <div class="d-flex align-items-center border rounded-3 p-3 h-100">
                             <div class="me-3">
                                 <i class="bi bi-person-lines-fill fs-3 text-secondary"></i>
@@ -44,7 +44,7 @@
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-6 col-lg-3">
+                    <div class="col-12 col-sm-6 col-lg">
                         <div class="d-flex align-items-center border rounded-3 p-3 h-100">
                             <div class="me-3">
                                 <i class="bi bi-card-list fs-3 text-success"></i>
@@ -56,7 +56,7 @@
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-6 col-lg-3">
+                    <div class="col-12 col-sm-6 col-lg">
                         <div class="d-flex align-items-center border rounded-3 p-3 h-100">
                             <div class="me-3">
                                 <i class="bi bi-calendar-week fs-3 text-warning"></i>
@@ -64,6 +64,18 @@
                             <div>
                                 <div class="small text-muted">Visitas semanais</div>
                                 <div class="h5 mb-0">@((Model?.WeeklySiteVisits) ?? 0)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-lg">
+                        <div class="d-flex align-items-center border rounded-3 p-3 h-100">
+                            <div class="me-3">
+                                <i class="bi bi-cash-stack fs-3 text-success"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Vendas totais</div>
+                                <div class="h5 mb-0">@((Model?.TotalVendas) ?? 0)</div>
                             </div>
                         </div>
                     </div>
@@ -75,6 +87,16 @@
                     <div class="card border-0">
                         <div class="card-body">
                             <canvas id="visitsChart" style="max-height:360px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de vendas ao longo do tempo -->
+                <div class="mt-4">
+                    <h6 class="mb-2">Vendas (últimos 30 dias)</h6>
+                    <div class="card border-0">
+                        <div class="card-body">
+                            <canvas id="salesChart" style="max-height:360px;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -112,6 +134,53 @@
                     data: data,
                     borderColor: 'rgba(13,110,253,0.9)', // primary
                     backgroundColor: 'rgba(13,110,253,0.12)',
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: 2,
+                    pointHoverRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: { maxRotation: 0, autoSkip: true },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.04)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { mode: 'index', intersect: false }
+                }
+            }
+        });
+    })();
+
+    (function () {
+        const salesLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.SalesLabels ?? new System.Collections.Generic.List<string>()));
+        const salesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.SalesCounts ?? new System.Collections.Generic.List<int>()));
+
+        const ctx = document.getElementById('salesChart').getContext('2d');
+
+        // Se já existir uma instância anterior (hot reload), destrói
+        if (window._salesChart) {
+            window._salesChart.destroy();
+        }
+
+        window._salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: salesLabels,
+                datasets: [{
+                    label: 'Vendas por dia',
+                    data: salesData,
+                    borderColor: 'rgba(40,167,69,0.9)', // success
+                    backgroundColor: 'rgba(40,167,69,0.12)',
                     fill: true,
                     tension: 0.25,
                     pointRadius: 2,

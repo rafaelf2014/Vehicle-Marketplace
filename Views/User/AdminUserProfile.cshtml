@@ -1,0 +1,134 @@
+@using Microsoft.AspNetCore.Identity
+@using CliCarProject.Models.Classes
+@model IdentityUser
+
+@{
+    ViewData["Title"] = "Perfil do Utilizador (Admin)";
+
+    var profileImage = Url.Content("~/images/Image_not_available.png");
+    var imgPath = ViewBag.ProfileImagePath as string;
+    if (!string.IsNullOrEmpty(imgPath))
+    {
+        profileImage = imgPath;
+    }
+
+    var roles = ViewBag.Roles as IList<string> ?? new List<string>();
+    var vendedor = ViewBag.Vendedor as Vendedor;
+    var comprador = ViewBag.Comprador as Comprador;
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="bi bi-person-circle me-2"></i> Perfil do Utilizador
+        </h3>
+        <a href="@Url.Action("UserManage", "Admin")" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Voltar à gestão de utilizadores
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body text-center p-4">
+                    <img src="@profileImage"
+                         alt="Foto de perfil"
+                         class="rounded-circle shadow-sm mb-3"
+                         width="140" height="140"
+                         style="object-fit: cover;" />
+
+                    <h4 class="fw-bold mb-0">@Model.UserName</h4>
+                    <p class="text-muted small mb-2">@Model.Email</p>
+
+                    <p class="text-muted small mb-0">
+                        @if (roles.Count == 0)
+                        {
+                            @:Sem roles
+                        }
+                        else
+                        {
+                            @string.Join(", ", roles)
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-header bg-white border-0 px-4 pt-4">
+                    <h5 class="fw-bold mb-1">
+                        <i class="bi bi-info-circle me-2 text-primary"></i> Informação da Conta
+                    </h5>
+                    <p class="text-muted small mb-0">
+                        Dados apenas para consulta. Não editáveis a partir desta página.
+                    </p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">ID</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="small">@Model.Id</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Username</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">@Model.UserName</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Email</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">@Model.Email</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Contacto</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">
+                                    @(vendedor?.Contacto ?? comprador?.Contacto ?? "-")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Morada (Comprador)</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">
+                                    @(comprador?.Morada ?? "-")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Código Postal</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">
+                                    @(vendedor?.CodigoPostal ?? comprador?.CodigoPostal ?? "-")
+                                </span>
+                            </div>
+                        </div>
+                        @if (vendedor != null)
+                        {
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">NIF (Vendedor)</label>
+                                <div class="border rounded-3 px-3 py-2 bg-light">
+                                    <span class="fw-semibold">@vendedor.Nif</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">Tipo de Vendedor</label>
+                                <div class="border rounded-3 px-3 py-2 bg-light">
+                                    <span class="fw-semibold">
+                                        @(vendedor.Tipo == "P" ? "Particular" :
+                                          vendedor.Tipo == "C" ? "Comercial" : vendedor.Tipo)
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -21,6 +21,7 @@ namespace CliCarProject.Models
 
             // Data de criação (obteremos a partir do claim "CreatedAt")
             public DateTime? CreatedAt { get; set; }
+            public bool IsBlocked { get; set; }   // <= novo
         }
     }
 }

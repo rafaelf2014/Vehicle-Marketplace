@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using CliCarProject.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CliCarProject.Areas.Identity.Pages.Account
 {
@@ -114,13 +116,28 @@ namespace CliCarProject.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                // Encontrar o utilizador pelo email (no registo o UserName e Email são distintos)
                 var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user == null)
                 {
-                    // não revelar qual campo está errado
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();
+                }
+
+                // verificar se há bloqueio registado
+                using (var scope = HttpContext.RequestServices.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var block = await db.UserBlocks.FirstOrDefaultAsync(b => b.UserId == user.Id);
+                    if (block != null)
+                    {
+                        // opcional: garantir lockout no Identity
+                        user.LockoutEnabled = true;
+                        user.LockoutEnd = DateTimeOffset.MaxValue;
+                        await _userManager.UpdateAsync(user);
+
+                        // redirecionar para página de bloqueio
+                        return RedirectToAction("Blocked", "User", new { area = "", userId = user.Id });
+                    }
                 }
 
                 // Verifica a password diretamente no utilizador encontrado

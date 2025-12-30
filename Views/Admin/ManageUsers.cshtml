@@ -20,23 +20,38 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-12 col-md-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="small text-muted">Contas criadas</div>
-                            <div class="h5 mb-0">@Model.TotalAccountsCreated</div>
+                        <div class="d-flex align-items-center border rounded-3 p-3 h-100">
+                            <div class="me-3">
+                                <i class="bi bi-people-fill fs-3 text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Contas criadas</div>
+                                <div class="h5 mb-0">@Model.TotalAccountsCreated</div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-12 col-md-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="small text-muted">Compradores</div>
-                            <div class="h5 mb-0">@Model.TotalCompradores</div>
+                        <div class="d-flex align-items-center border rounded-3 p-3 h-100">
+                            <div class="me-3">
+                                <i class="bi bi-person-badge fs-3 text-success"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Compradores</div>
+                                <div class="h5 mb-0">@Model.TotalCompradores</div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="col-12 col-md-4">
-                        <div class="border rounded-3 p-3 h-100">
-                            <div class="small text-muted">Vendedores</div>
-                            <div class="h5 mb-0">@Model.TotalVendedores</div>
+                        <div class="d-flex align-items-center border rounded-3 p-3 h-100">
+                            <div class="me-3">
+                                <i class="bi bi-shop-window fs-3 text-warning"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Vendedores</div>
+                                <div class="h5 mb-0">@Model.TotalVendedores</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -123,7 +138,19 @@
                                             </div>
                                         </th>
                                         <th>Papel</th>
-                                        <th class="text-end">Data criação</th>
+                                        <th class="text-end" style="cursor: pointer;" onclick="sortTable('createdAt', '@ViewBag.CreatedAtSortOrder')">
+                                            <div class="d-flex align-items-center justify-content-end">
+                                                <span>Data criação</span>
+                                                @if (ViewBag.CurrentSort == "createdAt")
+                                                {
+                                                    <i class="bi bi-arrow-@(ViewBag.CurrentOrder == "asc" ? "up" : "down") ms-1"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-arrow-down-up ms-1 text-muted opacity-50"></i>
+                                                }
+                                            </div>
+                                        </th>
                                         <th style="width:1%"></th>
                                     </tr>
                                 </thead>
@@ -136,8 +163,36 @@
                                             <td>@u.UserName</td>
                                             <td>@(string.IsNullOrEmpty(u.Role) ? "-" : u.Role)</td>
                                             <td class="text-end">@((u.CreatedAt.HasValue) ? u.CreatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")</td>
-                                            <td>
-                                                <a class="btn btn-sm btn-outline-secondary" asp-controller="Admin" asp-action="Historico" asp-route-id="@u.Id">Ver</a>
+                                            <td class="text-nowrap">
+                                                <a class="btn btn-sm btn-outline-primary me-1"
+                                                   asp-controller="User"
+                                                   asp-action="AdminViewProfile"
+                                                   asp-route-id="@u.Id">
+                                                    Ver
+                                                </a>
+
+                                                @if (!u.IsBlocked)
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalBlockUser"
+                                                            data-user-id="@u.Id"
+                                                            data-user-name="@u.UserName">
+                                                        Bloquear
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalUnblockUser"
+                                                            data-user-id="@u.Id"
+                                                            data-user-name="@u.UserName">
+                                                        Desbloquear
+                                                    </button>
+                                                }
                                             </td>
                                         </tr>
                                     }
@@ -150,6 +205,75 @@
 
             </div>
         </main>
+    </div>
+</div>
+
+<!-- Modal Bloquear Utilizador -->
+<div class="modal fade" id="modalBlockUser" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-slash-circle me-2 text-danger"></i> Bloquear utilizador
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="User" asp-action="BlockUser" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="blockUserId" name="userId" />
+
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">
+                        Está prestes a bloquear o utilizador <strong id="blockUserName"></strong>.
+                    </p>
+                    <div class="mb-3">
+                        <label for="blockReason" class="form-label small fw-semibold">Razão do bloqueio (obrigatório)</label>
+                        <textarea id="blockReason"
+                                  name="reason"
+                                  class="form-control"
+                                  rows="3"
+                                  required
+                                  maxlength="500"
+                                  placeholder="Explique resumidamente o motivo do bloqueio."></textarea>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        O utilizador será impedido de fazer login e, se estiver autenticado, será desconectado.
+                    </p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Confirmar bloqueio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Desbloquear Utilizador -->
+<div class="modal fade" id="modalUnblockUser" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-unlock-fill me-2 text-success"></i> Desbloquear utilizador
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="User" asp-action="UnblockUser" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="unblockUserId" name="userId" />
+                <div class="modal-body">
+                    <p class="mb-0">
+                        Tem a certeza que pretende desbloquear o utilizador
+                        <strong id="unblockUserName"></strong>?
+                    </p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4">Sim, desbloquear</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -172,5 +296,36 @@
         }
         window.location.href = url.toString();
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var blockModal = document.getElementById('modalBlockUser');
+        if (blockModal) {
+            blockModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                if (!button) return;
+
+                var userId = button.getAttribute('data-user-id');
+                var userName = button.getAttribute('data-user-name');
+
+                document.getElementById('blockUserId').value = userId;
+                document.getElementById('blockUserName').textContent = userName || userId;
+                document.getElementById('blockReason').value = '';
+            });
+        }
+
+        var unblockModal = document.getElementById('modalUnblockUser');
+        if (unblockModal) {
+            unblockModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                if (!button) return;
+
+                var userId = button.getAttribute('data-user-id');
+                var userName = button.getAttribute('data-user-name');
+
+                document.getElementById('unblockUserId').value = userId;
+                document.getElementById('unblockUserName').textContent = userName || userId;
+            });
+        }
+    });
 </script>
 }
