@@ -115,62 +115,57 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.12);
 }
 
-.search-box form {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 10px;
-    align-items: center;
-    justify-content: center; /* Agora irrelevante pois a textbox vai encher tudo */
-    margin: 0;
-    padding: 6px 0;
-    overflow-x: auto;
-    overflow-y: visible;
-}
+    .search-box form {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: center; /* Agora irrelevante pois a textbox vai encher tudo */
+        margin: 0;
+        padding: 6px 0;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
 
-/* 1. OS DROPDOWNS (Correção do texto cortado) */
-.search-box .form-control, .search-box .form-select {
-    width: auto;
-    /* Aumentei o min-width para 125px para caber "Combustível" */
-    min-width: 125px;       
-    max-width: 220px;
-    
-    /* Mudei para 'auto' para o dropdown crescer se a palavra for grande */
-    flex: 0 0 auto;         
-    
-    box-sizing: border-box;
-    height: 36px;
-    padding: 6px 30px 6px 10px; /* Mais espaço à direita para a seta não tapar texto */
-}
+    /* 1. OS DROPDOWNS (Correção do texto cortado) */
+    .search-box .form-control, .search-box .form-select {
+        width: auto;
+        /* Aumentei o min-width para 125px para caber "Combustível" */
+        min-width: 125px;
+        max-width: 220px;
+        /* Mudei para 'auto' para o dropdown crescer se a palavra for grande */
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        height: 36px;
+        padding: 6px 30px 6px 10px; /* Mais espaço à direita para a seta não tapar texto */
+    }
 
-/* 2. A CAIXA DE PESQUISA (AQUI ESTÁ A MUDANÇA PRINCIPAL) */
-.search-box input[name="searchBox"], .search-box input[type="search"] {
-    /* flex: grow shrink basis */
-    /* O '1' inicial diz para CRESCER e ocupar o espaço vazio */
-    flex: 1 1 auto;         
-    
-    width: auto;            /* Deixa o flex controlar a largura */
-    min-width: 250px;       /* Garante que nunca fica pequena demais */
-    max-width: 250px;        /* REMOVIDO o limite máximo para ela poder encher a barra */
-    
-    height: 34px;
-    padding: 10px 12px;
-}
+    /* 2. A CAIXA DE PESQUISA (AQUI ESTÁ A MUDANÇA PRINCIPAL) */
+    .search-box input[name="searchBox"], .search-box input[type="search"] {
+        /* flex: grow shrink basis */
+        /* O '1' inicial diz para CRESCER e ocupar o espaço vazio */
+        flex: 1 1 auto;
+        width: auto; /* Deixa o flex controlar a largura */
+        min-width: 250px; /* Garante que nunca fica pequena demais */
+        max-width: 250px; /* REMOVIDO o limite máximo para ela poder encher a barra */
 
-/* 3. O BOTÃO PESQUISAR (Mais largo) */
-.search-box button {
-    flex: 0 0 auto;
-    height: 34px;
-    
-    /* Aumentei o padding lateral para 40px (antes era 14px) */
-    padding: 0 40px;        
-    
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    white-space: nowrap;
-    font-weight: 600;       /* Texto um pouco mais grosso */
-}
+        height: 34px;
+        padding: 10px 12px;
+    }
+
+    /* 3. O BOTÃO PESQUISAR (Mais largo) */
+    .search-box button {
+        flex: 0 0 auto;
+        height: 34px;
+        /* Aumentei o padding lateral para 40px (antes era 14px) */
+        padding: 0 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        white-space: nowrap;
+        font-weight: 600; /* Texto um pouco mais grosso */
+    }
 
 /* Responsivo Mobile */
 @media (max-width: 991px) {
@@ -215,14 +210,14 @@ body {
 /* Searchbox Left (Barra Lateral) */
 .search-box.search-box-left {
     position: static;
-    transform: none;
     left: auto;
-    top: auto;
     margin-top: 0;
-    width: 104%;
+    width: 106%;
     max-width: none;
     margin-left: 0;
     margin-right: 0;
+    /* --- NOVO: Permite que o dropdown saia da caixa --- */
+    overflow: visible !important;
 }
 
     .search-box.search-box-left .search-box-vertical {
@@ -236,6 +231,11 @@ body {
         max-width: none;
         flex: none;
     }
+
+/* --- NOVO: Garante que a coluna do layout não corta o dropdown --- */
+.col-lg-3, aside {
+    overflow: visible !important;
+}
 
 /* Spinners dos inputs number */
 .search-box input[type="number"]::-webkit-outer-spin-button, .search-box input[type="number"]::-webkit-inner-spin-button {
@@ -365,3 +365,31 @@ body {
             font-weight: 700;
             border-bottom: 3px solid #212529; /* Linha preta grossa em baixo */
         }
+
+
+/* =========================================================
+   CORREÇÃO DEFINITIVA DE SCROLL E OVERFLOW
+   ========================================================= */
+
+/* 1. OBRIGATÓRIO: Deixar a barra lateral "transbordar" */
+/* Isto impede que o menu seja cortado e permite que abra por cima dos outros elementos */
+.col-lg-3,
+aside,
+.search-box.search-box-left,
+.search-box-vertical,
+.search-box-left form {
+    overflow: visible !important;
+    z-index: auto;
+}
+
+/* 2. O Dropdown flutua por cima de tudo */
+.dropdown-menu {
+    z-index: 1055 !important; /* Maior que o resto */
+    margin-top: 2px !important;
+}
+
+/* 3. Ajuste do Modal para ficar bonito */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}

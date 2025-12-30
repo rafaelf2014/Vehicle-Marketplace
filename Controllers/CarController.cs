@@ -195,5 +195,72 @@ namespace CliCarProject.Controllers
 
             return Json(modelos);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> GuardarFiltro(string nome, string filtrosJson)
+        {
+            // 1. Simular Utilizador Logado (Ajusta depois para User.Identity.GetUserId())
+            // Tens de garantir que este ID existe na tabela Comprador/User
+            var userId = "e797aeee-bf4c-4235-8664-000000000000";
+
+            if (string.IsNullOrEmpty(nome) || string.IsNullOrEmpty(filtrosJson))
+            {
+                return Json(new { success = false, message = "Dados inválidos." });
+            }
+
+            // 2. Criar o objeto com os dados
+            var novoFiltro = new FiltrosFavorito
+            {
+                IdComprador = userId,
+                Nome = nome,
+                FiltrosJson = filtrosJson, // Guardamos tudo aqui!
+
+                // Opcional: Se quiseres preencher as colunas antigas para estatística
+                // podes tentar extrair do JSON, mas não é obrigatório para a pesquisa funcionar.
+                IdMarca = null,
+                IdCombustivel = null
+            };
+
+            _context.FiltrosFavoritos.Add(novoFiltro);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public IActionResult ObterMeusFiltros()
+        {
+            var userId = "e797aeee-bf4c-4235-8664-000000000000"; // ID fixo para teste
+
+            var filtros = _context.FiltrosFavoritos
+                .Where(f => f.IdComprador == userId)
+                .Select(f => new {
+                    id = f.IdFiltroFavorito,
+                    nome = f.Nome,
+                    json = f.FiltrosJson
+                })
+                .ToList();
+
+            return Json(filtros);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ApagarFiltro(int id)
+        {
+            // Verifica se o filtro existe e pertence ao user (usando o ID de teste que definimos)
+            var userId = "e797aeee-bf4c-4235-8664-000000000000";
+
+            var filtro = await _context.FiltrosFavoritos.FindAsync(id);
+
+            if (filtro == null || filtro.IdComprador != userId)
+            {
+                return Json(new { success = false, message = "Filtro não encontrado." });
+            }
+
+            _context.FiltrosFavoritos.Remove(filtro);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
     }
 }
