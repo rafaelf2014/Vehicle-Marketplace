@@ -16,6 +16,7 @@ namespace CliCarProject.Models
             public string Estado { get; set; } = string.Empty;
             public DateTime? DataCriacao { get; set; }
             public string Marca { get; set; } = string.Empty;
+            public string Modelo { get; set; } = string.Empty; // NOVO
         }
     }
 }

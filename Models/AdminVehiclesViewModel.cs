@@ -16,6 +16,7 @@ namespace CliCarProject.Models
             public string Modelo { get; set; } = string.Empty;
             public int? Ano { get; set; }
             public string Proprietario { get; set; } = string.Empty;
+            public bool Disponivel { get; set; }   // novo
         }
     }
 }
