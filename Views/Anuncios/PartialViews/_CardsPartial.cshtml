@@ -4,39 +4,102 @@
 {
     <div class="col">
         @{
-            var isVendido = item.Estado == "Vendido";
-            var borderClass = isVendido ? "border-secondary" : (item.Estado == "Reservado" ? "border-success" : (item.Estado == "Pendente" ? "border-warning" : "border-0"));
+            // Cast explícito para garantir acesso às propriedades sem erro CS1977
+            var anuncio = (CliCarProject.Models.Classes.Anuncio)item;
+            var isVendido = anuncio.Estado == "Vendido";
+            var estado = anuncio.Estado;
+
+            // Requisito: Validar se o pagamento foi efetuado para habilitar a venda
+            var isPago = anuncio.Compra != null && anuncio.Compra.Estado == "Pago";
+
+            // Requisito: Verificar se existem reservas para controle de UI
+            var temReservaPendente = anuncio.VisitaReservas != null && anuncio.VisitaReservas.Any(r => r.Estado == "Pendente");
+
+            // Lógica de cores baseada no Protocolo (Ativo, Reservado, Vendido)
+            var borderClass = isVendido ? "border-secondary" :
+            (estado == "Reservado" ? "border-success" :
+            (estado == "Pendente" ? "border-warning" : "border-0"));
             var borderStyle = borderClass != "border-0" ? "border-top border-4" : "";
         }
 
         <div class="card h-100 shadow-sm rounded-4 overflow-hidden position-relative @(isVendido ? "grayscale-filter" : "") @borderClass @borderStyle">
 
-            @* Overlay de Vendido *@
-            @if (isVendido)
+            @* Badge de Pagamento - Requisito funcional de simulação de checkout *@
+            @if (isPago && !isVendido)
             {
-                <div class="position-absolute top-50 start-50 translate-middle" style="z-index: 10;">
-                    <span class="badge bg-dark px-2 py-1 opacity-75">VENDIDO</span>
+                <div class="position-absolute top-0 end-0 m-2" style="z-index: 5;">
+                    <span class="badge bg-success shadow-sm animate-pulse">
+                        <i class="bi bi-cash-check"></i> PAGO
+                    </span>
                 </div>
             }
 
-            <img src="@(item.IdVeiculoNavigation?.Imagems?.Any() == true
-                        ? Url.Content($"~/uploads/veiculos/{item.IdVeiculo}/{item.IdVeiculoNavigation.Imagems.First().Nome}")
+            @* Checkbox para eliminação - Apenas anúncios sem processos ativos *@
+            @if (estado == "Ativo" && !temReservaPendente)
+            {
+                <div class="position-absolute top-0 start-0 m-2" style="z-index: 5;">
+                    <input type="checkbox" name="ids" value="@anuncio.IdAnuncio" class="form-check-input border-primary shadow-sm" />
+                </div>
+            }
+
+            <img src="@(anuncio.IdVeiculoNavigation?.Imagems?.Any() == true
+                        ? Url.Content($"~/uploads/veiculos/{anuncio.IdVeiculo}/{anuncio.IdVeiculoNavigation.Imagems.First().Nome}")
                         : "/images/no-image.png")"
                  class="card-img-top" style="height: 110px; object-fit: cover; @(isVendido ? "opacity: 0.5;" : "")">
 
             <div class="card-body p-2 text-center">
-                <h6 class="fw-bold mb-1 text-truncate" style="font-size: 0.85rem;">@item.Titulo</h6>
+                <h6 class="fw-bold mb-1 text-truncate" style="font-size: 0.85rem;">@anuncio.Titulo</h6>
 
                 @if (isVendido)
                 {
-                    <p class="text-muted small mb-0">Vendido por: @item.Preco.ToString("N0") €</p>
+                    <p class="text-muted small mb-0">Vendido por: @anuncio.Preco.ToString("N0") €</p>
                 }
                 else
                 {
-                    <p class="text-primary fw-bold mb-2 small" style="font-size: 0.75rem;">@item.Preco.ToString("N0") €</p>
+                    <p class="text-primary fw-bold mb-2 small" style="font-size: 0.75rem;">@anuncio.Preco.ToString("N0") €</p>
+
                     <div class="d-grid gap-1">
-                        @* ... Seus botões de Confirmar Reserva / Venda / Detalhes ... *@
-                        <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-0" style="font-size: 0.65rem;">Detalhes</a>
+                        @* 1. Ação de Vendedor: Aceitar Reserva *@
+                        @if (estado == "Pendente")
+                        {
+                            @* BOTÃO ACEITAR *@
+                            <form asp-action="ConfirmarReserva" method="post" class="mb-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idAnuncio" value="@anuncio.IdAnuncio" />
+                                <button type="submit" class="btn btn-warning btn-xs w-100 rounded-pill py-1 fw-bold text-dark" style="font-size: 0.65rem;">
+                                    <i class="bi bi-check-circle me-1"></i> Aceitar Reserva
+                                </button>
+                            </form>
+
+                            @* BOTÃO REJEITAR/CANCELAR *@
+                            <form asp-action="CancelarReserva" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idAnuncio" value="@anuncio.IdAnuncio" />
+                                <button type="submit" class="btn btn-outline-danger btn-xs w-100 rounded-pill py-1 fw-bold" style="font-size: 0.65rem;">
+                                    <i class="bi bi-x-circle me-1"></i> Rejeitar Pedido
+                                </button>
+                            </form>
+                        }
+
+                        @* 2. Ação de Vendedor: Confirmar Venda (Apenas após Checkout/Pagamento do Comprador) *@
+                        @if (estado == "Reservado")
+                        {
+                            <form asp-action="ConfirmarVenda" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@anuncio.IdAnuncio" />
+                                <button type="submit" class="btn btn-success btn-xs w-100 rounded-pill py-1 fw-bold @(!isPago ? "disabled" : "")" style="font-size: 0.65rem;">
+                                    @(isPago ? "Confirmar Venda" : "Aguardar Pagamento")
+                                </button>
+                            </form>
+                        }
+
+                        @* Botões de Gestão Padrão *@
+                        <a asp-action="Details" asp-route-id="@anuncio.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-0" style="font-size: 0.65rem;">Detalhes</a>
+
+                        @if (estado == "Ativo")
+                        {
+                            <a asp-action="Edit" asp-route-id="@anuncio.IdAnuncio" class="btn btn-light btn-xs rounded-pill py-0" style="font-size: 0.65rem;">Editar</a>
+                        }
                     </div>
                 }
             </div>

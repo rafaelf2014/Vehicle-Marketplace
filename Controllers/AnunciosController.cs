@@ -18,7 +18,7 @@ using NuGet.Packaging.Signing;
 
 namespace CliCarProject.Controllers
 {
-    [Authorize]
+    
     public class AnunciosController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -31,62 +31,69 @@ namespace CliCarProject.Controllers
         }
 
         // GET: Anuncios
+        [Authorize]
         public async Task<IActionResult> Index(string sortOrder)
         {
             var userId = _userManager.GetUserId(User);
             int pageSize = 5;
 
+            // Base query com todos os Includes necessários para a Partial View
             var baseQuery = _context.Anuncios
                 .Include(a => a.IdVeiculoNavigation).ThenInclude(v => v.Imagems)
-                // Adiciona Include das Reservas para a Partial View poder validar o estado
-                .Include(a => a.VisitaReservas)
+                .Include(a => a.VisitaReservas) 
+                .Include(a => a.Compra)         
                 .Where(a => a.IdVendedor == userId && a.Estado != "Inativo");
 
-            // APLICAR ORDENAÇÃO PRIMEIRO
             baseQuery = sortOrder switch
             {
                 "ano_asc" => baseQuery.OrderBy(a => a.IdVeiculoNavigation.Ano),
                 "ano_desc" => baseQuery.OrderByDescending(a => a.IdVeiculoNavigation.Ano),
-                _ => baseQuery.OrderByDescending(a => a.IdAnuncio) // Ou DataCriacao
+                _ => baseQuery.OrderByDescending(a => a.IdAnuncio)
             };
 
-            var ativosQuery = baseQuery.Where(a => a.Estado == "Ativo" &&
-                !a.VisitaReservas.Any(r => r.Estado == "Pendente"));
-
-            var ativosLista = await ativosQuery.ToListAsync();
+            // 1. ATIVOS:
+            var ativosLista = await baseQuery
+                .Where(a => a.Estado == "Ativo" && !a.VisitaReservas.Any(r => r.Estado == "Pendente"))
+                .ToListAsync();
             ViewBag.Ativos = ativosLista.Take(pageSize).ToList();
             ViewBag.TotalAtivos = ativosLista.Count;
             ViewBag.HasNextAtivos = ativosLista.Count > pageSize;
 
-            // 2. PENDENTES: Estado Ativo E TEM de ter pelo menos uma reserva pendente
-            var pendentesQuery = baseQuery.Where(a => a.Estado == "Pendente");
-
-            var pendentesLista = await pendentesQuery.ToListAsync();
+            // 2. PENDENTES: Anúncios que aguardam ação do vendedor
+            var pendentesLista = await baseQuery
+                .Where(a => a.Estado == "Pendente")
+                .ToListAsync();
             ViewBag.Pendentes = pendentesLista.Take(pageSize).ToList();
             ViewBag.TotalPendentes = pendentesLista.Count;
             ViewBag.HasNextPendentes = pendentesLista.Count > pageSize;
 
-            // 3. Reservados (Vendedor já confirmou a reserva)
-            var reservados = await baseQuery
+            //var totalPendentesNaBD = await _context.Anuncios.CountAsync(a => a.Estado == "Pendente");
+            //Console.WriteLine($"DEBUG: Total de anúncios com Estado 'Pendente' na BD: {totalPendentesNaBD}");
+
+            //foreach (var a in pendentesLista)
+            //{
+            //    Console.WriteLine($"Anúncio ID: {a.IdAnuncio} | Estado: {a.Estado} | Reservas: {a.VisitaReservas?.Count ?? 0}");
+            //}
+
+            // 3. RESERVADOS: Vendedor já confirmou
+            var reservadosLista = await baseQuery
                 .Where(a => a.Estado == "Reservado")
                 .ToListAsync();
+            ViewBag.Reservados = reservadosLista.Take(pageSize).ToList();
+            ViewBag.TotalReservados = reservadosLista.Count;
+            ViewBag.HasNextReservados = reservadosLista.Count > pageSize;
 
-            ViewBag.Reservados = reservados.Take(pageSize).ToList();
-            ViewBag.TotalReservados = reservados.Count;
-            ViewBag.HasNextReservados = reservados.Count > pageSize;
-
-            // 4. Vendidos
-            var vendidos = await baseQuery
+            // 4. VENDIDOS: Ciclo finalizado
+            var vendidosLista = await baseQuery
                 .Where(a => a.Estado == "Vendido")
                 .ToListAsync();
+            ViewBag.Vendidos = vendidosLista.Take(pageSize).ToList();
+            ViewBag.TotalVendidos = vendidosLista.Count;
+            ViewBag.HasNextVendidos = vendidosLista.Count > pageSize;
 
-            ViewBag.Vendidos = vendidos.Take(pageSize).ToList();
-            ViewBag.TotalVendidos = vendidos.Count;
-            ViewBag.HasNextVendidos = vendidos.Count > pageSize;
-
-            return View(); 
+            return View();
         }
-
+        [Authorize]
         public async Task<IActionResult> GetAnunciosPaginados(string tipo, int pagina = 1)
         {
             var userId = _userManager.GetUserId(User);
@@ -98,24 +105,32 @@ namespace CliCarProject.Controllers
                 .Include(a => a.VisitaReservas) // ESSENCIAL para os botões de reserva aparecerem
                 .Where(a => a.IdVendedor == userId && a.Estado != "Inativo");
 
-            
+
             switch (tipo.ToLower())
             {
                 case "ativos":
+                    // Apenas anúncios que não têm qualquer processo de reserva iniciado
                     query = query.Where(a => a.Estado == "Ativo" &&
-                            !a.VisitaReservas.Any(r => r.Estado == "Pendente"));
+                                !a.VisitaReservas.Any(r => r.Estado == "Pendente"));
                     break;
+
                 case "pendentes":
-                    query = query.Where(a => a.Estado == "Ativo" &&
-                            a.VisitaReservas.Any(r => r.Estado == "Pendente"));
+                    // IMPORTANTE: Alinhado com o método Reservar que define Estado = "Pendente"
+                    query = query.Where(a => a.Estado == "Pendente")
+                                .Include(a => a.VisitaReservas);
                     break;
+
                 case "reservados":
-                    query = query.Where(a => a.Estado == "Reservado");
+                    // Requisito: Listagens de veículos reservados 
+                    query = query.Where(a => a.Estado == "Reservado")
+                                .Include(a => a.Compra) // Necessário para validar se está PAGO na Partial
+                                .Include(a => a.VisitaReservas);
                     break;
+
                 case "vendidos":
+                    // Requisito: Listagens de veículos vendidos 
                     query = query.Where(a => a.Estado == "Vendido")
-                        .Include(a => a.IdVeiculoNavigation)
-                        .ThenInclude(v => v.Imagems);
+                                .Include(a => a.IdVeiculoNavigation).ThenInclude(v => v.Imagems);
                     break;
             }
 
@@ -226,7 +241,7 @@ namespace CliCarProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles ="Vendedor")] //Quando tivermos sistema de Roles trocamos por [Athorize(Roles="Vendedor")];
+        [Authorize(Roles ="Vendedor")]
         public async Task<IActionResult> Create([Bind("Titulo,Descricao,Preco,IdVeiculo,IdLocalizacao")] Anuncio anuncio)
         {
             var userId = _userManager.GetUserId(User);
@@ -433,33 +448,42 @@ namespace CliCarProject.Controllers
 
 
         // POST: Anuncios/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [Authorize(Roles = "Vendedor")]
+        [HttpPost, ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
-        [Authorize]
-        public async Task<IActionResult> DeleteConfirmed(int[] ids)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            foreach (var id in ids)
-            {
-                var anuncio = await _context.Anuncios
-                    .Include(a => a.VisitaReservas)
-                    .FirstOrDefaultAsync(a => a.IdAnuncio == id);
+            var userId = _userManager.GetUserId(User);
 
-                
-                if (anuncio != null && anuncio.Estado != "Reservado" && !anuncio.VisitaReservas.Any())
-                {
-                    anuncio.Estado = "Inativo";
-                }
-                else
-                {
-                    TempData["Error"] = "Alguns anúncios não puderam ser apagados por terem reservas ou pedidos.";
-                }
+            // Carregamos o anúncio garantindo que pertence ao utilizador logado
+            var anuncio = await _context.Anuncios
+                .Include(a => a.VisitaReservas)
+                .FirstOrDefaultAsync(a => a.IdAnuncio == id && a.IdVendedor == userId);
+
+            if (anuncio == null) return NotFound();
+
+            // Lógica de Integridade: Só desativamos se não houver um processo de compra em curso
+            // Verificamos se há reservas que NÃO estejam canceladas nem concluídas
+            bool temProcessoAtivo = anuncio.VisitaReservas.Any(r => r.Estado == "Pendente" || r.Estado == "Confirmada");
+
+            if (anuncio.Estado != "Vendido" && !temProcessoAtivo)
+            {
+                anuncio.Estado = "Inativo";
+                anuncio.DataAtualizacao = DateTime.Now;
+
+                TempData["Success"] = "Anúncio removido com sucesso.";
             }
+            else
+            {
+                TempData["Error"] = "Não pode eliminar um anúncio que tenha reservas ativas ou que já tenha sido vendido.";
+            }
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles ="Comprador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reservar(int idAnuncio, DateTime? dataSugerida)
         {
@@ -506,7 +530,7 @@ namespace CliCarProject.Controllers
             {
                 IdAnuncio = idAnuncio,
                 IdComprador = userId,
-                DataVisita = dataSugerida ?? DateTime.Now.AddDays(1), // Data em que o interesse foi manifestado
+                DataVisita = dataSugerida ?? DateTime.Now.AddDays(1),
                 DataExpiracao = (dataSugerida ?? DateTime.Now).AddDays(2),
                 Estado = "Pendente"
             };
@@ -559,47 +583,49 @@ namespace CliCarProject.Controllers
         }
 
        
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteSelected(int[] ids)
-        {
-            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteSelected(int[] ids)
+        //{
+        //    if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
 
-            try
-            {
-                var anunciosParaApagar = await _context.Anuncios
-                    .Where(a => ids.Contains(a.IdAnuncio) && a.Estado == "Ativo")
-                    .ToListAsync();
+        //    try
+        //    {
+        //        var anunciosParaApagar = await _context.Anuncios
+        //            .Where(a => ids.Contains(a.IdAnuncio) && a.Estado == "Ativo")
+        //            .ToListAsync();
 
-                foreach (var anuncio in anunciosParaApagar)
-                {
-                    // Verifica se realmente não tem reservas antes de apagar
-                    var temReserva = await _context.VisitaReservas.AnyAsync(r => r.IdAnuncio == anuncio.IdAnuncio);
-                    if (!temReserva)
-                    {
-                        anuncio.Estado = "Inativo";
-                    }
-                }
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Anúncios eliminados com sucesso.";
-            }
-            catch (Exception)
-            {
-                TempData["Error"] = "Erro ao eliminar anúncios.";
-            }
-            return RedirectToAction(nameof(Index));
-        }
+        //        foreach (var anuncio in anunciosParaApagar)
+        //        {
+        //            // Verifica se realmente não tem reservas antes de apagar
+        //            var temReserva = await _context.VisitaReservas.AnyAsync(r => r.IdAnuncio == anuncio.IdAnuncio);
+        //            if (!temReserva)
+        //            {
+        //                anuncio.Estado = "Inativo";
+        //            }
+        //        }
+        //        await _context.SaveChangesAsync();
+        //        TempData["Success"] = "Anúncios eliminados com sucesso.";
+        //    }
+        //    catch (Exception)
+        //    {
+        //        TempData["Error"] = "Erro ao eliminar anúncios.";
+        //    }
+        //    return RedirectToAction(nameof(Index));
+        //}
 
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CancelarReserva(int idAnuncio)
         {
             var userId = _userManager.GetUserId(User);
-            var anuncio = await _context.Anuncios.FindAsync(idAnuncio);
 
+            var anuncio = await _context.Anuncios.FindAsync(idAnuncio);
+            if (anuncio == null) return NotFound();
             // Verifica se é o comprador da reserva ou o vendedor do anúncio
             var reserva = await _context.VisitaReservas
-                .FirstOrDefaultAsync(r => r.IdAnuncio == idAnuncio && r.Estado == "Pendente");
+                .FirstOrDefaultAsync(r => r.IdAnuncio == idAnuncio &&
+                                 (r.Estado == "Pendente" || r.Estado == "Confirmada"));
 
             if (reserva == null) return NotFound();
 
@@ -608,11 +634,25 @@ namespace CliCarProject.Controllers
 
             // Reset do estado
             reserva.Estado = "Cancelada";
-            anuncio.Estado = "Ativo";
+            if (reserva.IdAnuncioNavigation != null)
+            {
+                reserva.IdAnuncioNavigation.Estado = "Ativo";
+            }
             anuncio.Notificacao = false;
 
-            await _context.SaveChangesAsync();
-            TempData["Success"] = "Reserva cancelada com sucesso.";
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Reserva cancelada. O veículo está novamente disponível.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Erro ao atualizar a base de dados.";
+            }
+
+            if (anuncio.IdVendedor == userId)
+                return RedirectToAction("Index");
+
             return RedirectToAction(nameof(Details), new { id = idAnuncio });
         }
 
@@ -626,6 +666,15 @@ namespace CliCarProject.Controllers
             var anuncio = await _context.Anuncios
                 .Include(a => a.IdVeiculoNavigation)
                 .FirstOrDefaultAsync(a => a.IdAnuncio == id && a.IdVendedor == userId);
+
+            var compraPaga = await _context.Compras
+                .AnyAsync(c => c.IdAnuncio == id && c.Estado == "Pago");
+
+            if (!compraPaga)
+            {
+                TempData["Error"] = "Não pode confirmar a venda antes do pagamento ser registado.";
+                return RedirectToAction(nameof(Index));
+            }
 
             if (anuncio == null) return NotFound();
 
@@ -676,13 +725,128 @@ namespace CliCarProject.Controllers
 
             // Listar todas as visitas/reservas feitas pelo utilizador logado
             var reservas = await _context.VisitaReservas
-                .Include(v => v.IdAnuncioNavigation)
-                    .ThenInclude(a => a.IdVeiculoNavigation)
-                .Where(v => v.IdComprador == userId)
-                .OrderByDescending(v => v.DataVisita)
-                .ToListAsync();
+        .Include(v => v.IdAnuncioNavigation)
+            .ThenInclude(a => a.IdVeiculoNavigation)
+        .Include(v => v.IdAnuncioNavigation)
+            .ThenInclude(a => a.Compra)
+        .Where(v => v.IdComprador == userId)
+        .OrderByDescending(v => v.DataVisita)
+        .ToListAsync();
 
             return View(reservas);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> PagarEncomenda(int idCompra)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            // 1. Carregar a Compra E o Anúncio relacionado (Eager Loading)
+            var compra = await _context.Compras
+                .Include(c => c.IdAnuncioNavigation)
+                .FirstOrDefaultAsync(c => c.IdAnuncio == idCompra && c.IdComprador == userId);
+
+            if (compra == null || compra.Estado != "Pendente")
+                return BadRequest("Encomenda não encontrada ou já processada.");
+
+            // 2. Atualizar o estado da Compra para Pago
+            compra.Estado = "Pago";
+
+            // 3. Importante: Atualizar o estado do Anúncio para indicar que aguarda confirmação final
+            if (compra.IdAnuncioNavigation != null)
+            {
+                // Opcional: podes definir um estado intermédio ou manter "Reservado" 
+                // mas garantir que a propriedade de navegação não é nula.
+                compra.IdAnuncioNavigation.Estado = "Reservado";
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Pagamento simulado com sucesso! O vendedor já pode confirmar a entrega.";
+            return RedirectToAction("MinhasReservas");
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CancelarEncomenda(int idAnuncio)
+        {
+            var userId = _userManager.GetUserId(User);
+            var compra = await _context.Compras
+                .FirstOrDefaultAsync(c => c.IdAnuncio == idAnuncio && c.IdComprador == userId);
+
+            if (compra != null)
+            {
+                compra.Estado = "Cancelado";
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Compra cancelada com sucesso.";
+            }
+
+            return RedirectToAction(nameof(MinhasReservas));
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> DetalhesCheckout(int idAnuncio)
+        {
+            var anuncio = await _context.Anuncios
+                .Include(a => a.IdVeiculoNavigation)
+                .FirstOrDefaultAsync(a => a.IdAnuncio == idAnuncio);
+
+            if (anuncio == null || anuncio.Estado != "Reservado")
+                return NotFound();
+
+            return View(anuncio);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Checkout(int idAnuncio)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            // 1. Procuramos a reserva DIRETAMENTE na tabela para evitar problemas de Include
+            var reservaAtiva = await _context.VisitaReservas
+                .FirstOrDefaultAsync(r => r.IdAnuncio == idAnuncio && r.IdComprador == userId);
+
+            // Se não encontrar a reserva para este user, aí sim damos o 401
+            if (reservaAtiva == null)
+            {
+                return Unauthorized("Não tem uma reserva ativa para este veículo.");
+            }
+
+            // 2. Procuramos o anúncio para validar o estado e o preço
+            var anuncio = await _context.Anuncios.FindAsync(idAnuncio);
+
+            if (anuncio == null || anuncio.Estado != "Reservado")
+            {
+                return BadRequest("O anúncio não está disponível para checkout (não está reservado).");
+            }
+
+            // 3. Registo da Encomenda (Protocolo: simulação de checkout)
+            var compra = await _context.Compras
+                .FirstOrDefaultAsync(c => c.IdAnuncio == idAnuncio && c.IdComprador == userId);
+
+            if (compra == null)
+            {
+                compra = new Compra
+                {
+                    IdAnuncio = idAnuncio,
+                    IdComprador = userId,
+                    DataCompra = DateTime.Now,
+                    Estado = "Pendente",
+                    Preco = anuncio.Preco 
+                };
+                _context.Compras.Add(compra);
+            }
+            else
+            {
+                compra.Estado = "Pendente";
+                _context.Update(compra);
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("MinhasReservas");
         }
     }
 }
