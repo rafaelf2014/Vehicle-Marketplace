@@ -114,6 +114,7 @@
                                                 }
                                             </div>
                                         </th>
+                                        <th>Disponibilidade</th>
                                         <th style="width:1%"></th>
                                     </tr>
                                 </thead>
@@ -129,7 +130,30 @@
                                                 <td>@(v.Ano?.ToString() ?? "-")</td>
                                                 <td>@(string.IsNullOrEmpty(v.Proprietario) ? "-" : v.Proprietario)</td>
                                                 <td>
-                                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Veiculos" asp-action="Details" asp-route-id="@v.IdVeiculo">Ver</a>
+                                                    @if (v.Disponivel)
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Disponível</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Indisponível</span>
+                                                    }
+                                                </td>
+                                                <td class="text-nowrap">
+                                                    <a class="btn btn-sm btn-outline-secondary me-1"
+                                                       asp-controller="Veiculos"
+                                                       asp-action="Details"
+                                                       asp-route-id="@v.IdVeiculo">
+                                                        Ver
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalDeleteVeiculo"
+                                                            data-veiculo-id="@v.IdVeiculo"
+                                                            data-veiculo-label="@($"{v.Marca} {v.Modelo} ({v.Ano?.ToString() ?? "-"})")">
+                                                        Remover
+                                                    </button>
                                                 </td>
                                             </tr>
                                         }
@@ -137,7 +161,7 @@
                                     else
                                     {
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted py-4">Nenhuma viatura encontrada.</td>
+                                            <td colspan="7" class="text-center text-muted py-4">Nenhuma viatura encontrada.</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -148,6 +172,34 @@
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+<!-- Modal Remover Viatura -->
+<div class="modal fade" id="modalDeleteVeiculo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-trash-fill me-2 text-danger"></i> Remover viatura
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="Admin" asp-action="DeleteVeiculo" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deleteVeiculoId" name="id" />
+                <div class="modal-body">
+                    <p class="mb-0">
+                        Tem a certeza que pretende remover a viatura
+                        <strong id="deleteVeiculoLabel"></strong>?
+                    </p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Remover</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -170,5 +222,21 @@
         }
         window.location.href = url.toString();
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('modalDeleteVeiculo');
+        if (!modal) return;
+
+        modal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            if (!button) return;
+
+            var id = button.getAttribute('data-veiculo-id');
+            var label = button.getAttribute('data-veiculo-label');
+
+            document.getElementById('deleteVeiculoId').value = id;
+            document.getElementById('deleteVeiculoLabel').textContent = label || id;
+        });
+    });
 </script>
 }

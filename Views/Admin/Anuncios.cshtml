@@ -102,6 +102,8 @@
                                                 }
                                             </div>
                                         </th>
+                                        <th>Marca</th>
+                                        <th>Modelo</th>
                                         <th style="cursor: pointer;" onclick="sortTable('username', '@ViewBag.UsernameSortOrder')">
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span>Criador</span>
@@ -127,11 +129,28 @@
                                         {
                                             <tr>
                                                 <td class="text-truncate" style="max-width:120px;">@a.IdAnuncio</td>
+                                                <td>@(string.IsNullOrEmpty(a.Marca) ? "-" : a.Marca)</td>
+                                                <td>@(string.IsNullOrEmpty(a.Modelo) ? "-" : a.Modelo)</td>
                                                 <td>@(string.IsNullOrEmpty(a.Criador) ? "-" : a.Criador)</td>
                                                 <td>@(string.IsNullOrEmpty(a.Estado) ? "-" : a.Estado)</td>
                                                 <td>@(a.DataCriacao.HasValue ? a.DataCriacao.Value.ToString("dd/MM/yyyy HH:mm") : "-")</td>
-                                                <td>
-                                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Anuncios" asp-action="Details" asp-route-id="@a.IdAnuncio">Ver</a>
+                                                <td class="text-nowrap">
+                                                    <a class="btn btn-sm btn-outline-secondary me-1"
+                                                       asp-controller="Anuncios"
+                                                       asp-action="Details"
+                                                       asp-route-id="@a.IdAnuncio">
+                                                        Ver
+                                                    </a>
+                                                    @if (!string.Equals(a.Estado, "Inativo", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-danger"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalDeactivateAnuncio"
+                                                                data-anuncio-id="@a.IdAnuncio">
+                                                            Remover
+                                                        </button>
+                                                    }
                                                 </td>
                                             </tr>
                                         }
@@ -150,6 +169,33 @@
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+<!-- Modal Desativar Anúncio -->
+<div class="modal fade" id="modalDeactivateAnuncio" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-x-octagon-fill me-2 text-danger"></i> Desativar anúncio
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="Admin" asp-action="DeactivateAnuncio" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deactivateAnuncioId" name="id" />
+                <div class="modal-body">
+                    <p class="mb-0">
+                        Tem a certeza que pretende marcar este anúncio como <strong>Inativo</strong>?
+                    </p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Confirmar</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -172,5 +218,18 @@
         }
         window.location.href = url.toString();
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('modalDeactivateAnuncio');
+        if (!modal) return;
+
+        modal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            if (!button) return;
+
+            var id = button.getAttribute('data-anuncio-id');
+            document.getElementById('deactivateAnuncioId').value = id;
+        });
+    });
 </script>
 }

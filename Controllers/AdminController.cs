@@ -242,7 +242,8 @@ namespace CliCarProject.Controllers
                     Marca = v.IdMarcaNavigation != null ? v.IdMarcaNavigation.Nome : string.Empty,
                     Modelo = v.IdModeloNavigation != null ? v.IdModeloNavigation.Nome : string.Empty,
                     Ano = v.Ano,
-                    Proprietario = v.IdVendedorNavigation != null ? v.IdVendedorNavigation.UserName ?? string.Empty : string.Empty
+                    Proprietario = v.IdVendedorNavigation != null ? v.IdVendedorNavigation.UserName ?? string.Empty : string.Empty,
+                    Disponivel = v.Disponivel
                 })
                 .ToListAsync();
 
@@ -277,7 +278,8 @@ namespace CliCarProject.Controllers
                 .Include(a => a.IdVendedorNavigation)
                 .Include(a => a.IdVeiculoNavigation)
                     .ThenInclude(v => v.IdMarcaNavigation)
-                .Where(a => a.Estado == "Ativo")
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdModeloNavigation)
                 .AsQueryable();
 
             // Aplicar pesquisa
@@ -312,6 +314,9 @@ namespace CliCarProject.Controllers
                     DataCriacao = a.DataCriacao,
                     Marca = a.IdVeiculoNavigation != null && a.IdVeiculoNavigation.IdMarcaNavigation != null
                         ? a.IdVeiculoNavigation.IdMarcaNavigation.Nome
+                        : string.Empty,
+                    Modelo = a.IdVeiculoNavigation != null && a.IdVeiculoNavigation.IdModeloNavigation != null
+                        ? a.IdVeiculoNavigation.IdModeloNavigation.Nome
                         : string.Empty
                 })
                 .ToListAsync();
@@ -338,6 +343,50 @@ namespace CliCarProject.Controllers
             };
 
             return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteVeiculo(int id)
+        {
+            var veiculo = await _context.Veiculos
+                .Include(v => v.Anuncios)
+                .FirstOrDefaultAsync(v => v.IdVeiculo == id);
+
+            if (veiculo == null)
+            {
+                TempData["AdminError"] = "Viatura não encontrada.";
+                return RedirectToAction(nameof(Veiculos));
+            }
+
+            // Em vez de remover, marcar como indisponível
+            veiculo.Disponivel = false;
+            await _context.SaveChangesAsync();
+
+            TempData["AdminSuccess"] = "Viatura marcada como indisponível.";
+            return RedirectToAction(nameof(Veiculos));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeactivateAnuncio(int id)
+        {
+            var anuncio = await _context.Anuncios.FirstOrDefaultAsync(a => a.IdAnuncio == id);
+            if (anuncio == null)
+            {
+                TempData["AdminError"] = "Anúncio não encontrado.";
+                return RedirectToAction(nameof(Anuncios));
+            }
+
+            anuncio.Estado = "Inativo";
+            anuncio.DataAtualizacao = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            TempData["AdminSuccess"] = "Anúncio marcado como inativo.";
+            return RedirectToAction(nameof(Anuncios));
         }
     }
 }
