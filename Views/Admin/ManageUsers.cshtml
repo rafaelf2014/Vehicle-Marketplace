@@ -1,6 +1,6 @@
 @model CliCarProject.Models.UsersViewModel
 @{
-    ViewData["Title"] = "Utilizadores — Gestão";
+    ViewData["Title"] = "Utilizadores – Gestão";
     Layout = "_Layout";
 }
 
@@ -41,6 +41,40 @@
                     </div>
                 </div>
 
+                <!-- Barra de Pesquisa -->
+                <div class="card mt-3 mb-3 border-0 bg-light">
+                    <div class="card-body p-3">
+                        <form method="get" asp-action="UserManage" class="row g-2 align-items-center">
+                            <div class="col-auto flex-grow-1">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                    <input type="text" 
+                                           name="searchTerm" 
+                                           value="@ViewBag.SearchTerm" 
+                                           class="form-control border-start-0 ps-0" 
+                                           placeholder="Pesquisar por ID, email ou username..." 
+                                           aria-label="Pesquisar">
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search me-1"></i> Pesquisar
+                                </button>
+                            </div>
+                            @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
+                            {
+                                <div class="col-auto">
+                                    <a href="@Url.Action("UserManage")" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i> Limpar
+                                    </a>
+                                </div>
+                            }
+                        </form>
+                    </div>
+                </div>
+
                 <div class="card mt-3">
                     <div class="card-body p-3">
                         <h6 class="mb-3">Lista de utilizadores</h6>
@@ -49,9 +83,45 @@
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:1%">ID</th>
-                                        <th>Email</th>
-                                        <th>Username</th>
+                                        <th style="width:1%; cursor: pointer;" onclick="sortTable('id', '@ViewBag.IdSortOrder')">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span>ID</span>
+                                                @if (ViewBag.CurrentSort == "id")
+                                                {
+                                                    <i class="bi bi-arrow-@(ViewBag.CurrentOrder == "asc" ? "up" : "down") ms-1"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-arrow-down-up ms-1 text-muted opacity-50"></i>
+                                                }
+                                            </div>
+                                        </th>
+                                        <th style="cursor: pointer;" onclick="sortTable('email', '@ViewBag.EmailSortOrder')">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span>Email</span>
+                                                @if (ViewBag.CurrentSort == "email")
+                                                {
+                                                    <i class="bi bi-arrow-@(ViewBag.CurrentOrder == "asc" ? "up" : "down") ms-1"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-arrow-down-up ms-1 text-muted opacity-50"></i>
+                                                }
+                                            </div>
+                                        </th>
+                                        <th style="cursor: pointer;" onclick="sortTable('username', '@ViewBag.UsernameSortOrder')">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span>Username</span>
+                                                @if (ViewBag.CurrentSort == "username")
+                                                {
+                                                    <i class="bi bi-arrow-@(ViewBag.CurrentOrder == "asc" ? "up" : "down") ms-1"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-arrow-down-up ms-1 text-muted opacity-50"></i>
+                                                }
+                                            </div>
+                                        </th>
                                         <th>Papel</th>
                                         <th class="text-end">Data criação</th>
                                         <th style="width:1%"></th>
@@ -86,4 +156,21 @@
 <style>
     .rounded-4 { border-radius: 1.0rem !important; }
     .list-group-item i { width: 1.25rem; text-align: center; }
+    thead th { user-select: none; }
+    thead th:hover { background-color: #e9ecef !important; }
 </style>
+
+@section Scripts {
+<script>
+    function sortTable(column, order) {
+        const searchTerm = '@ViewBag.SearchTerm' || '';
+        const url = new URL(window.location.href);
+        url.searchParams.set('sortBy', column);
+        url.searchParams.set('sortOrder', order);
+        if (searchTerm) {
+            url.searchParams.set('searchTerm', searchTerm);
+        }
+        window.location.href = url.toString();
+    }
+</script>
+}

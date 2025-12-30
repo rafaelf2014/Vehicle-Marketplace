@@ -1,14 +1,13 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using CliCarProject.Data;
 using CliCarProject.Models;
-using CliCarProject.Models.Classes;
-using Microsoft.EntityFrameworkCore;
 
 namespace CliCarProject.Controllers
 {
@@ -72,9 +71,17 @@ namespace CliCarProject.Controllers
         }
 
         // GET: /Admin/UserManage
-        public async Task<IActionResult> UserManage()
+        public async Task<IActionResult> UserManage(string searchTerm, string sortBy, string sortOrder)
         {
             ViewData["AdminActive"] = "Users";
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.CurrentSort = sortBy;
+            ViewBag.CurrentOrder = sortOrder;
+
+            // Alternar ordem de ordenação
+            ViewBag.IdSortOrder = sortBy == "id" && sortOrder == "asc" ? "desc" : "asc";
+            ViewBag.EmailSortOrder = sortBy == "email" && sortOrder == "asc" ? "desc" : "asc";
+            ViewBag.UsernameSortOrder = sortBy == "username" && sortOrder == "asc" ? "desc" : "asc";
 
             var totalAccounts = await _context.Users.CountAsync();
             var totalCompradores = await _context.Compradors.CountAsync();
@@ -86,8 +93,20 @@ namespace CliCarProject.Controllers
             var compradoresSet = compradoresIds.ToHashSet();
             var vendedoresSet = vendedoresIds.ToHashSet();
 
-            var identityUsers = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
+            // Query base de utilizadores
+            var identityUsersQuery = _userManager.Users.AsQueryable();
 
+            // Aplicar pesquisa
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+                identityUsersQuery = identityUsersQuery.Where(u =>
+                    u.Id.ToLower().Contains(searchTerm) ||
+                    (u.Email != null && u.Email.ToLower().Contains(searchTerm)) ||
+                    (u.UserName != null && u.UserName.ToLower().Contains(searchTerm)));
+            }
+
+            var identityUsers = await identityUsersQuery.ToListAsync();
             var users = new List<UsersViewModel.UserListItem>(identityUsers.Count);
 
             foreach (var iu in identityUsers)
@@ -112,6 +131,21 @@ namespace CliCarProject.Controllers
                 });
             }
 
+            // Aplicar ordenação
+            users = sortBy switch
+            {
+                "id" => sortOrder == "desc" 
+                    ? users.OrderByDescending(u => u.Id).ToList() 
+                    : users.OrderBy(u => u.Id).ToList(),
+                "email" => sortOrder == "desc" 
+                    ? users.OrderByDescending(u => u.Email).ToList() 
+                    : users.OrderBy(u => u.Email).ToList(),
+                "username" => sortOrder == "desc" 
+                    ? users.OrderByDescending(u => u.UserName).ToList() 
+                    : users.OrderBy(u => u.UserName).ToList(),
+                _ => users.OrderBy(u => u.Email).ToList()
+            };
+
             var model = new UsersViewModel
             {
                 TotalAccountsCreated = totalAccounts,
@@ -124,18 +158,50 @@ namespace CliCarProject.Controllers
         }
 
         // GET: /Admin/Veiculos
-        // Página que mostra o número total de viaturas e a lista (Id, Marca, Modelo, Ano, Proprietário)
-        public async Task<IActionResult> Veiculos()
+        public async Task<IActionResult> Veiculos(string searchTerm, string sortBy, string sortOrder)
         {
             ViewData["AdminActive"] = "Veiculos";
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.CurrentSort = sortBy;
+            ViewBag.CurrentOrder = sortOrder;
+
+            // Alternar ordem de ordenação
+            ViewBag.IdSortOrder = sortBy == "id" && sortOrder == "asc" ? "desc" : "asc";
+            ViewBag.UsernameSortOrder = sortBy == "username" && sortOrder == "asc" ? "desc" : "asc";
 
             var total = await _context.Veiculos.CountAsync();
 
-            var list = await _context.Veiculos
+            // Query base
+            var query = _context.Veiculos
                 .Include(v => v.IdMarcaNavigation)
                 .Include(v => v.IdModeloNavigation)
                 .Include(v => v.IdVendedorNavigation)
-                .OrderByDescending(v => v.IdVeiculo)
+                .AsQueryable();
+
+            // Aplicar pesquisa
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+                query = query.Where(v =>
+                    v.IdVeiculo.ToString().Contains(searchTerm) ||
+                    (v.IdVendedorNavigation != null && 
+                     v.IdVendedorNavigation.UserName != null && 
+                     v.IdVendedorNavigation.UserName.ToLower().Contains(searchTerm)));
+            }
+
+            // Aplicar ordenação
+            query = sortBy switch
+            {
+                "id" => sortOrder == "desc" 
+                    ? query.OrderByDescending(v => v.IdVeiculo) 
+                    : query.OrderBy(v => v.IdVeiculo),
+                "username" => sortOrder == "desc" 
+                    ? query.OrderByDescending(v => v.IdVendedorNavigation.UserName) 
+                    : query.OrderBy(v => v.IdVendedorNavigation.UserName),
+                _ => query.OrderByDescending(v => v.IdVeiculo)
+            };
+
+            var list = await query
                 .Select(v => new AdminVehiclesViewModel.VehicleItem
                 {
                     IdVeiculo = v.IdVeiculo,
@@ -156,16 +222,48 @@ namespace CliCarProject.Controllers
         }
 
         // GET: /Admin/Anuncios
-        // Página que mostra o número total de anúncios e a lista (Id, Criador, Estado, DataCriação)
-        public async Task<IActionResult> Anuncios()
+        public async Task<IActionResult> Anuncios(string searchTerm, string sortBy, string sortOrder)
         {
             ViewData["AdminActive"] = "Anuncios";
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.CurrentSort = sortBy;
+            ViewBag.CurrentOrder = sortOrder;
+
+            // Alternar ordem de ordenação
+            ViewBag.IdSortOrder = sortBy == "id" && sortOrder == "asc" ? "desc" : "asc";
+            ViewBag.UsernameSortOrder = sortBy == "username" && sortOrder == "asc" ? "desc" : "asc";
 
             var total = await _context.Anuncios.CountAsync();
 
-            var list = await _context.Anuncios
+            // Query base
+            var query = _context.Anuncios
                 .Include(a => a.IdVendedorNavigation)
-                .OrderByDescending(a => a.IdAnuncio)
+                .AsQueryable();
+
+            // Aplicar pesquisa
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+                query = query.Where(a =>
+                    a.IdAnuncio.ToString().Contains(searchTerm) ||
+                    (a.IdVendedorNavigation != null && 
+                     a.IdVendedorNavigation.UserName != null && 
+                     a.IdVendedorNavigation.UserName.ToLower().Contains(searchTerm)));
+            }
+
+            // Aplicar ordenação
+            query = sortBy switch
+            {
+                "id" => sortOrder == "desc" 
+                    ? query.OrderByDescending(a => a.IdAnuncio) 
+                    : query.OrderBy(a => a.IdAnuncio),
+                "username" => sortOrder == "desc" 
+                    ? query.OrderByDescending(a => a.IdVendedorNavigation.UserName) 
+                    : query.OrderBy(a => a.IdVendedorNavigation.UserName),
+                _ => query.OrderByDescending(a => a.IdAnuncio)
+            };
+
+            var list = await query
                 .Select(a => new AdminAnnouncementsViewModel.AnnouncementItem
                 {
                     IdAnuncio = a.IdAnuncio,
