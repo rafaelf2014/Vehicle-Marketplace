@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Conta bloqueada";
+    Layout = "_Layout";
+
+    var reason = ViewBag.Reason as string 
+        ?? "A sua conta foi bloqueada por um administrador.";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-slash-circle text-danger display-4 mb-3"></i>
+                    <h3 class="fw-bold mb-2">Conta bloqueada</h3>
+                    <p class="text-muted mb-3">
+                        A sua conta foi bloqueada e não pode ser utilizada neste momento.
+                    </p>
+                    <div class="alert alert-warning text-start">
+                        <strong>Motivo do bloqueio:</strong>
+                        <p class="mb-0">@reason</p>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        Se considerar que isto foi um erro, contacte o suporte ou a administração da plataforma.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

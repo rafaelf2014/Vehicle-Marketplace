@@ -20,8 +20,14 @@
                         <p class="text-muted mb-0">Total de viaturas registadas e listagem completa.</p>
                     </div>
 
-                    <div class="text-end">
-                        <span class="badge bg-primary rounded-pill fs-6">Total: @Model.TotalVeiculos</span>
+                    <div class="d-flex align-items-center border rounded-3 p-3">
+                        <div class="me-3">
+                            <i class="bi bi-car-front-fill fs-3 text-primary"></i>
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">Viaturas</div>
+                            <div class="h5 mb-0">@Model.TotalVeiculos</div>
+                        </div>
                     </div>
                 </div>
 
@@ -82,7 +88,19 @@
                                         </th>
                                         <th>Marca</th>
                                         <th>Modelo</th>
-                                        <th>Ano</th>
+                                        <th style="cursor: pointer;" onclick="sortTable('ano', '@ViewBag.AnoSortOrder')">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span>Ano</span>
+                                                @if (ViewBag.CurrentSort == "ano")
+                                                {
+                                                    <i class="bi bi-arrow-@(ViewBag.CurrentOrder == "asc" ? "up" : "down") ms-1"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-arrow-down-up ms-1 text-muted opacity-50"></i>
+                                                }
+                                            </div>
+                                        </th>
                                         <th style="cursor: pointer;" onclick="sortTable('username', '@ViewBag.UsernameSortOrder')">
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span>Utilizador</span>

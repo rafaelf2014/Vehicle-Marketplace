@@ -1,17 +1,17 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using CliCarProject.Data;
 using CliCarProject.Models;
-using System.Collections.Generic;
+using CliCarProject.Models.Classes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CliCarProject.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize] // perfil é para qualquer utilizador autenticado
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -23,65 +23,371 @@ namespace CliCarProject.Controllers
             _userManager = userManager;
         }
 
-        // Mantém a view existente UserProfile (não alterada)
-        public IActionResult UserProfile()
+        // GET: /User/UserProfile
+        public async Task<IActionResult> UserProfile()
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Foto de perfil via claim (se usares esse esquema)
+            var claims = await _userManager.GetClaimsAsync(user);
+            var imgClaim = claims.FirstOrDefault(c => c.Type == "ProfileImagePath");
+            if (imgClaim != null)
+            {
+                ViewBag.ProfileImagePath = imgClaim.Value;
+            }
+
+            // Carregar vendedor/comprador
+            Vendedor? vendedor = null;
+            Comprador? comprador = null;
+
+            if (User.IsInRole("Vendedor"))
+            {
+                vendedor = await _context.Vendedors
+                    .FirstOrDefaultAsync(v => v.IdUtilizador == user.Id);
+            }
+
+            if (User.IsInRole("Comprador"))
+            {
+                comprador = await _context.Compradors
+                    .FirstOrDefaultAsync(c => c.IdUtilizador == user.Id);
+            }
+
+            ViewBag.Vendedor = vendedor;
+            ViewBag.Comprador = comprador;
+
             return View();
         }
 
-        // Nova action que devolve a view de gestão/listagem de utilizadores
-        public async Task<IActionResult> Manage()
+        // POST: /User/UploadProfileImage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadProfileImage(IFormFile fotoPerfil, [FromServices] IWebHostEnvironment env)
         {
-            ViewData["AdminActive"] = "Users";
-
-            var totalAccounts = await _context.Users.CountAsync();
-            var totalCompradores = await _context.Compradors.CountAsync();
-            var totalVendedores = await _context.Vendedors.CountAsync();
-
-            var compradoresIds = await _context.Compradors.Select(c => c.IdUtilizador).ToListAsync();
-            var vendedoresIds = await _context.Vendedors.Select(v => v.IdUtilizador).ToListAsync();
-
-            var compradoresSet = compradoresIds.ToHashSet();
-            var vendedoresSet = vendedoresIds.ToHashSet();
-
-            // Obtemos a lista completa de utilizadores via UserManager (permite depois ler claims)
-            var identityUsers = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
-
-            var users = new List<UsersViewModel.UserListItem>(identityUsers.Count);
-
-            foreach (var iu in identityUsers)
+            if (fotoPerfil == null || fotoPerfil.Length == 0)
             {
-                // Ler claims do utilizador (procuramos CreatedAt)
-                var claims = await _userManager.GetClaimsAsync(iu);
-                var createdAtClaim = claims.FirstOrDefault(c => c.Type == "CreatedAt");
-                DateTime? createdAt = null;
-                if (createdAtClaim != null && DateTime.TryParse(createdAtClaim.Value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
-                {
-                    createdAt = dt;
-                }
-
-                users.Add(new UsersViewModel.UserListItem
-                {
-                    Id = iu.Id,
-                    Email = iu.Email ?? string.Empty,
-                    UserName = iu.UserName ?? string.Empty,
-                    Role = (compradoresSet.Contains(iu.Id) ? "Comprador" : "")
-                           + (compradoresSet.Contains(iu.Id) && vendedoresSet.Contains(iu.Id) ? ", " : "")
-                           + (vendedoresSet.Contains(iu.Id) ? "Vendedor" : ""),
-                    CreatedAt = createdAt
-                });
+                return RedirectToAction(nameof(UserProfile));
             }
 
-            var model = new UsersViewModel
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
-                TotalAccountsCreated = totalAccounts,
-                TotalCompradores = totalCompradores,
-                TotalVendedores = totalVendedores,
-                Users = users
-            };
+                return RedirectToAction(nameof(UserProfile));
+            }
 
-            // Renderiza a view que fica dentro de Views/Admin para ficar integrada no painel
-            return View("~/Views/Admin/ManageUsers.cshtml", model);
+            var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", "perfil", user.Id);
+            Directory.CreateDirectory(uploadsRoot);
+
+            var fileName = Path.GetRandomFileName() + Path.GetExtension(fotoPerfil.FileName);
+            var fullPath = Path.Combine(uploadsRoot, fileName);
+
+            await using (var stream = System.IO.File.Create(fullPath))
+            {
+                await fotoPerfil.CopyToAsync(stream);
+            }
+
+            var relativePath = $"/uploads/perfil/{user.Id}/{fileName}";
+
+            // guardar caminho numa claim
+            var claims = await _userManager.GetClaimsAsync(user);
+            var old = claims.FirstOrDefault(c => c.Type == "ProfileImagePath");
+            if (old != null)
+            {
+                await _userManager.RemoveClaimAsync(user, old);
+            }
+            await _userManager.AddClaimAsync(
+                user,
+                new System.Security.Claims.Claim("ProfileImagePath", relativePath));
+
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        // POST: /User/UpdateAccountData
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAccountData(
+            string userName,
+            string email,
+            string contacto,
+            string codigoPostal,
+            string? nif,
+            string? morada)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                TempData["ProfileError"] = "Utilizador não encontrado.";
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            // validações simples de números
+            if (!string.IsNullOrWhiteSpace(contacto) && !contacto.All(char.IsDigit))
+            {
+                TempData["ProfileError"] = "O contacto deve conter apenas dígitos.";
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            if (!string.IsNullOrWhiteSpace(codigoPostal) && !codigoPostal.All(char.IsDigit))
+            {
+                TempData["ProfileError"] = "O código postal deve conter apenas dígitos (sem hífen).";
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            if (!string.IsNullOrWhiteSpace(nif) && !nif.All(char.IsDigit))
+            {
+                TempData["ProfileError"] = "O NIF deve conter apenas dígitos.";
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            // Atualizar username/email do AspNetUsers
+            var hasChanges = false;
+
+            if (!string.IsNullOrWhiteSpace(userName) && !string.Equals(user.UserName, userName, StringComparison.Ordinal))
+            {
+                user.UserName = userName;
+                hasChanges = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(email) && !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                user.Email = email;
+                user.NormalizedEmail = _userManager.NormalizeEmail(email);
+                hasChanges = true;
+            }
+
+            if (hasChanges)
+            {
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                {
+                    TempData["ProfileError"] = string.Join(" | ", result.Errors.Select(e => e.Description));
+                    return RedirectToAction(nameof(UserProfile));
+                }
+            }
+
+            // Atualizar Vendedor / Comprador
+            if (User.IsInRole("Vendedor"))
+            {
+                var vendedor = await _context.Vendedors
+                    .FirstOrDefaultAsync(v => v.IdUtilizador == user.Id);
+
+                if (vendedor == null)
+                {
+                    vendedor = new Vendedor { IdUtilizador = user.Id };
+                    _context.Vendedors.Add(vendedor);
+                }
+
+                vendedor.Contacto = string.IsNullOrWhiteSpace(contacto) ? null : contacto;
+                vendedor.CodigoPostal = string.IsNullOrWhiteSpace(codigoPostal) ? null : codigoPostal;
+                vendedor.Nif = string.IsNullOrWhiteSpace(nif) ? null : nif;
+            }
+
+            if (User.IsInRole("Comprador"))
+            {
+                var comprador = await _context.Compradors
+                    .FirstOrDefaultAsync(c => c.IdUtilizador == user.Id);
+
+                if (comprador == null)
+                {
+                    comprador = new Comprador { IdUtilizador = user.Id };
+                    _context.Compradors.Add(comprador);
+                }
+
+                comprador.Contacto = string.IsNullOrWhiteSpace(contacto) ? null : contacto;
+                comprador.CodigoPostal = string.IsNullOrWhiteSpace(codigoPostal) ? null : codigoPostal;
+                comprador.Morada = string.IsNullOrWhiteSpace(morada) ? comprador.Morada : morada;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["ProfileSuccess"] = "Dados da conta atualizados com sucesso.";
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        // POST: /User/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(
+            string currentPassword,
+            string newPassword,
+            string confirmPassword)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                TempData["ProfileError"] = "Utilizador não encontrado.";
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword != confirmPassword)
+            {
+                TempData["ProfileError"] = "A nova palavra‑passe e a confirmação não coincidem.";
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (!result.Succeeded)
+            {
+                TempData["ProfileError"] = string.Join(" | ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(UserProfile));
+            }
+
+            TempData["ProfileSuccess"] = "Palavra‑passe alterada com sucesso.";
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        // GET: /User/AdminViewProfile/{id}
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminViewProfile(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return NotFound();
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // claims para foto
+            var claims = await _userManager.GetClaimsAsync(user);
+            var imgClaim = claims.FirstOrDefault(c => c.Type == "ProfileImagePath");
+            ViewBag.ProfileImagePath = imgClaim?.Value;
+
+            // roles
+            var roles = await _userManager.GetRolesAsync(user);
+            ViewBag.Roles = roles;
+
+            // comprador/vendedor do utilizador em questão
+            var vendedor = await _context.Vendedors
+                .FirstOrDefaultAsync(v => v.IdUtilizador == user.Id);
+            var comprador = await _context.Compradors
+                .FirstOrDefaultAsync(c => c.IdUtilizador == user.Id);
+
+            ViewBag.Vendedor = vendedor;
+            ViewBag.Comprador = comprador;
+
+            return View("AdminUserProfile", user); // usa view específica
+        }
+
+        // Se ainda precisares de ações de admin neste controller, coloca-as aqui com [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> BlockUser(string userId, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["ProfileError"] = "É necessário indicar o utilizador e a razão.";
+                return RedirectToAction("UserManage", "Admin");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                TempData["ProfileError"] = "Utilizador não encontrado.";
+                return RedirectToAction("UserManage", "Admin");
+            }
+
+            // registar bloqueio (atualiza se já existir)
+            var existing = await _context.UserBlocks.FirstOrDefaultAsync(b => b.UserId == userId);
+            if (existing == null)
+            {
+                existing = new UserBlock
+                {
+                    UserId = userId,
+                    Reason = reason.Trim(),
+                    BlockedAt = DateTime.UtcNow
+                };
+                _context.UserBlocks.Add(existing);
+            }
+            else
+            {
+                existing.Reason = reason.Trim();
+                existing.BlockedAt = DateTime.UtcNow;
+            }
+
+            // Opcional: também podes usar Lockout do Identity para redundância
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            await _userManager.UpdateAsync(user);
+
+            await _context.SaveChangesAsync();
+
+            // se o próprio estiver logado, nada a fazer aqui (o middleware/checagem vai tratá-lo no próximo request)
+
+            TempData["ProfileSuccess"] = "Utilizador bloqueado com sucesso.";
+            return RedirectToAction("UserManage", "Admin");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UnblockUser(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                TempData["ProfileError"] = "Utilizador inválido.";
+                return RedirectToAction("UserManage", "Admin");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                TempData["ProfileError"] = "Utilizador não encontrado.";
+                return RedirectToAction("UserManage", "Admin");
+            }
+
+            var block = await _context.UserBlocks.FirstOrDefaultAsync(b => b.UserId == userId);
+            if (block != null)
+            {
+                _context.UserBlocks.Remove(block);
+                await _context.SaveChangesAsync();
+            }
+
+            // remover lockout se tiveres usado
+            if (user.LockoutEnabled || user.LockoutEnd != null)
+            {
+                user.LockoutEnd = null;
+                user.LockoutEnabled = false;
+                await _userManager.UpdateAsync(user);
+            }
+
+            TempData["ProfileSuccess"] = "Utilizador desbloqueado com sucesso.";
+            return RedirectToAction("UserManage", "Admin");
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Blocked(string? userId = null)
+        {
+            string? reason = null;
+
+            // 1) se vier userId do querystring, usa-o
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                var blockById = await _context.UserBlocks
+                    .FirstOrDefaultAsync(b => b.UserId == userId);
+                reason = blockById?.Reason;
+            }
+            // 2) se estiver autenticado, tenta novamente com o utilizador da sessão
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    var block = await _context.UserBlocks
+                        .FirstOrDefaultAsync(b => b.UserId == user.Id);
+                    reason = block?.Reason;
+                }
+            }
+
+            ViewBag.Reason = reason;
+            return View();
         }
     }
 }

@@ -1,59 +1,339 @@
-﻿@{
-    ViewData["Title"] = "UserProfile";
+﻿@using Microsoft.AspNetCore.Identity
+@using CliCarProject.Models.Classes
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    ViewData["Title"] = "O meu Perfil";
+
+    var userName = User.Identity?.Name ?? "Utilizador";
+    IdentityUser? currentUser = null;
+    string email = string.Empty;
+    string profileImage = Url.Content("~/images/Image_not_available.png");
+
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        currentUser = await UserManager.GetUserAsync(User);
+        email = currentUser?.Email ?? string.Empty;
+
+        var imgPath = ViewBag.ProfileImagePath as string;
+        if (!string.IsNullOrEmpty(imgPath))
+        {
+            profileImage = imgPath;
+        }
+    }
+
+    var vendedor = ViewBag.Vendedor as Vendedor;
+    var comprador = ViewBag.Comprador as Comprador; // prepara para comprador
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <!-- 🔹 Cartão de perfil -->
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-body text-center p-4">
-                    <!-- Foto do utilizador -->
-                    <div class="mb-3">
-                        <img src="https://via.placeholder.com/150"
-                             alt="Foto do utilizador"
+<div class="container py-5">
+    <div class="row g-4 justify-content-center">
+        <!-- Coluna esquerda: card principal de perfil -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body text-center p-4 p-lg-4">
+                    <!-- Foto de perfil -->
+                    <div class="position-relative d-inline-block mb-3">
+                        <img src="@profileImage"
+                             alt="Foto de perfil"
                              class="rounded-circle shadow-sm"
-                             width="150" height="150">
+                             width="140" height="140"
+                             style="object-fit: cover;" />
+
+                        <button type="button"
+                                class="btn btn-sm btn-light border position-absolute bottom-0 end-0 rounded-circle shadow"
+                                title="Alterar foto"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalFotoPerfil">
+                            <i class="bi bi-camera-fill"></i>
+                        </button>
                     </div>
 
-                    <!-- Nome e username -->
-                    <h3 class="fw-bold mb-0">John Doe</h3>
-                    <p class="text-muted">johndoe</p>
+                    <h4 class="fw-bold mb-0">@userName</h4>
+                    <p class="text-muted small mb-3">
+                        @if (User.IsInRole("Vendedor") && User.IsInRole("Comprador"))
+                        {
+                            @:Vendedor &amp; Comprador
+                        }
+                        else if (User.IsInRole("Vendedor"))
+                        {
+                            @:Vendedor
+                        }
+                        else if (User.IsInRole("Comprador"))
+                        {
+                            @:Comprador
+                        }
+                        else if (User.IsInRole("Admin"))
+                        {
+                            @:Administrador
+                        }
+                        else
+                        {
+                            @:Utilizador CliCar
+                        }
+                    </p>
 
-                    <!-- Informações básicas -->
-                    <hr>
-                    <div class="text-start px-4">
-                        <p><strong>Email:</strong> johndoe@email.com</p>
-                        <p><strong>Telefone:</strong> +351 912 345 678</p>
-                        <p><strong>Localização:</strong> Porto, Portugal</p>
-                        <p><strong>Data de registo:</strong> 15/05/2023</p>
-                    </div>
-
-                    <!-- Botões -->
-                    <div class="mt-4 d-flex justify-content-center gap-2">
-                        <a href="#" class="btn btn-outline-primary">Editar Perfil</a>
-                        <a href="#" class="btn btn-outline-secondary">Alterar Palavra-passe</a>
+                    <div class="d-flex flex-column gap-2 mt-2">
+                        <button type="button"
+                                class="btn btn-outline-primary w-100 rounded-pill"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalEditarConta">
+                            <i class="bi bi-person-gear me-1"></i> Editar dados da conta
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-secondary w-100 rounded-pill"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalAlterarPassword">
+                            <i class="bi bi-key-fill me-1"></i> Alterar palavra‑passe
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- 🔹 Secção de informações adicionais -->
-            <div class="card mt-4 border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Sobre mim</h5>
-                    <p class="text-muted">
-                        Sou um entusiasta de automóveis e tecnologia.
-                        Gosto de explorar novos modelos, aprender sobre motores e partilhar conhecimento.
+                <div class="card-footer bg-light border-0 text-center small text-muted py-3">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    A sua informação está protegida e apenas é usada para gestão da conta.
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna direita: resumo dos dados -->
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 px-4 pt-4">
+                    <h5 class="fw-bold mb-1">
+                        <i class="bi bi-person-vcard me-2 text-primary"></i> Informação da Conta
+                    </h5>
+                    <p class="text-muted small mb-0">
+                        Visão geral dos dados principais da sua conta.
                     </p>
-                    <hr>
-                    <h5 class="fw-bold mb-3">Atividade recente</h5>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Viu o anúncio <strong>BMW 320i</strong></li>
-                        <li class="list-group-item">Atualizou a informação de contacto</li>
-                        <li class="list-group-item">Adicionou um carro aos favoritos</li>
-                    </ul>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Username</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">@userName</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Email</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">@email</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Palavra‑passe</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">••••••••</span>
+                            </div>
+                        </div>
+
+                        <!-- Dados comuns (Contacto / Morada / Código Postal) -->
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Contacto</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">
+                                    @(vendedor?.Contacto ?? comprador?.Contacto ?? "-")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Morada</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">
+                                    @(comprador?.Morada ?? "-")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="text-muted small mb-1">Código Postal</label>
+                            <div class="border rounded-3 px-3 py-2 bg-light">
+                                <span class="fw-semibold">
+                                    @(vendedor?.CodigoPostal ?? comprador?.CodigoPostal ?? "-")
+                                </span>
+                            </div>
+                        </div>
+
+                        @if (User.IsInRole("Vendedor"))
+                        {
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">NIF (Vendedor)</label>
+                                <div class="border rounded-3 px-3 py-2 bg-light">
+                                    <span class="fw-semibold">
+                                        @(vendedor?.Nif ?? "-")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal: Foto de perfil -->
+<div class="modal fade" id="modalFotoPerfil" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-camera-fill me-2"></i> Alterar foto de perfil
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="User" asp-action="UploadProfileImage" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="border border-dashed rounded-4 p-4 text-center bg-light">
+                        <i class="bi bi-cloud-arrow-up text-primary display-6"></i>
+                        <p class="mt-2 mb-3 small text-muted">
+                            Selecione uma imagem quadrada (ex.: 400x400) para melhor resultado.
+                        </p>
+                        <input type="file"
+                               name="fotoPerfil"
+                               accept="image/*"
+                               class="form-control rounded-pill border-0 shadow-sm" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar dados da conta (sem password) -->
+<div class="modal fade" id="modalEditarConta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-person-gear me-2"></i> Editar dados da conta
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="User" asp-action="UpdateAccountData" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Username</label>
+                            <input name="UserName"
+                                   class="form-control"
+                                   value="@userName" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email</label>
+                            <input name="Email"
+                                   type="email"
+                                   class="form-control"
+                                   value="@email" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Contacto</label>
+                            <input name="Contacto"
+                                   class="form-control"
+                                   value="@(vendedor?.Contacto ?? comprador?.Contacto ?? string.Empty)"
+                                   maxlength="9"
+                                   inputmode="numeric"
+                                   pattern="\d*" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Código Postal</label>
+                            <input name="CodigoPostal"
+                                   class="form-control"
+                                   value="@(vendedor?.CodigoPostal ?? comprador?.CodigoPostal ?? string.Empty)"
+                                   maxlength="8"
+                                   inputmode="numeric"
+                                   pattern="\d*"
+                                   placeholder="12345678 (sem hífen)" />
+                        </div>
+
+                        @if (User.IsInRole("Vendedor"))
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">NIF (Vendedor)</label>
+                                <input name="Nif"
+                                       class="form-control"
+                                       value="@vendedor?.Nif"
+                                       maxlength="9"
+                                       inputmode="numeric"
+                                       pattern="\d*" />
+                            </div>
+                        }
+
+                        @if (User.IsInRole("Comprador"))
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Morada</label>
+                                <input name="Morada"
+                                       class="form-control"
+                                       value="@comprador?.Morada" />
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Alterar palavra‑passe -->
+<div class="modal fade" id="modalAlterarPassword" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-key-fill me-2"></i> Alterar palavra‑passe
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form asp-controller="User" asp-action="ChangePassword" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Palavra‑passe atual</label>
+                        <input name="CurrentPassword"
+                               type="password"
+                               class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nova palavra‑passe</label>
+                        <input name="NewPassword"
+                               type="password"
+                               class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Confirmar nova palavra‑passe</label>
+                        <input name="ConfirmPassword"
+                               type="password"
+                               class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Alterar palavra‑passe</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+    }
+</style>

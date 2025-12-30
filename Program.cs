@@ -111,6 +111,31 @@ app.UseSession();
 app.UseSiteVisitMiddleware();
 
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var userManager = context.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
+        var db = context.RequestServices.GetRequiredService<ApplicationDbContext>();
+
+        var user = await userManager.GetUserAsync(context.User);
+        if (user != null)
+        {
+            var blocked = await db.UserBlocks.AnyAsync(b => b.UserId == user.Id);
+            if (blocked)
+            {
+                var signInManager = context.RequestServices.GetRequiredService<SignInManager<IdentityUser>>();
+                await signInManager.SignOutAsync();
+
+                context.Response.Redirect("/User/Blocked");
+                return;
+            }
+        }
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 
 app.MapStaticAssets();
