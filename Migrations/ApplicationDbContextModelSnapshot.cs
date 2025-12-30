@@ -272,6 +272,9 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdFiltroFavorito"));
 
+                    b.Property<string>("FiltrosJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("IdClasse")
                         .HasColumnType("int")
                         .HasColumnName("ID_Classe");
@@ -293,6 +296,10 @@ namespace CliCarProject.Migrations
                     b.Property<int?>("IdMarca")
                         .HasColumnType("int")
                         .HasColumnName("ID_Marca");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("IdFiltroFavorito")
                         .HasName("PK__FiltrosF__410905C7C5E79498");
@@ -453,21 +460,14 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdSitePageView"));
 
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("Path")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<DateTime>("VisitTime")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("(sysdatetime())");
 
                     b.HasKey("IdSitePageView");
 
