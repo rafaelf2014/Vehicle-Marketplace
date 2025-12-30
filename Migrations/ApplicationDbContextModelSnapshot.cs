@@ -272,6 +272,9 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdFiltroFavorito"));
 
+                    b.Property<string>("FiltrosJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("IdClasse")
                         .HasColumnType("int")
                         .HasColumnName("ID_Classe");
@@ -293,6 +296,10 @@ namespace CliCarProject.Migrations
                     b.Property<int?>("IdMarca")
                         .HasColumnType("int")
                         .HasColumnName("ID_Marca");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("IdFiltroFavorito")
                         .HasName("PK__FiltrosF__410905C7C5E79498");
