@@ -2,46 +2,90 @@
 @using CliCarProject.Models.Classes
 @model IEnumerable<Anuncio>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
 
-	@if (!Model.Any())
-	{
-		<div class="col-12 text-center py-5">
-			<h3> Nenhum carro encontrado</h3>
-		</div>
-	}
+    @if (!Model.Any())
+    {
+        <div class="col-12 text-center py-5">
+            <div class="py-5">
+                <h3 class="text-muted">😔 Nenhum carro encontrado.</h3>
+                <p class="text-secondary">Tenta ajustar os filtros para ver mais resultados.</p>
+            </div>
+        </div>
+    }
 
-	@foreach (var item in Model)
-	{
-		var veiculo = item.IdVeiculoNavigation;
-		var img = veiculo?.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
-		var imageSrc = (veiculo != null && img != null && !string.IsNullOrWhiteSpace(img.Nome))
-					? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}")
-					: Url.Content("~/img/placeholder-car.png");
-		var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + "€";
+    @foreach (var item in Model)
+    {
+        var veiculo = item.IdVeiculoNavigation;
+        var img = veiculo?.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
+
+        // Verifica a imagem
+        var imageSrc = (veiculo != null && img != null && !string.IsNullOrWhiteSpace(img.Nome))
+        ? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}")
+        : Url.Content("~/img/placeholder-car.png");
+
+        var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + " €";
 
         <div class="col">
-            <div class="card shadow-sm border-0 h-100">
-                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio">
-                    <img src="@imageSrc" class="card-img-top" alt="Carro" style="height:180px; object-fit:cover; border-radius:6px;" />
+            <div class="card car-card h-100 shadow-sm">
+                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="car-img-container">
+                    <img src="@imageSrc" class="car-card-img" alt="@item.Titulo" />
                 </a>
-                <div class="card-body">
-                    <h5 class="card-title mb-1">@item.Titulo</h5>
-                    <div class="fw-bold mb-2" style="color:#d32f2f;">@precoFormatado</div>
-                    <p class="card-text text-muted mb-0">
-                        @veiculo?.IdMarcaNavigation?.Nome @veiculo?.IdModeloNavigation?.Nome
-                        @if (veiculo != null)
-                        {
-                            <text> • @veiculo.Ano • @veiculo.Quilometragem km • @veiculo.Caixa</text>
-                        }
-                    </p>
-                </div>
-                <div class="card-footer bg-white border-0">
-                    <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-primary w-100">Ver Detalhes</a>
+
+                <div class="card-body car-card-body">
+                    <div>
+                        <h5 class="car-title" title="@item.Titulo">@item.Titulo</h5>
+                        <div class="car-price">@precoFormatado</div>
+
+                        <div class="specs-container">
+                            @if (veiculo != null)
+                            {
+                                <span class="spec-badge">@veiculo.Ano</span>
+                                <span class="spec-badge">@((veiculo.Quilometragem ?? 0).ToString("N0")) km</span>
+                                <span class="spec-badge">@veiculo.IdCombustivelNavigation?.Tipo</span>
+                                <span class="spec-badge">@veiculo.Caixa</span>
+                            }
+                        </div>
+                    </div>
+
+                    @if (item.IdLocalizacaoNavigation != null)
+                    {
+                        <div class="text-muted small mb-3">
+                            📍 @item.IdLocalizacaoNavigation.Distrito
+                        </div>
+                    }
+
+                    <div class="car-footer">
+                        <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
+                           class="btn btn-danger w-100">
+                            Ver Detalhes
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-	}
-
-
+    }
 </div>
+
+<nav aria-label="Pagination" class="mt-5 mb-4">
+    @{
+        var page = (int?)ViewData["Page"] ?? 1;
+        var totalPages = (int?)ViewData["TotalPages"] ?? 1;
+        var prevPage = Math.Max(1, page - 1);
+        var nextPage = Math.Min(totalPages, page + 1);
+    }
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(page <= 1 ? "disabled" : "")">
+            <a class="page-link ajax-link rounded-pill px-3 mx-1" href="#" data-page="@prevPage">Anterior</a>
+        </li>
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == page ? "active" : "")">
+                <a class="page-link ajax-link rounded-pill px-3 mx-1" href="#" data-page="@i">@i</a>
+            </li>
+        }
+        <li class="page-item @(page >= totalPages ? "disabled" : "")">
+            <a class="page-link ajax-link rounded-pill px-3 mx-1" href="#" data-page="@nextPage">Próxima</a>
+        </li>
+    </ul>
+</nav>

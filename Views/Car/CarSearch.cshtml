@@ -6,20 +6,18 @@
 @model IEnumerable<Anuncio>
 
 @{
-    ViewData["Title"] = "Anúncios";
+    ViewData["Title"] = "Pesquisar Carros";
 
-    // Variáveis de controlo vindas da URL para manter o estado inicial
     var qSearchBox = (string?)Context.Request.Query["searchBox"];
     var qMarcaId = (string?)Context.Request.Query["marcaId"];
     var qModeloId = (string?)Context.Request.Query["modeloId"];
     var qCategoriaId = (string?)Context.Request.Query["categoriaId"];
     var qCombustivelId = (string?)Context.Request.Query["combustivelId"];
     var qCaixa = (string?)Context.Request.Query["caixa"];
-    var qPriceRange = (string?)Context.Request.Query["priceRange"];
-    var currentSort = (string?)ViewBag.CurrentSort ?? "";
     var qLocalizacaoId = (string?)Context.Request.Query["localizacaoId"];
+    var currentSort = (string?)ViewBag.CurrentSort ?? "";
+    var currentCond = (string?)ViewBag.CurrentCondicao ?? "";
 
-    // Listas para os Dropdowns
     var marcas = ViewBag.Marcas as List<Marca> ?? new List<Marca>();
     var modelos = ViewBag.Modelos as List<Modelo> ?? new List<Modelo>();
     var classes = ViewBag.Classes as List<Classe> ?? new List<Classe>();
@@ -28,14 +26,24 @@
     var localizacoes = ViewBag.Localizacoes as List<Localizacao> ?? new List<Localizacao>();
 }
 
-<div class="container-fluid py-4 px-0">
-    <div class="row gx-3">
+<div class="container py-5">
+    <div class="row">
 
-        <div class="col-md-3">
+        <div class="col-lg-3 mb-4">
             <div class="search-box search-box-left">
                 <form method="get" asp-controller="Car" asp-action="CarSearch" id="searchForm" class="search-box-vertical d-grid gap-2">
 
+                    <input type="hidden" name="condicao" id="condicaoInput" value="@Context.Request.Query["condicao"]" />
+
                     <input name="searchBox" class="form-control" placeholder="Procurar..." value="@qSearchBox" />
+
+                    <select class="form-select" name="localizacaoId">
+                        <option value="">Todo o País</option>
+                        @foreach (var loc in localizacoes)
+                        {
+                            <option value="@loc.IdLocalizacao" selected="@(qLocalizacaoId == loc.IdLocalizacao.ToString() ? "selected" : null)">@loc.Distrito</option>
+                        }
+                    </select>
 
                     <select class="form-select" name="marcaId" id="marcaId">
                         <option value="">Marca</option>
@@ -77,129 +85,171 @@
                         }
                     </select>
 
-                    <select class="form-select" name="localizacaoId">
-                        <option value="">Localização</option>
-                        @foreach (var loc in localizacoes)
-                        {
-                            <option value="@loc.IdLocalizacao"
-                                    selected="@(qLocalizacaoId == loc.IdLocalizacao.ToString() ? "selected" : null)">
-                                @loc.Distrito
-                            </option>
-                        }
-                    </select>
-
-                    <label class="form-label mt-2 text-muted small">Preço (€)</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input type="number"
-                                   name="minPrice"
-                                   class="form-control"
-                                   placeholder="De"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["minPrice"]" />
-                        </div>
-                        <div class="col-6">
-                            <input type="number"
-                                   name="maxPrice"
-                                   class="form-control"
-                                   placeholder="Até"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["maxPrice"]" />
+                    <div>
+                        <label class="form-label small text-muted mt-2">Preço (€)</label>
+                        <div class="row g-1">
+                            <div class="col-6"><input type="number" name="minPrice" class="form-control" placeholder="De" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["minPrice"]" /></div>
+                            <div class="col-6"><input type="number" name="maxPrice" class="form-control" placeholder="Até" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["maxPrice"]" /></div>
                         </div>
                     </div>
 
-                    <label class="form-label mt-2 text-muted small">Ano</label>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <input type="number"
-                                   name="minYear"
-                                   class="form-control"
-                                   placeholder="De"
-                                   min="1900"
-                                   max="2100"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["minYear"]" />
-                        </div>
-                        <div class="col-6">
-                            <input type="number"
-                                   name="maxYear"
-                                   class="form-control"
-                                   placeholder="Até"
-                                   min="1900"
-                                   max="2100"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["maxYear"]" />
+                    <div>
+                        <label class="form-label small text-muted mt-2">Ano</label>
+                        <div class="row g-1">
+                            <div class="col-6"><input type="number" name="minYear" class="form-control" placeholder="De" min="1900" max="2100" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["minYear"]" /></div>
+                            <div class="col-6"><input type="number" name="maxYear" class="form-control" placeholder="Até" min="1900" max="2100" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["maxYear"]" /></div>
                         </div>
                     </div>
 
-                    <label class="form-label mt-2 text-muted small">Quilometros (Km)</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input type="number"
-                                   name="minKm"
-                                   class="form-control"
-                                   placeholder="De"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["minKm"]" />
-                        </div>
-                        <div class="col-6">
-                            <input type="number"
-                                   name="maxKm"
-                                   class="form-control"
-                                   placeholder="Até"
-                                   min="0"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   value="@Context.Request.Query["maxKm"]" />
+                    <div>
+                        <label class="form-label small text-muted mt-2">Quilómetros</label>
+                        <div class="row g-1">
+                            <div class="col-6"><input type="number" name="minKm" class="form-control" placeholder="De" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["minKm"]" /></div>
+                            <div class="col-6"><input type="number" name="maxKm" class="form-control" placeholder="Até" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="@Context.Request.Query["maxKm"]" /></div>
                         </div>
                     </div>
 
-                  
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mt-2">Pesquisas Guardadas</label>
 
+                        <div class="d-flex align-items-center">
+
+                            <div class="dropdown flex-grow-1">
+                                <button class="form-select text-start text-truncate"
+                                        type="button"
+                                        id="favoritesDropdownBtn"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    <span id="favoritesLabel">-- Selecionar Favorito --</span>
+                                </button>
+
+                                <ul class="dropdown-menu w-100 shadow border-0" id="savedFiltersList" style="max-height: 300px; overflow-y: auto;">
+                                </ul>
+                            </div>
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2"
+                                    title="Gerir Favoritos"
+                                    onclick="openManageFavorites()"
+                                    style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100 mt-2">Pesquisar</button>
+
+                    <button type="button" class="btn btn-outline-secondary w-100 mt-2 btn-sm" data-bs-toggle="modal" data-bs-target="#saveFilterModal">
+                        ⭐ Guardar esta Pesquisa
+                    </button>
 
                 </form>
             </div>
         </div>
 
+        <div class="col-lg-9">
 
-        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                <ul class="nav nav-tabs-custom">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(string.IsNullOrEmpty(currentCond) ? "active" : "")" data-val="">Todos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(currentCond == "U" ? "active" : "")" data-val="U">Usados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(currentCond == "S" ? "active" : "")" data-val="S">Semi-novos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link filter-tab @(currentCond == "N" ? "active" : "")" data-val="N">Novos</a>
+                    </li>
+                </ul>
 
-            <div class="d-flex justify-content-end mb-3">
-                <select name="sortOrder" class="form-select w-auto" form="searchForm">
-                    <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
-                    <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Ano (Recente)</option>
-                    <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Ano (Antigo)</option>
-                    <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (Baixo)</option>
-                    <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (Alto)</option>
-                </select>
+                <div class="d-flex align-items-center">
+                    <select name="sortOrder" class="form-select form-select-sm border-0 bg-light fw-bold" form="searchForm" style="width: auto; cursor:pointer;">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(currentSort) ? "selected" : null)">Ordenar por...</option>
+                        <option value="ano_desc" selected="@(currentSort == "ano_desc" ? "selected" : null)">Mais Recentes</option>
+                        <option value="ano_asc" selected="@(currentSort == "ano_asc" ? "selected" : null)">Mais Antigos</option>
+                        <option value="preco_asc" selected="@(currentSort == "preco_asc" ? "selected" : null)">Preço (Baixo)</option>
+                        <option value="preco_desc" selected="@(currentSort == "preco_desc" ? "selected" : null)">Preço (Alto)</option>
+                    </select>
+                </div>
             </div>
 
             <div id="results-container">
                 <partial name="_AnunciosGrid" model="Model" />
             </div>
-
         </div>
 
-       
     </div>
 </div>
+
+<div class="modal fade" id="saveFilterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0 justify-content-center">
+                <h5 class="modal-title fw-bold text-dark">Guardar Pesquisa</h5>
+            </div>
+            <div class="modal-body p-4">
+                <label for="filterNameInput" class="form-label text-muted small fw-bold">NOME DA PESQUISA</label>
+                <input type="text" id="filterNameInput" class="form-control form-control-lg bg-light" placeholder="Ex: BMW Série 1 Barato">
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnGuardarFiltro" class="btn btn-primary px-4 rounded-pill">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="manageFavoritesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Gerir Favoritos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="text-muted small mb-3">Apaga as pesquisas que já não precisas.</p>
+                <ul class="list-group list-group-flush" id="manageFavoritesList">
+                </ul>
+                <div id="emptyFavoritesMsg" class="text-center py-4 d-none">
+                    <span class="text-muted">Não tens favoritos guardados.</span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light w-100 rounded-pill" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <script>
         (function () {
-            // --- 1. CONFIGURAÇÃO INICIAL E VARIÁVEIS ---
+            // ==========================================
+            // 1. VARIÁVEIS GLOBAIS
+            // ==========================================
             const form = document.getElementById('searchForm');
             const resultsContainer = document.getElementById('results-container');
             const marcaSelect = document.getElementById('marcaId');
             const modeloSelect = document.getElementById('modeloId');
             const sortSelect = document.querySelector('select[name="sortOrder"]');
-            const currentModeloId = "@qModeloId"; // Guarda o modelo selecionado inicialmente
+            const searchInput = form.querySelector('input[name="searchBox"]');
+            const condicaoInput = document.getElementById('condicaoInput');
+
+            // Botões e Inputs do Modal de Guardar
+            const btnGuardar = document.getElementById('btnGuardarFiltro');
+            const nameInput = document.getElementById('filterNameInput');
+
+            const currentModeloId = "@qModeloId";
             let debounceTimer;
 
-            // --- 2. LÓGICA DE DROPDAWN EM CASCATA (MARCA -> MODELO) ---
-            function setModelos(list) {
+            // ==========================================
+            // 2. FUNÇÕES BASE (PESQUISA E DROPDOWNS)
+            // ==========================================
+            function setModelos(list, selectedId = null) {
+                if(!modeloSelect) return;
                 modeloSelect.innerHTML = '<option value="">Modelo</option>';
                 list.forEach(m => {
                     const id = m.idModelo ?? m.IdModelo;
@@ -207,81 +257,221 @@
                     const opt = document.createElement('option');
                     opt.value = id;
                     opt.textContent = nome;
-                    if (id == currentModeloId) opt.selected = true;
+                    if (id == selectedId || id == currentModeloId) opt.selected = true;
                     modeloSelect.appendChild(opt);
                 });
                 modeloSelect.disabled = list.length === 0;
             }
 
-            // --- 3. FUNÇÃO PRINCIPAL: BUSCAR RESULTADOS (AJAX) ---
             function fetchResults(page = 1) {
                 const formData = new FormData(form);
-
-                // Adiciona a ordenação ao pedido se existir
                 if (sortSelect) formData.append('sortOrder', sortSelect.value);
-
-                // Adiciona o número da página
                 formData.append('page', page);
 
                 const params = new URLSearchParams(formData).toString();
                 const url = `${form.action}?${params}`;
 
-                // Atualiza a URL do browser (para histórico)
-                window.history.pushState({}, '', url);
-
-                // Animação de "Carregando..." (Opcional: Diminui opacidade)
                 resultsContainer.style.opacity = '0.5';
 
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(response => response.text())
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
                 .then(html => {
                     resultsContainer.innerHTML = html;
                     resultsContainer.style.opacity = '1';
-                    attachPaginationEvents(); // Reconecta os botões da paginação
+                    attachPaginationEvents();
                 })
-                .catch(err => {
-                    console.error(err);
-                    resultsContainer.style.opacity = '1';
-                });
+                .catch(err => { console.error(err); resultsContainer.style.opacity = '1'; });
             }
 
-            // --- 4. EVENT LISTENERS (OUVINTES) ---
+            // ==========================================
+            // 3. LÓGICA DE FAVORITOS (GUARDAR, CARREGAR, APAGAR)
+            // ==========================================
 
-            // A. Quando muda a Marca (Carrega modelos e depois filtra)
-            marcaSelect.addEventListener('change', function () {
-                const marcaId = this.value;
+            // A. Carregar Dropdown da Barra Lateral
+            function loadSavedFiltersList() {
+                const listContainer = document.getElementById('savedFiltersList');
+                if(!listContainer) return;
 
-                // 1. Atualiza lista de Modelos
-                if (!marcaId) {
-                    modeloSelect.innerHTML = '<option value="">Modelo</option>';
-                    modeloSelect.disabled = true;
-                    fetchResults(1); // Filtra logo (sem marca)
+                fetch('/Car/ObterMeusFiltros')
+                    .then(r => r.json())
+                    .then(data => {
+                        listContainer.innerHTML = '';
+
+                        // Opção de Reset
+                        const liReset = document.createElement('li');
+                        liReset.innerHTML = `
+                            <button class="dropdown-item text-secondary fw-bold small" type="button" onclick="applyFavorite(null, '-- Selecionar Favorito --')">
+                                ↺ Limpar Filtros
+                            </button>
+                        `;
+                        listContainer.appendChild(liReset);
+
+                        if(data.length > 0) {
+                            listContainer.appendChild(document.createElement('hr')).className = "dropdown-divider my-1";
+                        }
+
+                        // Lista apenas os NOMES (Simples)
+                        data.forEach(f => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                <button class="dropdown-item text-truncate" type="button"
+                                        data-json='${f.json}'
+                                        onclick="applyFavorite(this, '${f.nome}')">
+                                    ${f.nome}
+                                </button>
+                            `;
+                            listContainer.appendChild(li);
+                        });
+                    });
+            }
+
+            // B. Abrir Modal de Gestão
+            window.openManageFavorites = function() {
+                const modal = new bootstrap.Modal(document.getElementById('manageFavoritesModal'));
+                modal.show();
+                loadManageList();
+            };
+
+            // C. Preencher Lista do Modal (Com botões Apagar)
+            function loadManageList() {
+                const manageList = document.getElementById('manageFavoritesList');
+                const emptyMsg = document.getElementById('emptyFavoritesMsg');
+
+                manageList.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+
+                fetch('/Car/ObterMeusFiltros')
+                    .then(r => r.json())
+                    .then(data => {
+                        manageList.innerHTML = '';
+
+                        if (data.length === 0) {
+                            emptyMsg.classList.remove('d-none');
+                        } else {
+                            emptyMsg.classList.add('d-none');
+
+                            data.forEach(f => {
+                                const li = document.createElement('li');
+                                li.className = "list-group-item d-flex justify-content-between align-items-center py-3";
+                                li.innerHTML = `
+                                    <span class="fw-bold text-dark text-truncate me-2" style="max-width: 250px;">
+                                        ${f.nome}
+                                    </span>
+                                    <button class="btn btn-outline-danger btn-sm px-3 rounded-pill"
+                                            onclick="deleteFavoriteInModal(${f.id})">
+                                        Apagar
+                                    </button>
+                                `;
+                                manageList.appendChild(li);
+                            });
+                        }
+                    });
+            }
+
+            // D. Apagar Filtro
+          // D. Apagar Filtro (Sem pergunta de confirmação)
+            window.deleteFavoriteInModal = function(id) {
+                // Removi a linha: if(!confirm("Tens a certeza?")) return;
+
+                fetch('/Car/ApagarFiltro?id=' + id, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(response => {
+                        if(response.success) {
+                            loadManageList();       // Atualiza a lista do Modal instantaneamente
+                            loadSavedFiltersList(); // Atualiza o Dropdown lá atrás
+                        } else {
+                            alert("Erro: " + response.message);
+                        }
+                    });
+            };
+
+            // E. Aplicar Filtro (Ao clicar no Dropdown)
+            window.applyFavorite = function(element, nome) {
+                const btnLabel = document.getElementById('favoritesLabel');
+                btnLabel.textContent = nome;
+
+                if (!element) { // Reset
+                    form.reset();
+                    if(condicaoInput) condicaoInput.value = "";
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelector('.filter-tab[data-val=""]')?.classList.add('active');
+                    if(modeloSelect) { modeloSelect.innerHTML = '<option value="">Modelo</option>'; modeloSelect.disabled = true; }
+                    fetchResults(1);
                     return;
                 }
 
-                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
+                // Aplicar
+                const jsonString = element.getAttribute('data-json');
+                const filters = JSON.parse(jsonString);
+
+                form.reset();
+                if(condicaoInput) condicaoInput.value = "";
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+
+                if(filters.condicao && condicaoInput) {
+                     condicaoInput.value = filters.condicao;
+                     document.querySelector(`.filter-tab[data-val="${filters.condicao}"]`)?.classList.add('active');
+                } else {
+                     document.querySelector('.filter-tab[data-val=""]')?.classList.add('active');
+                }
+
+                for (const [key, value] of Object.entries(filters)) {
+                    if(key === 'condicao') continue;
+                    const input = form.querySelector(`[name="${key}"]`);
+                    if (input) input.value = value;
+                }
+
+                if (filters.marcaId) {
+                    fetch(`/Car/GetModelos?marcaId=${filters.marcaId}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            setModelos(data, filters.modeloId);
+                            fetchResults(1);
+                        });
+                } else {
+                    if(modeloSelect) { modeloSelect.innerHTML = '<option value="">Modelo</option>'; modeloSelect.disabled = true; }
+                    fetchResults(1);
+                }
+            };
+
+            // F. Guardar Filtro (Botão do Modal)
+            if(btnGuardar) {
+                btnGuardar.addEventListener('click', function() {
+                    const name = nameInput.value;
+                    if (!name) { nameInput.classList.add('is-invalid'); return; }
+                    else { nameInput.classList.remove('is-invalid'); }
+
+                    const formData = new FormData(form);
+                    const object = {};
+                    formData.forEach((value, key) => object[key] = value);
+                    if(condicaoInput) object['condicao'] = condicaoInput.value;
+                    const json = JSON.stringify(object);
+
+                    const data = new FormData();
+                    data.append('nome', name);
+                    data.append('filtrosJson', json);
+
+                    fetch('/Car/GuardarFiltro', { method: 'POST', body: data })
                     .then(r => r.json())
-                    .then(data => {
-                        setModelos(data || []);
-                        // 2. Depois de carregar modelos, atualiza a grelha
-                        fetchResults(1);
+                    .then(response => {
+                        if (response.success) {
+                            // Fecha Modal
+                            const modalEl = document.getElementById('saveFilterModal');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if(modal) modal.hide();
+
+                            loadSavedFiltersList(); // Atualiza Lista
+                            nameInput.value = "";
+                        } else {
+                            alert("Erro: " + response.message);
+                        }
                     });
-            });
-
-            // B. Quando muda qualquer outro Dropdown (exceto Marca)
-            form.querySelectorAll('select:not(#marcaId)').forEach(select => {
-                select.addEventListener('change', () => fetchResults(1));
-            });
-
-            // C. Quando muda a Ordenação
-            if (sortSelect) {
-                sortSelect.addEventListener('change', () => fetchResults(1));
+                });
             }
 
-            // D. Quando escreve na SearchBox (Debounce de 500ms)
-            const searchInput = form.querySelector('input[name="searchBox"]');
+
+            // ==========================================
+            // 4. EVENT LISTENERS GERAIS
+            // ==========================================
             if (searchInput) {
                 searchInput.addEventListener('input', () => {
                     clearTimeout(debounceTimer);
@@ -289,45 +479,63 @@
                 });
             }
 
-            // E. Paginação AJAX
+            form.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => fetchResults(1), 600);
+                });
+            });
+
+            if (marcaSelect) {
+                marcaSelect.addEventListener('change', function () {
+                    const marcaId = this.value;
+                    if (!marcaId) {
+                        if(modeloSelect) { modeloSelect.innerHTML = '<option value="">Modelo</option>'; modeloSelect.disabled = true; }
+                        fetchResults(1);
+                        return;
+                    }
+                    fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
+                        .then(r => r.json())
+                        .then(data => { setModelos(data || []); fetchResults(1); });
+                });
+            }
+
+            form.querySelectorAll('select:not(#marcaId):not(#modeloId)').forEach(s => {
+                s.addEventListener('change', () => fetchResults(1));
+            });
+
+            if(modeloSelect) modeloSelect.addEventListener('change', () => fetchResults(1));
+            if (sortSelect) sortSelect.addEventListener('change', () => fetchResults(1));
+
             function attachPaginationEvents() {
                 document.querySelectorAll('.ajax-link').forEach(link => {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
-                        const page = this.getAttribute('data-page');
-                        fetchResults(page);
-                        // Scroll suave para o topo
+                        fetchResults(this.getAttribute('data-page'));
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     });
                 });
             }
 
-            // F. Previne o Submit tradicional do Form
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                fetchResults(1);
-            });
-
-            // --- 5. INICIALIZAÇÃO ---
-            // Se já vier com marca selecionada (da Home Page), carrega modelos
-            if (marcaSelect.value) {
-                // Dispara evento manualmente para carregar modelos, mas SEM filtrar de novo (pois já vem filtrado do server)
-                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaSelect.value)}`)
-                    .then(r => r.json())
-                    .then(data => setModelos(data || []));
-            }
-
-            // NOVO: Quando escreve nos campos de Preço (minPrice ou maxPrice)
-            const priceInputs = form.querySelectorAll('input[type="number"]');
-            priceInputs.forEach(input => {
-                input.addEventListener('input', () => {
-                    clearTimeout(debounceTimer);
-                    // Espera 800ms depois de parares de escrever para pesquisar
-                    debounceTimer = setTimeout(() => fetchResults(1), 800);
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (condicaoInput) condicaoInput.value = this.getAttribute('data-val');
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    fetchResults(1);
                 });
             });
 
-            // Liga a paginação inicial
+            form.addEventListener('submit', (e) => { e.preventDefault(); fetchResults(1); });
+
+            // INICIAR
+            loadSavedFiltersList(); // Carrega favoritos
+            if (marcaSelect && marcaSelect.value) {
+                fetch(`/Car/GetModelos?marcaId=${encodeURIComponent(marcaSelect.value)}`)
+                    .then(r => r.json())
+                    .then(d => setModelos(d || []));
+            }
             attachPaginationEvents();
 
         })();
