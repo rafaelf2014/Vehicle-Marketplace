@@ -1,0 +1,33 @@
+﻿@page
+@model RegisterConfirmationModel
+@{
+    ViewData["Title"] = "Quase lá!";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <div class="mb-4">
+                        <i class="bi bi-envelope-check" style="font-size: 4rem; color: red;"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">@ViewData["Title"]</h2>
+
+                   
+                        <p class="lead mb-4">
+                            Enviámos um e-mail de confirmação para o endereço registado.
+                        </p>
+                        <div class="alert alert-info">
+                            Por favor, <strong>verifica a tua caixa de entrada</strong> (ou spam) e clica no link para ativar a tua conta.
+                        </div>
+                    
+
+                    <div class="mt-4">
+                        <a asp-page="/Index" class="btn btn-outline-secondary">Voltar ao Início</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

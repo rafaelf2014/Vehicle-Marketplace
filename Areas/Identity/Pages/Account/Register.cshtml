@@ -1,94 +1,112 @@
 ﻿@page
 @model RegisterModel
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Criar Nova Conta";
     var initialRole = Model?.Input?.Role ?? (string.IsNullOrEmpty(Request.Query["role"]) ? "Comprador" : Request.Query["role"].ToString());
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                
+                <div class="card-header bg-danger text-white text-center py-4">
+                    <h1 class="fw-bold mb-0">CliCar</h1>
+                    <p class="mb-0 opacity-75">O teu próximo carro está aqui</p>
+                </div>
 
-<div class="tabs-container">
-    <a asp-page="/Account/Login" class="tab">Login</a>
+                <div class="card-body p-4 p-md-5">
+                    <h4 class="text-center mb-4 text-dark fw-bold">@ViewData["Title"]</h4>
 
-    <!-- Buttons now toggle client-side (no duplicate inputs in DOM) -->
-    <button type="button" class="tab @(initialRole == "Comprador" ? "active" : "")" data-role="Comprador">Criar Conta Comprador</button>
-    <button type="button" class="tab @(initialRole == "Vendedor" ? "active" : "")" data-role="Vendedor">Criar Conta Vendedor</button>
+                    <div class="tabs-container mb-4 text-center">
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-danger py-2 @(initialRole == "Comprador" ? "active" : "")" data-role="Comprador">Comprador</button>
+                            <button type="button" class="btn btn-outline-danger py-2 @(initialRole == "Vendedor" ? "active" : "")" data-role="Vendedor">Vendedor</button>
+                        </div>
+                    </div>
+
+                    <form id="registerForm" asp-route-returnUrl="@(Model?.ReturnUrl ?? string.Empty)" method="post">
+                        <input type="hidden" id="roleInput" name="Input.Role" value="@initialRole" />
+                        
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3" role="alert"></div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.UserName" class="form-control" placeholder="username" />
+                            <label asp-for="Input.UserName">Username</label>
+                            <span asp-validation-for="Input.UserName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Email" class="form-control" placeholder="email" />
+                            <label asp-for="Input.Email">Email</label>
+                            <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Input.PhoneNumber" class="form-control" placeholder="912..." />
+                                    <label asp-for="Input.PhoneNumber">Telemóvel</label>
+                                    <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Input.CodigoPostal" class="form-control" placeholder="0000-000" />
+                                    <label asp-for="Input.CodigoPostal">Cód. Postal</label>
+                                    <span asp-validation-for="Input.CodigoPostal" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="roleFields" class="bg-light rounded p-2 mb-3 border-start border-danger border-4"></div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Password" class="form-control" autocomplete="new-password" placeholder="password" />
+                            <label asp-for="Input.Password">Palavra-passe</label>
+                            <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="confirm" />
+                            <label asp-for="Input.ConfirmPassword">Confirmar Palavra-passe</label>
+                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="w-100 btn btn-lg btn-danger shadow fw-bold py-3">CRIAR CONTA</button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="small text-muted">Já tem conta? <a asp-page="/Account/Login" class="text-danger fw-bold text-decoration-none">Inicie sessão</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="row justify-content-center">
-  <div class="col-12 col-md-6 col-lg-4">
-        <form id="registerForm" asp-route-returnUrl="@(Model?.ReturnUrl ?? string.Empty)" method="post">
-      <input type="hidden" id="roleInput" name="Input.Role" value="@initialRole" />
-      <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-
-      <!-- Common fields (always in the form) -->
-      <div class="form-floating mb-3">
-          <input asp-for="Input.UserName" class="form-control" autocomplete="username" />
-          <label asp-for="Input.UserName"></label>
-          <span asp-validation-for="Input.UserName" class="text-danger"></span>
-      </div>
-
-      <div class="form-floating mb-3">
-          <input asp-for="Input.Email" class="form-control" autocomplete="email" />
-          <label asp-for="Input.Email"></label>
-          <span asp-validation-for="Input.Email" class="text-danger"></span>
-      </div>
-
-      <div class="form-floating mb-3">
-          <input asp-for="Input.PhoneNumber" class="form-control" />
-          <label asp-for="Input.PhoneNumber"></label>
-          <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-      </div>
-
-      <div class="form-floating mb-3">
-          <input asp-for="Input.CodigoPostal" class="form-control" />
-          <label asp-for="Input.CodigoPostal"></label>
-          <span asp-validation-for="Input.CodigoPostal" class="text-danger"></span>
-      </div>
-
-      <!-- Placeholder for role-specific fields (injected from templates) -->
-      <div id="roleFields"></div>
-
-      <div class="form-floating mb-3">
-          <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
-          <label asp-for="Input.Password"></label>
-          <span asp-validation-for="Input.Password" class="text-danger"></span>
-      </div>
-
-      <div class="form-floating mb-3">
-          <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
-          <label asp-for="Input.ConfirmPassword"></label>
-          <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-      </div>
-
-      <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-    </form>
-  </div>
-</div>
-
-<!-- Templates: inert until cloned into the form -->
 <template id="comprador-template">
     <div class="form-floating mb-3">
-        <input asp-for="Input.Morada" class="form-control" />
+        <input asp-for="Input.Morada" class="form-control" placeholder="morada" />
         <label asp-for="Input.Morada"></label>
-        <span asp-validation-for="Input.Morada" class="text-danger"></span>
+        <span asp-validation-for="Input.Morada" class="text-danger small"></span>
     </div>
 </template>
 
 <template id="vendedor-template">
     <div class="form-floating mb-3">
-        <input asp-for="Input.NIF" class="form-control" />
+        <input asp-for="Input.NIF" class="form-control" placeholder="nif" />
         <label asp-for="Input.NIF"></label>
-        <span asp-validation-for="Input.NIF" class="text-danger"></span>
+        <span asp-validation-for="Input.NIF" class="text-danger small"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Input.TypeSeller"></label>
-        <select asp-for="Input.TypeSeller" class="form-control">
-            <option value="">-- Select Tipo Vendedor --</option>
+        <label asp-for="Input.TypeSeller" class="form-label small fw-bold px-2">Tipo de Vendedor</label>
+        <select asp-for="Input.TypeSeller" class="form-select">
+            <option value="">-- Selecione --</option>
             <option value="P">Particular</option>
             <option value="C">Comercial</option>
         </select>
-        <span asp-validation-for="Input.TypeSeller" class="text-danger"></span>
+        <span asp-validation-for="Input.TypeSeller" class="text-danger small"></span>
     </div>
 </template>
 
@@ -97,7 +115,7 @@
 
     <script>
         (function () {
-            const tabs = document.querySelectorAll('.tabs-container .tab[data-role]');
+            const tabs = document.querySelectorAll('.tabs-container button[data-role]');
             const roleInput = document.getElementById('roleInput');
             const roleFields = document.getElementById('roleFields');
             const compradorTpl = document.getElementById('comprador-template');
@@ -105,31 +123,6 @@
 
             function clearRoleFields() {
                 while (roleFields.firstChild) roleFields.removeChild(roleFields.firstChild);
-            }
-
-            function hasServerValidationErrors() {
-                // verifica summary/server messages
-                const summary = document.querySelector('div[role="alert"].text-danger, .validation-summary-errors');
-                if (summary && summary.textContent.trim()) return true;
-
-                // verifica spans gerados por asp-validation-for (data-valmsg-for)
-                const msgs = document.querySelectorAll('[data-valmsg-for]');
-                for (let i = 0; i < msgs.length; i++) {
-                    if (msgs[i].textContent && msgs[i].textContent.trim()) return true;
-                }
-                return false;
-            }
-
-            function resetClientValidation() {
-                if (window.jQuery && window.jQuery.validator) {
-                    const $form = $('#registerForm');
-                    const validator = $form.data('validator') || $form.validate();
-                    if (validator) {
-                        validator.resetForm();
-                        $form.find('.input-validation-error').removeClass('input-validation-error');
-                        $form.find('[data-valmsg-for]').text('');
-                    }
-                }
             }
 
             function injectTemplate(template) {
@@ -143,33 +136,34 @@
                 }
             }
 
-            function setRole(role, pushUrl = true, initialLoad = false) {
-                tabs.forEach(t => t.classList.toggle('active', t.dataset.role === role));
-                if (roleInput) roleInput.value = role;
+            function setRole(role, pushUrl = true) {
+                tabs.forEach(t => {
+                    if (t.dataset.role === role) {
+                        t.classList.add('active');
+                        t.classList.replace('btn-outline-danger', 'btn-danger');
+                    } else {
+                        t.classList.remove('active');
+                        t.classList.replace('btn-danger', 'btn-outline-danger');
+                    }
+                });
 
-                // só resetar validação quando não houver mensagens do servidor (mantém erros visíveis)
-                if (!initialLoad && !hasServerValidationErrors()) {
-                    resetClientValidation();
-                }
+                roleInput.value = role;
 
                 if (role === 'Vendedor') injectTemplate(vendedorTpl);
                 else injectTemplate(compradorTpl);
 
                 if (pushUrl) {
-                    try {
-                        const url = new URL(window.location);
-                        url.searchParams.set('role', role);
-                        window.history.replaceState({}, '', url);
-                    } catch (e) { }
+                    const url = new URL(window.location);
+                    url.searchParams.set('role', role);
+                    window.history.replaceState({}, '', url);
                 }
             }
 
             tabs.forEach(tab => tab.addEventListener('click', function () {
-                setRole(this.dataset.role, true, false);
+                setRole(this.dataset.role, true);
             }));
 
-            // chamada existente (mantida conforme pediste)
-            setRole('@initialRole', "Comprador");
+            setRole('@initialRole', 'Comprador');
         })();
     </script>
 }

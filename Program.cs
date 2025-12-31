@@ -1,8 +1,9 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using CliCarProject.Data;
-using CliCarProject.Services;
 using CliCarProject.Models.Classes;
+using CliCarProject.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +14,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         connectionString,
-        sqlOptions => sqlOptions.CommandTimeout(60) // em segundos
-    ));
+        sqlOptions =>
+        {
+            sqlOptions.CommandTimeout(60); // commands
+       
+        }));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -34,7 +38,7 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedAccount = true;
     options.User.RequireUniqueEmail = true;
 })
 .AddRoles<IdentityRole>()
@@ -46,6 +50,8 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<IFileService, FileService>(); // Registar o FileService para injeção de dependência
 builder.Services.AddScoped<IVeiculoService, VeiculoService>(); // Registar o VeiculoService para injeção de dependência
+
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
 var app = builder.Build();
 
@@ -97,6 +103,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

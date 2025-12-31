@@ -265,10 +265,33 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                 values: new { area = "Identity", userId = userId, code = code },
                 protocol: Request.Scheme);
 
+            string mensagemHtml = $@"
+    <div style='font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;'>
+        <div style='background-color: #fd0d29; padding: 20px; text-align: center;'>
+            <h1 style='color: white; margin: 0;'>Bem-vindo ao CliCar!</h1>
+        </div>
+        <div style='padding: 30px; line-height: 1.6; color: #333;'>
+            <p style='font-size: 18px;'>Olá, <strong>{Input.UserName}</strong>!</p>
+            <p>Obrigado por te registares no nosso Stand Virtual. Para começares a comprar ou vender veículos, precisamos apenas que confirmes o teu e-mail.</p>
+            
+            <div style='text-align: center; margin: 40px 0;'>
+                <a href='{HtmlEncoder.Default.Encode(callbackUrl)}' 
+                   style='background-color: #198754; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;'>
+                   Confirmar a minha conta
+                </a>
+            </div>
+            
+            <p style='font-size: 12px; color: #777;'>Se não criaste uma conta no CliCar, podes ignorar este e-mail.</p>
+        </div>
+        <div style='background-color: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #e0e0e0; font-size: 12px; color: #999;'>
+            &copy; {DateTime.Now.Year} CliCar Project - Stand Virtual Local
+        </div>
+    </div>";
+
             await _emailSender.SendEmailAsync(
                 Input.Email,
-                "Confirme o seu email",
-                $"Por favor confirme a sua conta clicando aqui: <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Confirmar Email</a>");
+                "Confirmação de Conta - CliCar",
+                mensagemHtml);
 
             // Redireciona para página automática de confirmação
             return RedirectToPage("RegisterConfirmation", new { email = Input.Email });
