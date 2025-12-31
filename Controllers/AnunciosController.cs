@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using CliCarProject.Data;
 using CliCarProject.Models;
 using Microsoft.AspNetCore.Identity;
-using AspNetCoreGeneratedDocument;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using CliCarProject.Models.Classes;

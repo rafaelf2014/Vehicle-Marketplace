@@ -2,43 +2,33 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.Extensions.Options;
 
-public class SmtpSettings
+namespace CliCarProject.Services
 {
-    public string Host { get; set; } = "";
-    public int Port { get; set; } = 587;
-    public bool EnableSsl { get; set; } = true;
-    public string User { get; set; } = "";
-    public string Password { get; set; } = "";
-    public string FromEmail { get; set; } = "";
-    public string FromName { get; set; } = "";
-}
-
-public class SmtpEmailSender : IEmailSender
-{
-    private readonly SmtpSettings _settings;
-
-    public SmtpEmailSender(IOptions<SmtpSettings> options)
+    public class SmtpEmailSender : IEmailSender
     {
-        _settings = options.Value;
-    }
-
-    public async Task SendEmailAsync(string email, string subject, string htmlMessage)
-    {
-        using var message = new MailMessage();
-        message.From = new MailAddress(_settings.FromEmail, _settings.FromName);
-        message.To.Add(email);
-        message.Subject = subject;
-        message.Body = htmlMessage;
-        message.IsBodyHtml = true;
-
-        using var client = new SmtpClient(_settings.Host, _settings.Port)
+        public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            EnableSsl = _settings.EnableSsl,
-            Credentials = new NetworkCredential(_settings.User, _settings.Password)
-        };
+            // Configuramos o cliente SMTP com os dados do Mailtrap que enviaste
+            using (var client = new SmtpClient("sandbox.smtp.mailtrap.io", 2525))
+            {
+                client.Credentials = new NetworkCredential("11893ed2b2091d", "58e8b46b9fc726");
+                client.EnableSsl = true;
 
-        await client.SendMailAsync(message);
+                // Criamos a mensagem
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress("suporte@clicarproject.com", "CliCar Support"),
+                    Subject = subject,
+                    Body = htmlMessage,
+                    IsBodyHtml = true // Importante para o link de confirmação funcionar
+                };
+
+                mailMessage.To.Add(email);
+
+                // Enviamos o email de forma assíncrona
+                await client.SendMailAsync(mailMessage);
+            }
+        }
     }
 }
