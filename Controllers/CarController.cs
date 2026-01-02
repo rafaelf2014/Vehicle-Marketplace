@@ -17,7 +17,7 @@ namespace CliCarProject.Controllers
         }
 
         [HttpGet]
-        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, decimal? minPrice,decimal? maxPrice, string sortOrder, int? minYear, int? maxYear, int? localizacaoId, int? minKm, int? maxKm, string condicao ="", int page = 1)
+        public IActionResult CarSearch(string searchBox, int? marcaId, int? modeloId, int? categoriaId, int? combustivelId, string caixa, decimal? minPrice,decimal? maxPrice, string sortOrder, int? minYear, int? maxYear, int? localizacaoId, int? minKm, int? maxKm, string condicao ="",bool ocultarReservados = false , int page = 1)
         {
             if (modeloId.HasValue && !marcaId.HasValue)
             {
@@ -37,16 +37,32 @@ namespace CliCarProject.Controllers
                 .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.Imagems)
                 .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.IdMarcaNavigation)
                 .Include(a => a.IdVeiculoNavigation)!.ThenInclude(v => v!.IdModeloNavigation)
+                .Include(a => a.VisitaReservas)
                 .AsQueryable();
 
-            query = query.Where(a => a.Estado == "Ativo");
+
+            query = query.Where(a =>
+                  a.Estado == "Ativo" ||
+                  // Se estiver Inativo, mostra se tiver reserva "Reservada", "Confirmada" ou "Pendente"
+                  a.VisitaReservas.Any(v =>
+                      v.Estado.Contains("Reservada") ||
+                      v.Estado.Contains("Confirmada") ||
+                      v.Estado.Contains("Pendente")
+                  )
+              );
+
+            if (ocultarReservados)
+            {
+                // Garante que esconde tudo o que tenha qualquer tipo de reserva
+                query = query.Where(a => !a.VisitaReservas.Any(v => v.Estado.Contains("Pendente") || v.Estado.Contains("Reservada")));
+            }
 
             if (!string.IsNullOrEmpty(condicao))
             {
                 // Nota: Verifica se na tua BD o valor é "Novo"/"Usado" ou "New"/"Used"
                 query = query.Where(a => a.IdVeiculoNavigation.Condicao == condicao);
             }
-
+       
             ViewBag.CurrentCondicao = condicao;
 
             if (!string.IsNullOrWhiteSpace(searchBox))

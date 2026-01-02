@@ -26,10 +26,25 @@
 
         var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + " €";
 
+        // --- LÓGICA NOVA: Verificar se está reservado diretamente na View ---
+        // Verifica se a lista existe E se tem alguma reserva Pendente ou Confirmada/Reservada
+        bool estaReservado = item.VisitaReservas != null &&
+        item.VisitaReservas.Any(v => v.Estado.Contains("Pendente") || v.Estado.Contains("Reservada"));
+
         <div class="col">
             <div class="card car-card h-100 shadow-sm">
-                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="car-img-container">
+
+                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="car-img-container position-relative">
                     <img src="@imageSrc" class="car-card-img" alt="@item.Titulo" />
+
+                    @if (estaReservado)
+                    {
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-warning text-dark shadow-sm px-2 py-1 fw-bold">
+                                <i class="bi bi-lock-fill"></i> RESERVADO
+                            </span>
+                        </div>
+                    }
                 </a>
 
                 <div class="card-body car-card-body">
@@ -56,10 +71,19 @@
                     }
 
                     <div class="car-footer">
-                        <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
-                           class="btn btn-danger w-100">
-                            Ver Detalhes
-                        </a>
+                        @if (estaReservado)
+                        {
+                            <button class="btn btn-secondary w-100 disabled" disabled>
+                                <i class="bi bi-lock-fill"></i> Indisponível
+                            </button>
+                        }
+                        else
+                        {
+                            <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
+                               class="btn btn-danger w-100">
+                                Ver Detalhes
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
