@@ -1,0 +1,88 @@
+@model IEnumerable<CliCarProject.Models.HistoricoAdminViewModel>
+@{
+    ViewData["Title"] = "Histórico de Ações";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row g-4">
+        <aside class="col-12 col-md-4 col-lg-3">
+            @{
+                await Html.RenderPartialAsync("~/Views/Admin/_AdminSidebar.cshtml");
+            }
+        </aside>
+
+        <main class="col-12 col-md-8 col-lg-9">
+            <div class="card shadow-sm rounded-4 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="fw-bold mb-1">Histórico de Ações</h2>
+                        <p class="text-muted mb-0">Registo de operações efetuadas por todos os utilizadores.</p>
+                    </div>
+                </div>
+
+                <form method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control"
+                               name="search"
+                               placeholder="Procurar por ID de utilizador ou Username..."
+                               value="@((string?)ViewBag.Search ?? string.Empty)" />
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="bi bi-search"></i> Pesquisar
+                        </button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>Utilizador</th>
+                                <th>Ação</th>
+                                <th>Alvo</th>
+                                <th>Razão</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    Nenhum registo encontrado.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@(item.DataHora?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                                    <td>
+                                        <div class="fw-semibold">@item.UserName</div>
+                                        <small class="text-muted">ID: @item.IdUtilizador</small>
+                                    </td>
+                                    <td>@item.NomeAcao</td>
+                                    <td>
+                                        @if (item.IdAlvo.HasValue)
+                                        {
+                                            <span>@item.TipoAlvo #@item.IdAlvo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Razao) ? "-" : item.Razao)</td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>

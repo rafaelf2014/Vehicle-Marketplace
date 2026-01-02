@@ -257,6 +257,55 @@ namespace CliCarProject.Areas.Identity.Pages.Account
 
             }
 
+            // ----------------- Registo no Histórico de Ações --------------------
+            // Garante que tens um registo de Acao para "Criação de conta".
+            // Por ex., IdTipoAcao = 1 (ou o ID que fizer sentido na tua BD).
+            // Garante que existe o TipoAcao adequado
+            var tipoAcaoCriacao = await _dbContext.TipoAcaos
+                .FirstOrDefaultAsync(t => t.Nome == "Criação de conta");
+
+            if (tipoAcaoCriacao == null)
+            {
+                tipoAcaoCriacao = new TipoAcao
+                {
+                    Nome = "Criação de conta"
+                };
+
+                _dbContext.TipoAcaos.Add(tipoAcaoCriacao);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            // Agora usa o ID real
+            var acaoCriacaoConta = await _dbContext.Acaos
+                .FirstOrDefaultAsync(a => a.Nome == "Criação de conta");
+
+            if (acaoCriacaoConta == null)
+            {
+                acaoCriacaoConta = new Acao
+                {
+                    IdTipoAcao = tipoAcaoCriacao.IdTipoAcao,
+                    Nome = "Criação de conta",
+                    Descricao = "Registo de nova conta de utilizador",
+                    TipoAlvo = "Utilizador"
+                };
+
+                _dbContext.Acaos.Add(acaoCriacaoConta);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            var historico = new HistoricoAco
+            {
+                IdAcao = acaoCriacaoConta.IdAcao,
+                IdUtilizador = userId,
+                IdAlvo = null,                  // ou podes guardar algo como 0 / outro ID lógico
+                TipoAlvo = "Utilizador",
+                Razao = $"Conta criada com role {Input.Role}",
+                DataHora = DateTime.UtcNow      // opcional, a BD já tem default sysdatetime()
+            };
+
+            _dbContext.HistoricoAcoes.Add(historico);
+            await _dbContext.SaveChangesAsync();
+
             // ----------------- EMAIL DE CONFIRMAÇÃO --------------------
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

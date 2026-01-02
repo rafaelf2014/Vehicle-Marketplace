@@ -1,13 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CliCarProject.Data;
+using CliCarProject.Models;
+using CliCarProject.Models.Classes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CliCarProject.Data;
-using CliCarProject.Models;
+using System.Security.Claims;
 
 namespace CliCarProject.Controllers
 {
@@ -147,16 +148,15 @@ namespace CliCarProject.Controllers
                 }
 
                 var isSuperAdmin = string.Equals(iu.Email, "superadmin@clicar.local", StringComparison.OrdinalIgnoreCase);
-                // TODO: substitui "superadmin@tuaapp.com" pelo email real do teu superadmin
 
                 users.Add(new UsersViewModel.UserListItem
                 {
                     Id = iu.Id,
                     Email = iu.Email ?? string.Empty,
                     UserName = iu.UserName ?? string.Empty,
-                    Role = (compradoresSet.Contains(iu.Id) ? "Comprador" : "")
-                           + (compradoresSet.Contains(iu.Id) && vendedoresSet.Contains(iu.Id) ? ", " : "")
-                           + (vendedoresSet.Contains(iu.Id) ? "Vendedor" : ""),
+                    Role = (compradoresSet.Contains(iu.Id) ? "Comprador" : string.Empty)
+                           + (compradoresSet.Contains(iu.Id) && vendedoresSet.Contains(iu.Id) ? ", " : string.Empty)
+                           + (vendedoresSet.Contains(iu.Id) ? "Vendedor" : string.Empty),
                     CreatedAt = createdAt,
                     IsBlocked = blockedSet.Contains(iu.Id),
                     IsSuperAdmin = isSuperAdmin
@@ -200,32 +200,28 @@ namespace CliCarProject.Controllers
             ViewBag.CurrentSort = sortBy;
             ViewBag.CurrentOrder = sortOrder;
 
-            // Alternar ordem de ordenação
             ViewBag.IdSortOrder = sortBy == "id" && sortOrder == "asc" ? "desc" : "asc";
             ViewBag.UsernameSortOrder = sortBy == "username" && sortOrder == "asc" ? "desc" : "asc";
             ViewBag.AnoSortOrder = sortBy == "ano" && sortOrder == "asc" ? "desc" : "asc";
 
             var total = await _context.Veiculos.CountAsync();
 
-            // Query base
             var query = _context.Veiculos
                 .Include(v => v.IdMarcaNavigation)
                 .Include(v => v.IdModeloNavigation)
                 .Include(v => v.IdVendedorNavigation)
                 .AsQueryable();
 
-            // Aplicar pesquisa
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 searchTerm = searchTerm.ToLower();
                 query = query.Where(v =>
                     v.IdVeiculo.ToString().Contains(searchTerm) ||
-                    (v.IdVendedorNavigation != null && 
-                     v.IdVendedorNavigation.UserName != null && 
+                    (v.IdVendedorNavigation != null &&
+                     v.IdVendedorNavigation.UserName != null &&
                      v.IdVendedorNavigation.UserName.ToLower().Contains(searchTerm)));
             }
 
-            // Aplicar ordenação
             query = sortBy switch
             {
                 "id" => sortOrder == "desc"
@@ -269,16 +265,13 @@ namespace CliCarProject.Controllers
             ViewBag.CurrentSort = sortBy;
             ViewBag.CurrentOrder = sortOrder;
 
-            // Alternar ordem de ordenação
             ViewBag.IdSortOrder = sortBy == "id" && sortOrder == "asc" ? "desc" : "asc";
             ViewBag.UsernameSortOrder = sortBy == "username" && sortOrder == "asc" ? "desc" : "asc";
 
-            // Apenas anúncios ativos/contempla estado "Ativo"
             var total = await _context.Anuncios
                 .Where(a => a.Estado == "Ativo")
                 .CountAsync();
 
-            // Query base
             var query = _context.Anuncios
                 .Include(a => a.IdVendedorNavigation)
                 .Include(a => a.IdVeiculoNavigation)
@@ -287,25 +280,23 @@ namespace CliCarProject.Controllers
                     .ThenInclude(v => v.IdModeloNavigation)
                 .AsQueryable();
 
-            // Aplicar pesquisa
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 searchTerm = searchTerm.ToLower();
                 query = query.Where(a =>
                     a.IdAnuncio.ToString().Contains(searchTerm) ||
-                    (a.IdVendedorNavigation != null && 
-                     a.IdVendedorNavigation.UserName != null && 
+                    (a.IdVendedorNavigation != null &&
+                     a.IdVendedorNavigation.UserName != null &&
                      a.IdVendedorNavigation.UserName.ToLower().Contains(searchTerm)));
             }
 
-            // Aplicar ordenação
             query = sortBy switch
             {
-                "id" => sortOrder == "desc" 
-                    ? query.OrderByDescending(a => a.IdAnuncio) 
+                "id" => sortOrder == "desc"
+                    ? query.OrderByDescending(a => a.IdAnuncio)
                     : query.OrderBy(a => a.IdAnuncio),
-                "username" => sortOrder == "desc" 
-                    ? query.OrderByDescending(a => a.IdVendedorNavigation.UserName) 
+                "username" => sortOrder == "desc"
+                    ? query.OrderByDescending(a => a.IdVendedorNavigation.UserName)
                     : query.OrderBy(a => a.IdVendedorNavigation.UserName),
                 _ => query.OrderByDescending(a => a.IdAnuncio)
             };
@@ -326,7 +317,6 @@ namespace CliCarProject.Controllers
                 })
                 .ToListAsync();
 
-            // marca mais presente entre os ativos
             string? topMarca = null;
             if (list.Any())
             {
@@ -335,7 +325,7 @@ namespace CliCarProject.Controllers
                     .GroupBy(a => a.Marca)
                     .Select(g => new { Marca = g.Key, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
-                    .ThenBy(x => x.Marca) // empate -> alfabético
+                    .ThenBy(x => x.Marca)
                     .FirstOrDefault()
                     ?.Marca;
             }
@@ -365,7 +355,6 @@ namespace CliCarProject.Controllers
                 return RedirectToAction(nameof(Veiculos));
             }
 
-            // Em vez de remover, marcar como indisponível
             veiculo.Disponivel = false;
             await _context.SaveChangesAsync();
 
@@ -435,10 +424,107 @@ namespace CliCarProject.Controllers
                 return RedirectToAction("Index");
             }
 
+            // Claim CreatedAt, tal como no registo normal
+            var createdAtClaim = new Claim("CreatedAt", DateTime.UtcNow.ToString("o"));
+            await _userManager.AddClaimAsync(user, createdAtClaim);
+
             await _userManager.AddToRoleAsync(user, "Admin");
 
+            // --------- Registo no Histórico de Ações (Criação conta admin) ---------
+            // Garante que existe o TipoAcao para criação de conta admin
+            var tipoAcaoCriacaoAdmin = await _context.TipoAcaos
+                .FirstOrDefaultAsync(t => t.Nome == "Criação de conta admin");
+
+            if (tipoAcaoCriacaoAdmin == null)
+            {
+                tipoAcaoCriacaoAdmin = new TipoAcao
+                {
+                    Nome = "Criação de conta admin"
+                };
+
+                _context.TipoAcaos.Add(tipoAcaoCriacaoAdmin);
+                await _context.SaveChangesAsync();
+            }
+
+            // Garante que existe a Acao associada
+            var acaoCriacaoContaAdmin = await _context.Acaos
+                .FirstOrDefaultAsync(a => a.Nome == "Criação de conta admin");
+
+            if (acaoCriacaoContaAdmin == null)
+            {
+                acaoCriacaoContaAdmin = new Acao
+                {
+                    IdTipoAcao = tipoAcaoCriacaoAdmin.IdTipoAcao,
+                    Nome = "Criação de conta admin",
+                    Descricao = "Registo de nova conta de administrador",
+                    TipoAlvo = "Utilizador"
+                };
+
+                _context.Acaos.Add(acaoCriacaoContaAdmin);
+                await _context.SaveChangesAsync();
+            }
+
+            // Registo no histórico
+            var historicoAdmin = new HistoricoAco
+            {
+                IdAcao = acaoCriacaoContaAdmin.IdAcao,
+                IdUtilizador = user.Id,
+                IdAlvo = null,
+                TipoAlvo = "Utilizador",
+                Razao = "Conta criada com role Admin",
+                DataHora = DateTime.UtcNow
+            };
+
+            _context.HistoricoAcoes.Add(historicoAdmin);
+            await _context.SaveChangesAsync();
+
             TempData["AdminSuccess"] = "Conta admin criada com sucesso.";
+
             return RedirectToAction("Index");
+        }
+
+        // GET: /Admin/Acoes
+        [HttpGet]
+        public async Task<IActionResult> HistoricoAcoes(string? search)
+        {
+            ViewData["Title"] = "Histórico de Ações";
+            ViewData["AdminActive"] = "HistoricoAcoes";
+
+            var query = _context.HistoricoAcoes
+                .Include(h => h.IdAcaoNavigation)
+                .AsQueryable();
+
+            var historico = await query
+                .Join(_userManager.Users,
+                    h => h.IdUtilizador,
+                    u => u.Id,
+                    (h, u) => new
+                    {
+                        Historico = h,
+                        User = u
+                    })
+                .Where(x =>
+                    string.IsNullOrWhiteSpace(search)
+                    || x.User.UserName!.Contains(search)
+                    || x.User.Id.Contains(search))
+                .OrderByDescending(x => x.Historico.DataHora)
+                .Select(x => new HistoricoAdminViewModel
+                {
+                    IdHistorico = x.Historico.IdHistorico,
+                    IdUtilizador = x.User.Id,
+                    UserName = x.User.UserName!,
+                    NomeAcao = x.Historico.IdAcaoNavigation.Nome,
+                    TipoAcao = x.Historico.IdAcaoNavigation.IdTipoAcaoNavigation.Nome,
+                    IdAlvo = x.Historico.IdAlvo,
+                    TipoAlvo = x.Historico.TipoAlvo,
+                    Razao = x.Historico.Razao,
+                    DataHora = x.Historico.DataHora
+                })
+                .ToListAsync();
+
+            ViewBag.Search = search;
+
+            return View(historico);
         }
     }
 }

@@ -294,14 +294,13 @@ namespace CliCarProject.Controllers
                 return RedirectToAction("UserManage", "Admin");
             }
 
-            // impedir bloquear superadmin pelo backend
             if (string.Equals(user.Email, "superadmin@clicar.local", StringComparison.OrdinalIgnoreCase))
             {
                 TempData["ProfileError"] = "Não é permitido bloquear a conta superadmin.";
                 return RedirectToAction("UserManage", "Admin");
             }
 
-            // registar bloqueio (atualiza se já existir)
+            // registar bloqueio (cria/atualiza)
             var existing = await _context.UserBlocks.FirstOrDefaultAsync(b => b.UserId == userId);
             if (existing == null)
             {
@@ -319,14 +318,55 @@ namespace CliCarProject.Controllers
                 existing.BlockedAt = DateTime.UtcNow;
             }
 
-            // Opcional: também podes usar Lockout do Identity para redundância
+            // Lockout opcional
             user.LockoutEnabled = true;
             user.LockoutEnd = DateTimeOffset.MaxValue;
             await _userManager.UpdateAsync(user);
 
-            await _context.SaveChangesAsync();
+            // ------- Histórico: Bloqueio de utilizador -------
+            // TipoAcao = "Gestão de bloqueios"
+            var tipoAcaoBloqueio = await _context.TipoAcaos
+                .FirstOrDefaultAsync(t => t.Nome == "Gestão de bloqueios");
+            if (tipoAcaoBloqueio == null)
+            {
+                tipoAcaoBloqueio = new TipoAcao
+                {
+                    Nome = "Gestão de bloqueios"
+                };
+                _context.TipoAcaos.Add(tipoAcaoBloqueio);
+                await _context.SaveChangesAsync();
+            }
 
-            // se o próprio estiver logado, nada a fazer aqui (o middleware/checagem vai tratá-lo no próximo request)
+            // Acao = "Bloqueio de utilizador"
+            var acaoBloqueio = await _context.Acaos
+                .FirstOrDefaultAsync(a => a.Nome == "Bloqueio de utilizador");
+            if (acaoBloqueio == null)
+            {
+                acaoBloqueio = new Acao
+                {
+                    IdTipoAcao = tipoAcaoBloqueio.IdTipoAcao,
+                    Nome = "Bloqueio de utilizador",
+                    Descricao = "Utilizador bloqueado por administrador",
+                    TipoAlvo = "Utilizador"
+                };
+                _context.Acaos.Add(acaoBloqueio);
+                await _context.SaveChangesAsync();
+            }
+
+            var adminId = _userManager.GetUserId(User);
+
+            var historicoBloqueio = new HistoricoAco
+            {
+                IdAcao = acaoBloqueio.IdAcao,
+                IdUtilizador = adminId!,
+                IdAlvo = null, // alvo identificado via Razao
+                TipoAlvo = "Utilizador",
+                Razao = $"Utilizador alvo: {user.UserName}. Razão: {reason.Trim()}",
+                DataHora = DateTime.UtcNow
+            };
+
+            _context.HistoricoAcoes.Add(historicoBloqueio);
+            await _context.SaveChangesAsync();
 
             TempData["ProfileSuccess"] = "Utilizador bloqueado com sucesso.";
             return RedirectToAction("UserManage", "Admin");
@@ -351,19 +391,63 @@ namespace CliCarProject.Controllers
             }
 
             var block = await _context.UserBlocks.FirstOrDefaultAsync(b => b.UserId == userId);
+            var reason = block?.Reason ?? "Motivo não especificado.";
+
             if (block != null)
             {
                 _context.UserBlocks.Remove(block);
                 await _context.SaveChangesAsync();
             }
 
-            // remover lockout se tiveres usado
             if (user.LockoutEnabled || user.LockoutEnd != null)
             {
                 user.LockoutEnd = null;
                 user.LockoutEnabled = false;
                 await _userManager.UpdateAsync(user);
             }
+
+            // ------- Histórico: Desbloqueio de utilizador -------
+            var tipoAcaoBloqueio = await _context.TipoAcaos
+                .FirstOrDefaultAsync(t => t.Nome == "Gestão de bloqueios");
+            if (tipoAcaoBloqueio == null)
+            {
+                tipoAcaoBloqueio = new TipoAcao
+                {
+                    Nome = "Gestão de bloqueios"
+                };
+                _context.TipoAcaos.Add(tipoAcaoBloqueio);
+                await _context.SaveChangesAsync();
+            }
+
+            var acaoDesbloqueio = await _context.Acaos
+                .FirstOrDefaultAsync(a => a.Nome == "Desbloqueio de utilizador");
+            if (acaoDesbloqueio == null)
+            {
+                acaoDesbloqueio = new Acao
+                {
+                    IdTipoAcao = tipoAcaoBloqueio.IdTipoAcao,
+                    Nome = "Desbloqueio de utilizador",
+                    Descricao = "Utilizador desbloqueado por administrador",
+                    TipoAlvo = "Utilizador"
+                };
+                _context.Acaos.Add(acaoDesbloqueio);
+                await _context.SaveChangesAsync();
+            }
+
+            var adminId = _userManager.GetUserId(User);
+
+            var historicoDesbloqueio = new HistoricoAco
+            {
+                IdAcao = acaoDesbloqueio.IdAcao,
+                IdUtilizador = adminId!,
+                IdAlvo = null,
+                TipoAlvo = "Utilizador",
+                Razao = $"Utilizador alvo: {user.UserName}. Desbloqueado. Última razão conhecida: {reason}",
+                DataHora = DateTime.UtcNow
+            };
+
+            _context.HistoricoAcoes.Add(historicoDesbloqueio);
+            await _context.SaveChangesAsync();
 
             TempData["ProfileSuccess"] = "Utilizador desbloqueado com sucesso.";
             return RedirectToAction("UserManage", "Admin");
