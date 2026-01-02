@@ -2,63 +2,76 @@
 @model LoginModel
 
 @{
-    ViewData["Title"] = "Log in";
+    ViewData["Title"] = "Entrar no CliCar";
 }
 
-<h1>@ViewData["Title"]</h1>
-<div class="row min-vh-50 justify-content-center align-items-center">
-    <div class="col-md-4">
-        <section>
-            @if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
-            {
-                <div class="alert alert-success" role="alert" id="successMessage">
-                    @TempData["SuccessMessage"]
+<div class="container mt-5">
+    <div class="row justify-content-center align-items-center min-vh-50">
+        <div class="col-12 col-md-6 col-lg-4">
+            
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                
+                <div class="card-header bg-danger text-white text-center py-4">
+                    <h1 class="fw-bold mb-0">CliCar</h1>
+                    <p class="mb-0 opacity-75 small">Stand Virtual</p>
                 </div>
 
-                <script>
-                    // opcional: auto-hide após 4s
-                    setTimeout(function () {
-                        var el = document.getElementById('successMessage');
-                        if (el) el.style.display = 'none';
-                    }, 4000);
-                </script>
-            }
-            <form id="account" method="post">
-                <h2>Use uma conta existente!!.</h2>
-                <hr />
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label asp-for="Input.Email" class="form-label">Email</label>
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                <div class="card-body p-4 p-md-5">
+                    @if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
+                    {
+                        <div class="alert alert-success py-2 mb-4 small" role="alert" id="successMessage">
+                            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                        </div>
+
+                        <script>
+                            setTimeout(function () {
+                                var el = document.getElementById('successMessage');
+                                if (el) el.style.display = 'none';
+                            }, 4000);
+                        </script>
+                    }
+
+                    <h4 class="text-center mb-4 fw-bold">Bem-vindo!</h4>
+
+                    <form id="account" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3" role="alert"></div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="email@example.com" />
+                            <label asp-for="Input.Email">E-mail</label>
+                            <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                            <label asp-for="Input.Password">Palavra-passe</label>
+                            <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="checkbox mb-3 px-1">
+                            <label asp-for="Input.RememberMe" class="form-label small">
+                                <input class="form-check-input" asp-for="Input.RememberMe" />
+                                Lembrar-me neste dispositivo
+                            </label>
+                        </div>
+
+                        <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-danger shadow fw-bold py-3">ENTRAR</button>
+                    </form>
+
+                    <div class="text-center mt-4 border-top pt-3">
+                        <p class="mb-1">
+                            <a id="forgot-password" asp-page="./ForgotPassword" class="text-decoration-none text-muted small">Esqueceu-se da password?</a>
+                        </p>
+                        <p class="mb-1">
+                            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-danger fw-bold text-decoration-none small">Criar uma nova conta</a>
+                        </p>
+                        <p class="mb-0">
+                            <a id="resend-confirmation" asp-page="./ResendEmailConfirmation" class="text-decoration-none text-muted small">Reenviar confirmação</a>
+                        </p>
+                    </div>
                 </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label asp-for="Input.Password" class="form-label">Password</label>
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
-                </div>
-                <div class="checkbox mb-3">
-                    <label asp-for="Input.RememberMe" class="form-label">
-                        <input class="form-check-input" asp-for="Input.RememberMe" />
-                        @Html.DisplayNameFor(m => m.Input.RememberMe)
-                    </label>
-                </div>
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Esqueces-te a password?</a>
-                    </p>
-                    <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Criar uma nova conta</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Reenviar email de confirmação</a>
-                    </p>
-                </div>
-            </form>
-        </section>
+            </div>
+        </div>
     </div>
 </div>
 

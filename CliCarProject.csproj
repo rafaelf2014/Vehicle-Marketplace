@@ -7,7 +7,15 @@
     <UserSecretsId>aspnet-CliCarProject-cd6c34dd-764e-4d08-9af7-5579e1fce33e</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Areas\Identity\Pages\Account\Register\**" />
+    <Content Remove="Areas\Identity\Pages\Account\Register\**" />
+    <EmbeddedResource Remove="Areas\Identity\Pages\Account\Register\**" />
+    <None Remove="Areas\Identity\Pages\Account\Register\**" />
+  </ItemGroup>
+
 <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.14.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.11" />
@@ -23,7 +31,6 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\uploads\anuncios\" />
-    <Folder Include="Areas\Identity\Pages\Account\Register\" />
   </ItemGroup>
 
 </Project>
