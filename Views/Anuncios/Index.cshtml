@@ -31,16 +31,13 @@
             </div>
         </div>
 
-        <form asp-action="DeleteSelected" method="post">
+        <form method="post">
             @Html.AntiForgeryToken()
+           
             <div id="listaAtivos" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
-                <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Ativos" />
-            </div>
-
-            <div class="mt-4">
-                <button type="submit" id="btnDeleteSelected" class="btn btn-outline-danger rounded-pill px-4 shadow-sm" disabled>
-                    <i class="bi bi-trash3 me-2"></i>Eliminar Selecionados
-                </button>
+                <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                         model="ViewBag.Ativos"
+                         view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaDisponivel" } }' />
             </div>
         </form>
     </section>
@@ -53,8 +50,8 @@
                 <h4 class="fw-bold text-warning mb-0">Pedidos de Visita Pendentes</h4>
             </div>
 
+            @* Controlos AJAX *@
             <div class="d-flex gap-2">
-                @* Botões de Carrossel para Pendentes *@
                 <a id="prev-pendentes" asp-action="GetAnunciosPaginados" asp-route-tipo="pendentes" asp-route-pagina="0"
                    data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaPendentes"
                    class="btn btn-outline-warning btn-sm rounded-circle disabled">
@@ -68,36 +65,32 @@
             </div>
         </div>
 
-        @* ID TEM DE SER listaPendentes *@
+        @* O Alvo do AJAX: listaPendentes *@
         <div id="listaPendentes" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
-            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Pendentes" />
+            @foreach (var anuncio in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Pendentes)
+            {
+                foreach (var reserva in anuncio.VisitaReservas.Where(r => r.Estado == "Pendente"))
+                {
+                    @* Passamos a reserva específica como parâmetro extra *@
+                    <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                             model="new List<CliCarProject.Models.Classes.Anuncio> { anuncio }"
+                             view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaPendentes" }, { "ReservaUnica", reserva } }' />
+                }
+            }
         </div>
     </section>
 
     @* --- SECÇÃO 3: RESERVADOS --- *@
     <section class="mb-5">
         <div class="d-flex align-items-center mb-3">
-            <span class="badge bg-primary rounded-pill me-2">@(((List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Reservados).Count)</span>
+            <span class="badge bg-primary rounded-pill me-2">@ViewBag.TotalReservados</span>
             <h4 class="fw-bold text-primary mb-0">Reservas Confirmadas</h4>
         </div>
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach (var item in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Reservados)
-            {
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-success">
-                        <div class="card-body">
-                            <h6 class="fw-bold mb-3">@item.Titulo</h6>
-                            <form asp-action="ConfirmarVenda" method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@item.IdAnuncio" />
-                                <button type="submit" class="btn btn-primary btn-sm w-100 rounded-pill fw-bold">
-                                    <i class="bi bi-cash-stack"></i> Confirmar Venda
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            }
+        
+        <div id="listaReservados" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
+            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                     model="ViewBag.Reservados"
+                     view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaReservados" } }' />
         </div>
     </section>
 
@@ -124,9 +117,10 @@
             </div>
         </div>
 
-        @* Esta div é o alvo do AJAX *@
         <div id="listaVendidos" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3 transition-fade">
-            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Vendidos" />
+            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                     model="ViewBag.Vendidos"
+                     view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaVendidos" } }' />
         </div>
     </section>
 </div>
@@ -139,6 +133,31 @@
     .grayscale-filter {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6 !important;
+    }
+
+    .animate-pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @@keyframes pulse-animation {
+        0%
+
+        {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+     
+        }
+
+        70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+        }
+
     }
 </style>
 
@@ -197,5 +216,4 @@
         // Correr ao carregar a página pela primeira vez
         document.addEventListener('DOMContentLoaded', configurarCheckboxes);
     </script>
-}
 }

@@ -2,41 +2,101 @@
 
 @foreach (var item in Model)
 {
+    var anuncio = (CliCarProject.Models.Classes.Anuncio)item;
+    var contexto = ViewData["Contexto"]?.ToString();
+    var reservaUnica = ViewData["ReservaUnica"] as CliCarProject.Models.Classes.VisitaReserva;
+
+    var isVendido = anuncio.Estado == "Vendido" || contexto == "AbaVendidos";
+
+    var borderClass = isVendido ? "border-secondary" :
+                     (anuncio.Estado == "Reservado" ? "border-success" :
+                     (reservaUnica != null ? "border-warning" : "border-primary"));
+
     <div class="col">
-        @{
-            var isVendido = item.Estado == "Vendido";
-            var borderClass = isVendido ? "border-secondary" : (item.Estado == "Reservado" ? "border-success" : (item.Estado == "Pendente" ? "border-warning" : "border-0"));
-            var borderStyle = borderClass != "border-0" ? "border-top border-4" : "";
-        }
+        <div class="card h-100 shadow-sm rounded-4 border-top border-4 @borderClass @(isVendido ? "grayscale-filter" : "") position-relative">
 
-        <div class="card h-100 shadow-sm rounded-4 overflow-hidden position-relative @(isVendido ? "grayscale-filter" : "") @borderClass @borderStyle">
-
-            @* Overlay de Vendido *@
-            @if (isVendido)
-            {
-                <div class="position-absolute top-50 start-50 translate-middle" style="z-index: 10;">
-                    <span class="badge bg-dark px-2 py-1 opacity-75">VENDIDO</span>
-                </div>
-            }
-
-            <img src="@(item.IdVeiculoNavigation?.Imagems?.Any() == true
-                        ? Url.Content($"~/uploads/veiculos/{item.IdVeiculo}/{item.IdVeiculoNavigation.Imagems.First().Nome}")
-                        : "/images/no-image.png")"
+            <img src="@(anuncio.IdVeiculoNavigation?.Imagems?.Any() == true ? Url.Content($"~/uploads/veiculos/{anuncio.IdVeiculo}/{anuncio.IdVeiculoNavigation.Imagems.First().Nome}") : "/images/no-image.png")"
                  class="card-img-top" style="height: 110px; object-fit: cover; @(isVendido ? "opacity: 0.5;" : "")">
 
             <div class="card-body p-2 text-center">
-                <h6 class="fw-bold mb-1 text-truncate" style="font-size: 0.85rem;">@item.Titulo</h6>
+                <h6 class="fw-bold mb-1 small text-truncate">@anuncio.Titulo</h6>
 
                 @if (isVendido)
                 {
-                    <p class="text-muted small mb-0">Vendido por: @item.Preco.ToString("N0") €</p>
+                    <p class="text-muted small mb-0">Vendido por: @anuncio.Preco.ToString("N0") €</p>
                 }
                 else
                 {
-                    <p class="text-primary fw-bold mb-2 small" style="font-size: 0.75rem;">@item.Preco.ToString("N0") €</p>
+                    <p class="text-primary fw-bold mb-2" style="font-size: 0.75rem;">@anuncio.Preco.ToString("N0") €</p>
+
                     <div class="d-grid gap-1">
-                        @* ... Seus botões de Confirmar Reserva / Venda / Detalhes ... *@
-                        <a asp-action="Details" asp-route-id="@item.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-0" style="font-size: 0.65rem;">Detalhes</a>
+                        @if (contexto == "AbaPendentes" && reservaUnica != null)
+                        {
+                            @* --- BLOCO EXCLUSIVO PARA PENDENTES --- *@
+                            <div class="p-2 bg-warning bg-opacity-10 rounded border border-warning mb-2 text-start">
+                                <div class="mb-2">
+                                    <small class="fw-bold text-dark d-block" style="font-size: 0.65rem;">Interessado:</small>
+                                    <span class="small d-block text-break fw-semibold text-primary">@reservaUnica.Comprador?.UserName</span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <small class="fw-bold text-dark d-block" style="font-size: 0.65rem;">Horário Sugerido:</small>
+                                    @if (reservaUnica.DataVisita.HasValue)
+                                    {
+                                        <span class="small d-block"><i class="bi bi-calendar3 me-1"></i>@reservaUnica.DataVisita.Value.ToString("dd/MM/yyyy")</span>
+                                        <span class="small d-block"><i class="bi bi-clock me-1"></i>@reservaUnica.DataVisita.Value.ToString("HH:mm")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="small d-block text-muted">Data não definida</span>
+                                    }
+                                </div>
+
+                                <div class="d-flex gap-1">
+                                    @* Botão Aceitar *@
+                                    <form asp-action="ConfirmarReserva" method="post" class="flex-grow-1">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idReserva" value="@reservaUnica.IdReserva" />
+                                        <button type="submit" class="btn btn-success btn-xs w-100 py-1 shadow-sm" style="font-size: 0.6rem;">
+                                            <i class="bi bi-check-lg"></i> Aceitar
+                                        </button>
+                                    </form>
+
+                                    @* Botão Cancelar Pedido (Recusar) *@
+                                    <form asp-action="CancelarReserva" method="post" class="flex-grow-1">
+                                        @Html.AntiForgeryToken()
+                                        @* IMPORTANTE: Enviar o idReserva específico do loop *@
+                                        <input type="hidden" name="idReserva" value="@reservaUnica.IdReserva" />
+                                        <button type="submit" class="btn btn-outline-danger btn-xs w-100 py-1"
+                                                style="font-size: 0.6rem;"
+                                                onclick="return confirm('Tem a certeza que deseja cancelar este pedido?')">
+                                            <i class="bi bi-x-lg"></i> Cancelar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @* --- BOTÕES PADRÃO (DISPONÍVEIS / RESERVADOS) --- *@
+                            @if (anuncio.Estado == "Reservado")
+                            {
+                                <form asp-action="ConfirmarVenda" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@anuncio.IdAnuncio" />
+                                    <button type="submit" class="btn btn-success btn-xs w-100 rounded-pill py-1 fw-bold" style="font-size: 0.65rem;">
+                                        Confirmar Venda
+                                    </button>
+                                </form>
+                            }
+
+                            <a asp-action="Details" asp-route-id="@anuncio.IdAnuncio" class="btn btn-outline-dark btn-xs rounded-pill py-1" style="font-size: 0.65rem;">Detalhes</a>
+
+                            @if (anuncio.Estado == "Ativo")
+                            {
+                                <a asp-action="Edit" asp-route-id="@anuncio.IdAnuncio" class="btn btn-light btn-xs rounded-pill py-1" style="font-size: 0.65rem;">Editar</a>
+                            }
+                        }
                     </div>
                 }
             </div>
