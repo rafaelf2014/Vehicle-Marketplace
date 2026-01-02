@@ -31,10 +31,13 @@
             </div>
         </div>
 
-        <form asp-action="DeleteSelected" method="post">
+        <form method="post">
             @Html.AntiForgeryToken()
+           
             <div id="listaAtivos" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
-                <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Ativos" />
+                <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                         model="ViewBag.Ativos"
+                         view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaDisponivel" } }' />
             </div>
         </form>
     </section>
@@ -47,8 +50,8 @@
                 <h4 class="fw-bold text-warning mb-0">Pedidos de Visita Pendentes</h4>
             </div>
 
+            @* Controlos AJAX *@
             <div class="d-flex gap-2">
-                @* Botões de Carrossel para Pendentes *@
                 <a id="prev-pendentes" asp-action="GetAnunciosPaginados" asp-route-tipo="pendentes" asp-route-pagina="0"
                    data-ajax="true" data-ajax-mode="replace" data-ajax-update="#listaPendentes"
                    class="btn btn-outline-warning btn-sm rounded-circle disabled">
@@ -62,9 +65,18 @@
             </div>
         </div>
 
-        @* ID TEM DE SER listaPendentes *@
+        @* O Alvo do AJAX: listaPendentes *@
         <div id="listaPendentes" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
-            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Pendentes" />
+            @foreach (var anuncio in (List<CliCarProject.Models.Classes.Anuncio>)ViewBag.Pendentes)
+            {
+                foreach (var reserva in anuncio.VisitaReservas.Where(r => r.Estado == "Pendente"))
+                {
+                    @* Passamos a reserva específica como parâmetro extra *@
+                    <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                             model="new List<CliCarProject.Models.Classes.Anuncio> { anuncio }"
+                             view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaPendentes" }, { "ReservaUnica", reserva } }' />
+                }
+            }
         </div>
     </section>
 
@@ -74,9 +86,11 @@
             <span class="badge bg-primary rounded-pill me-2">@ViewBag.TotalReservados</span>
             <h4 class="fw-bold text-primary mb-0">Reservas Confirmadas</h4>
         </div>
-        @* Usamos a mesma div alvo de AJAX e a Partial View *@
+        
         <div id="listaReservados" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3 transition-fade">
-            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Reservados" />
+            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                     model="ViewBag.Reservados"
+                     view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaReservados" } }' />
         </div>
     </section>
 
@@ -103,9 +117,10 @@
             </div>
         </div>
 
-        @* Esta div é o alvo do AJAX *@
         <div id="listaVendidos" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3 transition-fade">
-            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml" model="ViewBag.Vendidos" />
+            <partial name="~/Views/Anuncios/PartialViews/_CardsPartial.cshtml"
+                     model="ViewBag.Vendidos"
+                     view-data='@new ViewDataDictionary(ViewData) { { "Contexto", "AbaVendidos" } }' />
         </div>
     </section>
 </div>

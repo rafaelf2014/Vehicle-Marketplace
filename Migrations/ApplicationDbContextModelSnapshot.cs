@@ -632,9 +632,6 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdReserva"));
 
-                    b.Property<int?>("AnuncioIdAnuncio")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("DataExpiracao")
                         .HasColumnType("datetime2");
 
@@ -661,8 +658,6 @@ namespace CliCarProject.Migrations
 
                     b.HasKey("IdReserva")
                         .HasName("PK__VisitaRe__12CAD9F4E4121AE5");
-
-                    b.HasIndex("AnuncioIdAnuncio");
 
                     b.HasIndex("IdAnuncio");
 
@@ -1114,12 +1109,8 @@ namespace CliCarProject.Migrations
 
             modelBuilder.Entity("CliCarProject.Models.Classes.VisitaReserva", b =>
                 {
-                    b.HasOne("CliCarProject.Models.Classes.Anuncio", null)
-                        .WithMany("VisitaReservas")
-                        .HasForeignKey("AnuncioIdAnuncio");
-
                     b.HasOne("CliCarProject.Models.Classes.Anuncio", "IdAnuncioNavigation")
-                        .WithMany()
+                        .WithMany("VisitaReservas")
                         .HasForeignKey("IdAnuncio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

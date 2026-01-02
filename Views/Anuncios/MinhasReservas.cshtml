@@ -8,9 +8,9 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h2 class="fw-bold mb-0">📅 Minhas Reservas & Visitas</h2>
-            <p class="text-muted">Acompanhe os veículos reservados, estados de pagamento e histórico. [cite: 64]</p>
+            <p class="text-muted">Acompanhe os veículos reservados, estados de pagamento e histórico.</p>
         </div>
-        <a asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">
+        <a asp-controller="Car" asp-action="CarSearch" class="btn btn-outline-primary rounded-pill px-4">
             <i class="bi bi-search me-2"></i>Explorar mais
         </a>
     </div>
@@ -40,10 +40,9 @@
                     {
                         var anuncio = reserva.IdAnuncioNavigation;
                         var compra = anuncio?.Compra;
-                        var isExpirada = reserva.Estado == "Confirmada" && reserva.DataExpiracao < DateTime.Now && compra == null;
-
-                        
-                        var podeFazerCheckout = anuncio?.Estado == "Reservado" && compra == null;
+                        // Uma reserva só é confirmada se o seu estado individual for "Confirmada"
+                        var isConfirmada = reserva.Estado == "Confirmada";
+                        var isExpirada = isConfirmada && reserva.DataExpiracao < DateTime.Now && compra == null;
 
                         <tr>
                             <td class="ps-4">
@@ -53,17 +52,22 @@
                                 </div>
                             </td>
                             <td>
-                                @if (isExpirada || reserva.Estado == "Expirada")
+                                @* CORREÇÃO: Olhamos PRIMEIRO para o estado da reserva individual *@
+                                @if (reserva.Estado == "Cancelada")
                                 {
-                                    <span class="badge bg-secondary rounded-pill">Expirada</span>
+                                    <span class="badge bg-secondary rounded-pill">Cancelada</span>
                                 }
-                                else if (anuncio?.Estado == "Reservado" || reserva.Estado == "Confirmada")
+                                else if (isExpirada || reserva.Estado == "Expirada")
+                                {
+                                    <span class="badge bg-danger rounded-pill">Expirada</span>
+                                }
+                                else if (isConfirmada)
                                 {
                                     <span class="badge bg-info text-dark rounded-pill">Reserva Aceite</span>
                                 }
                                 else if (reserva.Estado == "Concluida")
                                 {
-                                    <span class="badge bg-success rounded-pill">Concluída</span>
+                                    <span class="badge bg-success rounded-pill">Venda Concluída</span>
                                 }
                                 else
                                 {
@@ -73,7 +77,7 @@
                             <td>
                                 @if (compra == null)
                                 {
-                                    <span class="text-muted small">Aguardar Checkout</span>
+                                    <span class="text-muted small">@(reserva.Estado == "Confirmada" ? "Aguardar Checkout" : "---")</span>
                                 }
                                 else
                                 {
@@ -84,49 +88,39 @@
                                         "Cancelado" => "bg-danger",
                                         _ => "bg-light text-dark"
                                     };
-                                    <span class="badge @badgeClass rounded-pill">Pagamento @compra.Estado </span>
+                                    <span class="badge @badgeClass rounded-pill">Pagamento @compra.Estado</span>
                                 }
                             </td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
-                                    @* 1. Lógica de Checkout baseada no estado do Anúncio *@
-                                    @if (podeFazerCheckout)
+
+                                    @* SÓ MOSTRA OPÇÕES DE PAGAMENTO SE A RESERVA ESTIVER CONFIRMADA *@
+                                    @if (reserva.Estado == "Confirmada")
                                     {
-                                        <form asp-action="Checkout" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="idAnuncio" value="@reserva.IdAnuncio" />
-                                            <a asp-action="DetalhesCheckout" asp-route-idAnuncio="@reserva.IdAnuncio" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                        @* Se ainda não existe compra para este anúncio, mostra Checkout *@
+                                        @if (compra == null)
+                                        {
+                                            <a asp-action="DetalhesCheckout" asp-route-idReserva="@reserva.IdReserva"
+                                               class="btn btn-success btn-sm rounded-pill px-3">
                                                 <i class="bi bi-cart-check me-1"></i> Checkout
                                             </a>
-                                        </form>
-                                    }
-
-                                    @* 2. Lógica de Pagamento *@
-                                    @if (compra != null && compra.Estado == "Pendente")
-                                    {
-                                        <form asp-action="PagarEncomenda" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="idCompra" value="@reserva.IdAnuncio" />
-                                            <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
-                                                <i class="bi bi-credit-card me-1"></i> Pagar
-                                            </button>
-                                        </form>
+                                        }
+                                        @* Se já existe uma compra Pendente, mostra Pagar Agora *@
+                                        else if (compra.Estado == "Pendente")
+                                        {
+                                            <form asp-action="PagarEncomenda" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idCompra" value="@anuncio.IdAnuncio" />
+                                                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                    <i class="bi bi-credit-card me-1"></i> Pagar Agora
+                                                </button>
+                                            </form>
+                                        }
                                     }
 
                                     <a asp-action="Details" asp-route-id="@reserva.IdAnuncio" class="btn btn-sm btn-outline-dark rounded-pill">
                                         Detalhes
                                     </a>
-
-                                    @if ((reserva.Estado == "Pendente" || reserva.Estado == "Confirmada" ) && compra == null)
-                                    {
-                                        <form asp-action="CancelarReserva" asp-asp-controller="Anuncios" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="idAnuncio" value="@reserva.IdAnuncio" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                                <i class="bi bi-x-circle me-1"></i> Cancelar Pedido
-                                            </button>
-                                        </form>
-                                    }
                                 </div>
                             </td>
                         </tr>

@@ -43,7 +43,7 @@
 
                     <form asp-action="Checkout" method="post">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="idAnuncio" value="@Model.IdAnuncio" />
+                        <input type="hidden" name="idReserva" value="@ViewBag.IdReservaParaPagamento" />
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold py-3 shadow">
                                 Confirmar Registo da Encomenda

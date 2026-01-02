@@ -2,13 +2,108 @@
 @using CliCarProject.Models.Classes
 @model IEnumerable<Anuncio>
 
+@{
+    var cultureInfo = new CultureInfo("pt-PT");
+    cultureInfo.NumberFormat.NumberGroupSeparator = " ";
+}
+
+<style>
+    /* CSS dos Cards */
+    .car-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #eee;
+        overflow: hidden;
+    }
+
+        .car-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    .car-card-img {
+        height: 200px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .spec-item {
+        font-size: 0.85rem;
+        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .price-tag {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #dc3545;
+    }
+
+    /* --- CSS BASE DA ETIQUETA --- */
+    .badge-estado {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25em 0.6em;
+        border-radius: 50rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* --- CORES DINÂMICAS --- */
+
+    /* Novo = Verde */
+    .badge-novo {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #badbcc;
+    }
+
+    /* Semi-novo = Amarelo/Laranja */
+    .badge-seminovo {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    /* Usado = Vermelho (Padrão) */
+    .badge-usado {
+        background-color: #ffeaea;
+        color: #dc3545;
+        border: 1px solid #f5c2c7;
+    }
+
+    /* Contentor para alinhar Título e Badge */
+    .card-title-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0.25rem;
+        width: 100%;
+    }
+
+    .card-title-text {
+        font-weight: 800;
+        color: #212529;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+</style>
+
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
 
     @if (!Model.Any())
     {
         <div class="col-12 text-center py-5">
-            <div class="py-5">
-                <h3 class="text-muted">😔 Nenhum carro encontrado.</h3>
+            <div class="py-5 bg-light rounded-3">
+                <i class="bi bi-search display-1 text-muted mb-3"></i>
+                <h3 class="text-muted fw-bold">Nenhum carro encontrado</h3>
                 <p class="text-secondary">Tenta ajustar os filtros para ver mais resultados.</p>
             </div>
         </div>
@@ -19,48 +114,108 @@
         var veiculo = item.IdVeiculoNavigation;
         var img = veiculo?.Imagems?.OrderByDescending(i => i.IdImagem).FirstOrDefault();
 
-        // Verifica a imagem
+        // Imagem
         var imageSrc = (veiculo != null && img != null && !string.IsNullOrWhiteSpace(img.Nome))
         ? Url.Content($"~/uploads/veiculos/{veiculo.IdVeiculo}/{img.Nome}")
         : Url.Content("~/img/placeholder-car.png");
 
         var precoFormatado = item.Preco.ToString("N0", CultureInfo.GetCultureInfo("pt-PT")) + " €";
 
+        // Lógica de Reservado
+        bool estaReservado = item.VisitaReservas != null &&
+        item.VisitaReservas.Any(v => v.Estado.Contains("Reservada") || v.Estado.Contains("Confirmada"));
+
+        // Helper para o Texto
+        string GetCondicaoLabel(string? c) => c switch
+        {
+            "N" => "Novo",
+            "S" => "Semi-novo",
+            "U" => "Usado",
+            _ => ""
+        };
+
+        // Helper para a Classe CSS (Cores)
+        string GetCondicaoClass(string? c) => c switch
+        {
+            "N" => "badge-novo",
+            "S" => "badge-seminovo",
+            _ => "badge-usado"
+        };
+
+        string condicaoTexto = GetCondicaoLabel(veiculo?.Condicao);
+        string condicaoCss = GetCondicaoClass(veiculo?.Condicao);
+
         <div class="col">
-            <div class="card car-card h-100 shadow-sm">
-                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="car-img-container">
+            <div class="card car-card h-100 shadow-sm border-0 rounded-3">
+
+                <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio" class="position-relative text-decoration-none">
                     <img src="@imageSrc" class="car-card-img" alt="@item.Titulo" />
+
+                    @if (estaReservado)
+                    {
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-warning text-dark shadow px-3 py-2 fw-bold text-uppercase">
+                                <i class="bi bi-lock-fill me-1"></i> Reservado
+                            </span>
+                        </div>
+                    }
                 </a>
 
-                <div class="card-body car-card-body">
-                    <div>
-                        <h5 class="car-title" title="@item.Titulo">@item.Titulo</h5>
-                        <div class="car-price">@precoFormatado</div>
+                <div class="card-body d-flex flex-column p-3">
 
-                        <div class="specs-container">
-                            @if (veiculo != null)
-                            {
-                                <span class="spec-badge">@veiculo.Ano</span>
-                                <span class="spec-badge">@((veiculo.Quilometragem ?? 0).ToString("N0")) km</span>
-                                <span class="spec-badge">@veiculo.IdCombustivelNavigation?.Tipo</span>
-                                <span class="spec-badge">@veiculo.Caixa</span>
-                            }
-                        </div>
+                    <div class="card-title-container">
+                        <h5 class="card-title-text m-0" title="@item.Titulo">@item.Titulo</h5>
+
+                        @if (!string.IsNullOrEmpty(condicaoTexto))
+                        {
+                            <span class="badge-estado @condicaoCss">@condicaoTexto</span>
+                        }
                     </div>
 
                     @if (item.IdLocalizacaoNavigation != null)
                     {
-                        <div class="text-muted small mb-3">
-                            📍 @item.IdLocalizacaoNavigation.Distrito
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                            @item.IdLocalizacaoNavigation.Distrito
                         </div>
                     }
 
-                    <div class="car-footer">
-                        <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
-                           class="btn btn-danger w-100">
-                            Ver Detalhes
-                        </a>
+                    <div class="mb-3">
+                        <span class="price-tag">@precoFormatado</span>
                     </div>
+
+                    <div class="bg-light p-3 rounded-3 mb-3">
+                        @if (veiculo != null)
+                        {
+                            <div class="row g-2">
+                                <div class="col-6 spec-item" title="Ano">
+                                    <i class="bi bi-calendar-event text-secondary"></i>
+                                    <span>@veiculo.Ano</span>
+                                </div>
+                                <div class="col-6 spec-item" title="Quilómetros">
+                                    <i class="bi bi-speedometer2 text-secondary"></i>
+                                    <span>@((veiculo.Quilometragem ?? 0).ToString("N0")) km</span>
+                                </div>
+                                <div class="col-6 spec-item" title="Combustível">
+                                    <i class="bi bi-fuel-pump text-secondary"></i>
+                                    <span>@veiculo.IdCombustivelNavigation?.Tipo</span>
+                                </div>
+                                <div class="col-6 spec-item" title="Caixa">
+                                    <i class="bi bi-gear-wide-connected text-secondary"></i>
+                                    <span>@(veiculo.Caixa == "M" ? "Manual" : "Automática")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-auto">
+                            <a asp-controller="Anuncios" asp-action="Details" asp-route-id="@item.IdAnuncio"
+                               class="btn btn-danger w-100 fw-bold shadow-sm">
+                                Ver Detalhes
+                            </a>
+                        
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -76,16 +231,20 @@
     }
     <ul class="pagination justify-content-center">
         <li class="page-item @(page <= 1 ? "disabled" : "")">
-            <a class="page-link ajax-link rounded-pill px-3 mx-1" href="#" data-page="@prevPage">Anterior</a>
+            <a class="page-link ajax-link rounded-pill px-3 mx-1 border-0 shadow-sm" href="#" data-page="@prevPage">
+                <i class="bi bi-chevron-left"></i> Anterior
+            </a>
         </li>
         @for (int i = 1; i <= totalPages; i++)
         {
             <li class="page-item @(i == page ? "active" : "")">
-                <a class="page-link ajax-link rounded-pill px-3 mx-1" href="#" data-page="@i">@i</a>
+                <a class="page-link ajax-link rounded-pill px-3 mx-1 border-0 shadow-sm @(i == page ? "bg-danger border-danger" : "text-dark")" href="#" data-page="@i">@i</a>
             </li>
         }
         <li class="page-item @(page >= totalPages ? "disabled" : "")">
-            <a class="page-link ajax-link rounded-pill px-3 mx-1" href="#" data-page="@nextPage">Próxima</a>
+            <a class="page-link ajax-link rounded-pill px-3 mx-1 border-0 shadow-sm" href="#" data-page="@nextPage">
+                Próxima <i class="bi bi-chevron-right"></i>
+            </a>
         </li>
     </ul>
 </nav>

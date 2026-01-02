@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
+<<<<<<<< HEAD:Migrations/20251230180543_block.Designer.cs
     [Migration("20251230180543_block")]
     partial class block
+========
+    [Migration("20260102164628_FixRelacaoFluentApi")]
+    partial class FixRelacaoFluentApi
+>>>>>>>> AlexandrePereira-Branch:Migrations/20260102164628_FixRelacaoFluentApi.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -275,6 +280,9 @@ namespace CliCarProject.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdFiltroFavorito"));
 
+                    b.Property<string>("FiltrosJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("IdClasse")
                         .HasColumnType("int")
                         .HasColumnName("ID_Classe");
@@ -296,6 +304,10 @@ namespace CliCarProject.Migrations
                     b.Property<int?>("IdMarca")
                         .HasColumnType("int")
                         .HasColumnName("ID_Marca");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("IdFiltroFavorito")
                         .HasName("PK__FiltrosF__410905C7C5E79498");

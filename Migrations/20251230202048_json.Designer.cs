@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
+<<<<<<<< HEAD:Migrations/20251230202048_json.Designer.cs
     [Migration("20251230202048_json")]
     partial class json
+========
+    [Migration("20260102154324_fixDatabase")]
+    partial class fixDatabase
+>>>>>>>> AlexandrePereira-Branch:Migrations/20260102154324_fixDatabase.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
