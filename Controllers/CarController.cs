@@ -54,7 +54,7 @@ namespace CliCarProject.Controllers
             if (ocultarReservados)
             {
                 // Garante que esconde tudo o que tenha qualquer tipo de reserva
-                query = query.Where(a => !a.VisitaReservas.Any(v => v.Estado.Contains("Pendente") || v.Estado.Contains("Reservada")));
+                query = query.Where(a => !a.VisitaReservas.Any(v => v.Estado.Contains("Reservada") || v.Estado.Contains("Confirmada")));
             }
 
             if (!string.IsNullOrEmpty(condicao))
