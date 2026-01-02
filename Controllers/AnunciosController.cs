@@ -805,7 +805,9 @@ namespace CliCarProject.Controllers
             if (reserva == null || reserva.Estado != "Confirmada")
                 return RedirectToAction("MinhasReservas");
 
-            return View(reserva);
+            ViewBag.IdReservaParaPagamento = idReserva;
+
+            return View(reserva.IdAnuncioNavigation);
         }
 
         [HttpPost]
