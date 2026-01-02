@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
+<<<<<<<< HEAD:Migrations/20251230202229_jsonnome.Designer.cs
     [Migration("20251230202229_jsonnome")]
     partial class jsonnome
+========
+    [Migration("20251230204041_InitialCreate")]
+    partial class InitialCreate
+>>>>>>>> AlexandrePereira-Branch:Migrations/20251230204041_InitialCreate.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

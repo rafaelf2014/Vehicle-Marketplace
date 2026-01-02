@@ -132,7 +132,7 @@ body {
         width: auto;
         /* Aumentei o min-width para 125px para caber "Combustível" */
         min-width: 125px;
-        max-width: 220px;
+        max-width: 320px;
         /* Mudei para 'auto' para o dropdown crescer se a palavra for grande */
         flex: 0 0 auto;
         box-sizing: border-box;
