@@ -455,7 +455,7 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
                 .HasColumnName("ID_Comprador");
 
             entity.HasOne(d => d.IdAnuncioNavigation)
-                .WithMany()
+                .WithMany(p => p.VisitaReservas)
                 .HasForeignKey(d => d.IdAnuncio)
                 .OnDelete(DeleteBehavior.Cascade);
 

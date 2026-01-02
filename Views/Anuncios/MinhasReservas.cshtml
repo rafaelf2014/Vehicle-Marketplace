@@ -8,9 +8,9 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h2 class="fw-bold mb-0">📅 Minhas Reservas & Visitas</h2>
-            <p class="text-muted">Acompanhe os veículos que reservou e as suas visitas agendadas.</p>
+            <p class="text-muted">Acompanhe os veículos reservados, estados de pagamento e histórico.</p>
         </div>
-        <a asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">
+        <a asp-controller="Car" asp-action="CarSearch" class="btn btn-outline-primary rounded-pill px-4">
             <i class="bi bi-search me-2"></i>Explorar mais
         </a>
     </div>
@@ -20,7 +20,7 @@
         <div class="text-center py-5 border rounded-4 bg-light shadow-sm">
             <i class="bi bi-calendar-x display-1 text-muted opacity-25"></i>
             <h3 class="mt-4 fw-bold text-secondary">Ainda não tem reservas</h3>
-            <p class="text-muted">Quando reservar um veículo, ele aparecerá aqui com os detalhes da visita.</p>
+            <p class="text-muted">Quando reservar um veículo, ele aparecerá aqui.</p>
         </div>
     }
     else
@@ -30,69 +30,98 @@
                 <thead class="bg-dark text-white">
                     <tr>
                         <th class="ps-4 py-3">Veículo</th>
-                        <th>Data Agendada</th>
-                        <th>Expira em</th>
-                        <th>Estado</th>
-                        <th class="text-end pe-4">Ações</th>
+                        <th>Estado Reserva</th>
+                        <th>Estado Pagamento </th>
+                        <th class="text-end pe-4">Ações Funcionais</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var reserva in Model)
                     {
                         var anuncio = reserva.IdAnuncioNavigation;
-                        var veiculo = anuncio?.IdVeiculoNavigation;
-                        var isExpirada = reserva.DataExpiracao < DateTime.Now && reserva.Estado == "Pendente";
+                        var compra = anuncio?.Compra;
+                        // Uma reserva só é confirmada se o seu estado individual for "Confirmada"
+                        var isConfirmada = reserva.Estado == "Confirmada";
+                        var isExpirada = isConfirmada && reserva.DataExpiracao < DateTime.Now && compra == null;
 
                         <tr>
                             <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="fw-bold text-dark">
-                                        @anuncio?.Titulo
-                                        <small class="d-block text-muted fw-normal">@anuncio?.Preco.ToString("N0") €</small>
-                                    </div>
+                                <div class="fw-bold text-dark">
+                                    @anuncio?.Titulo
+                                    <small class="d-block text-primary">@anuncio?.Preco.ToString("N0") €</small>
                                 </div>
                             </td>
                             <td>
-                                <div class="d-flex flex-column">
-                                    <span><i class="bi bi-calendar-event me-2 text-primary"></i>@reserva.DataVisita?.ToString("dd/MM/yyyy")</span>
-                                    <small class="text-muted">@reserva.DataVisita?.ToString("HH:mm")</small>
-                                </div>
-                            </td>
-                            <td>
-                                @if (reserva.Estado == "Pendente" && !isExpirada)
+                                @* CORREÇÃO: Olhamos PRIMEIRO para o estado da reserva individual *@
+                                @if (reserva.Estado == "Cancelada")
                                 {
-                                    <span class="text-danger fw-bold">
-                                        <i class="bi bi-hourglass-split me-1"></i>
-                                        @reserva.DataExpiracao?.ToString("dd/MM HH:mm")
-                                    </span>
+                                    <span class="badge bg-secondary rounded-pill">Cancelada</span>
                                 }
-                                else
+                                else if (isExpirada || reserva.Estado == "Expirada")
                                 {
-                                    <span class="text-muted">--</span>
+                                    <span class="badge bg-danger rounded-pill">Expirada</span>
                                 }
-                            </td>
-                            <td>
-                                @if (isExpirada || reserva.Estado == "Expirada")
+                                else if (isConfirmada)
                                 {
-                                    <span class="badge bg-secondary rounded-pill px-3">Expirada</span>
-                                }
-                                else if (reserva.Estado == "Pendente")
-                                {
-                                    <span class="badge bg-warning text-dark rounded-pill px-3">Pendente</span>
+                                    <span class="badge bg-info text-dark rounded-pill">Reserva Aceite</span>
                                 }
                                 else if (reserva.Estado == "Concluida")
                                 {
-                                    <span class="badge bg-success rounded-pill px-3">Venda Concluída</span>
+                                    <span class="badge bg-success rounded-pill">Venda Concluída</span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-light text-dark border rounded-pill px-3">@reserva.Estado</span>
+                                    <span class="badge bg-warning text-dark rounded-pill">@reserva.Estado</span>
+                                }
+                            </td>
+                            <td>
+                                @if (compra == null)
+                                {
+                                    <span class="text-muted small">@(reserva.Estado == "Confirmada" ? "Aguardar Checkout" : "---")</span>
+                                }
+                                else
+                                {
+                                    var badgeClass = compra.Estado switch
+                                    {
+                                        "Pendente" => "bg-warning text-dark",
+                                        "Pago" => "bg-success",
+                                        "Cancelado" => "bg-danger",
+                                        _ => "bg-light text-dark"
+                                    };
+                                    <span class="badge @badgeClass rounded-pill">Pagamento @compra.Estado</span>
                                 }
                             </td>
                             <td class="text-end pe-4">
-                                <a asp-action="Details" asp-route-id="@reserva.IdAnuncio" class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                                    Ver Anúncio
-                                </a>
+                                <div class="d-flex justify-content-end gap-2">
+
+                                    @* SÓ MOSTRA OPÇÕES DE PAGAMENTO SE A RESERVA ESTIVER CONFIRMADA *@
+                                    @if (reserva.Estado == "Confirmada")
+                                    {
+                                        @* Se ainda não existe compra para este anúncio, mostra Checkout *@
+                                        @if (compra == null)
+                                        {
+                                            <a asp-action="DetalhesCheckout" asp-route-idReserva="@reserva.IdReserva"
+                                               class="btn btn-success btn-sm rounded-pill px-3">
+                                                <i class="bi bi-cart-check me-1"></i> Checkout
+                                            </a>
+                                        }
+                                        @* Se já existe uma compra Pendente, mostra Pagar Agora *@
+                                        else if (compra.Estado == "Pendente")
+                                        {
+                                            <form asp-action="PagarEncomenda" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idCompra" value="@anuncio.IdAnuncio" />
+                                                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                    <i class="bi bi-credit-card me-1"></i> Pagar Agora
+                                                </button>
+                                            </form>
+                                        }
+                                    }
+
+                                    <a asp-action="Details" asp-route-id="@reserva.IdAnuncio" class="btn btn-sm btn-outline-dark rounded-pill">
+                                        Detalhes
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -117,5 +146,9 @@
     .badge {
         font-weight: 600;
         font-size: 0.75rem;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
     }
 </style>
