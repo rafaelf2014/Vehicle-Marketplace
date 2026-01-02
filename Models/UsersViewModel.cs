@@ -16,12 +16,10 @@ namespace CliCarProject.Models
             public string Id { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
             public string UserName { get; set; } = string.Empty;
-            // Texto simples indicando se é Comprador, Vendedor, ambos ou vazio
             public string Role { get; set; } = string.Empty;
-
-            // Data de criação (obteremos a partir do claim "CreatedAt")
             public DateTime? CreatedAt { get; set; }
-            public bool IsBlocked { get; set; }   // <= novo
+            public bool IsBlocked { get; set; }
+            public bool IsSuperAdmin { get; set; } // NOVO
         }
     }
 }

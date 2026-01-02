@@ -140,10 +140,14 @@ namespace CliCarProject.Controllers
                 var claims = await _userManager.GetClaimsAsync(iu);
                 var createdAtClaim = claims.FirstOrDefault(c => c.Type == "CreatedAt");
                 DateTime? createdAt = null;
-                if (createdAtClaim != null && DateTime.TryParse(createdAtClaim.Value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+                if (createdAtClaim != null && DateTime.TryParse(createdAtClaim.Value, null,
+                        System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
                 {
                     createdAt = dt;
                 }
+
+                var isSuperAdmin = string.Equals(iu.Email, "superadmin@clicar.local", StringComparison.OrdinalIgnoreCase);
+                // TODO: substitui "superadmin@tuaapp.com" pelo email real do teu superadmin
 
                 users.Add(new UsersViewModel.UserListItem
                 {
@@ -154,7 +158,8 @@ namespace CliCarProject.Controllers
                            + (compradoresSet.Contains(iu.Id) && vendedoresSet.Contains(iu.Id) ? ", " : "")
                            + (vendedoresSet.Contains(iu.Id) ? "Vendedor" : ""),
                     CreatedAt = createdAt,
-                    IsBlocked = blockedSet.Contains(iu.Id)
+                    IsBlocked = blockedSet.Contains(iu.Id),
+                    IsSuperAdmin = isSuperAdmin
                 });
             }
 
@@ -387,6 +392,53 @@ namespace CliCarProject.Controllers
 
             TempData["AdminSuccess"] = "Anúncio marcado como inativo.";
             return RedirectToAction(nameof(Anuncios));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateAdminUser(string userName, string email, string password, string confirmPassword)
+        {
+            if (string.IsNullOrWhiteSpace(userName) ||
+                string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(password) ||
+                string.IsNullOrWhiteSpace(confirmPassword))
+            {
+                TempData["AdminError"] = "Todos os campos são obrigatórios.";
+                return RedirectToAction("Index");
+            }
+
+            if (!string.Equals(password, confirmPassword, StringComparison.Ordinal))
+            {
+                TempData["AdminError"] = "A password e a confirmação não coincidem.";
+                return RedirectToAction("Index");
+            }
+
+            var existing = await _userManager.FindByEmailAsync(email);
+            if (existing != null)
+            {
+                TempData["AdminError"] = "Já existe um utilizador com esse email.";
+                return RedirectToAction("Index");
+            }
+
+            var user = new IdentityUser
+            {
+                UserName = userName,
+                Email = email,
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
+            {
+                TempData["AdminError"] = string.Join(" | ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("Index");
+            }
+
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+            TempData["AdminSuccess"] = "Conta admin criada com sucesso.";
+            return RedirectToAction("Index");
         }
     }
 }
