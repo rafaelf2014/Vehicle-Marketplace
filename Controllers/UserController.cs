@@ -294,6 +294,13 @@ namespace CliCarProject.Controllers
                 return RedirectToAction("UserManage", "Admin");
             }
 
+            // impedir bloquear superadmin pelo backend
+            if (string.Equals(user.Email, "superadmin@clicar.local", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ProfileError"] = "Não é permitido bloquear a conta superadmin.";
+                return RedirectToAction("UserManage", "Admin");
+            }
+
             // registar bloqueio (atualiza se já existir)
             var existing = await _context.UserBlocks.FirstOrDefaultAsync(b => b.UserId == userId);
             if (existing == null)
