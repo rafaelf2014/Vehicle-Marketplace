@@ -1,8 +1,48 @@
 ﻿@page
 @model ConfirmEmailModel
 @{
-    ViewData["Title"] = "Confirm email";
+    ViewData["Title"] = "E-mail Confirmado";
 }
 
-<h1>@ViewData["Title"]</h1>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #198754;"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3">@ViewData["Title"]</h2>
+
+                    <div class="alert alert-success fs-5">
+                        A tua conta foi ativada com sucesso!
+                    </div>
+
+                    <p class="text-muted mt-3">
+                        Serás redirecionado para a página de Login em <span id="countdown">5</span> segundos...
+                    </p>
+
+                    <div class="mt-4">
+                        <a asp-page="/Account/Login" class="btn btn-primary btn-lg w-100">Ir para o Login Agora</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let seconds = 5;
+        const display = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            seconds--;
+            display.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(timer);
+                window.location.href = '/Identity/Account/Login';
+            }
+        }, 1000);
+    </script>
+}

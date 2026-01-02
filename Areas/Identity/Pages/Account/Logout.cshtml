@@ -1,0 +1,53 @@
+﻿@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Sessão Terminada";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center align-items-center min-vh-50">
+        <div class="col-12 col-md-6 col-lg-4 text-center">
+
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-danger text-white py-4">
+                    <h1 class="fw-bold mb-0">CliCar</h1>
+                    <p class="mb-0 opacity-75 small">Até à próxima!</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle-fill" style="font-size: 3.5rem; color: #198754;"></i>
+                    </div>
+
+                    <h4 class="fw-bold mb-3">Logout Efetuado</h4>
+
+                    <div class="alert alert-success border-0 bg-light text-success small mb-4">
+                        A tua sessão foi encerrada com sucesso.
+                    </div>
+
+                    <p class="text-muted small">
+                        A redirecionar para a página inicial em <span id="countdown" class="fw-bold text-danger">3</span> segundos...
+                    </p>
+
+                    <a href="/" class="btn btn-outline-danger w-100 mt-2">Ir para o Início Agora</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let seconds = 3;
+        const display = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            seconds--;
+            if (display) display.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(timer);
+                window.location.href = '/'; // Redireciona para a Home
+            }
+        }, 1000);
+    </script>
+}
