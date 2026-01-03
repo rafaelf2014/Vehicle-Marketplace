@@ -30,7 +30,7 @@
             <!-- Marca (IdModeloNavigation->Marca?) -->
             <div class="col-md-6">
                 <label class="form-label fw-semibold">Marca ( Obrigatório )</label>
-                <select asp-for="IdMarca" class="form-control" asp-items="ViewBag.IdMarca">
+                <select asp-for="IdMarca" id="marcaId" class="form-control" asp-items="ViewBag.IdMarca">
                     <option value="">Selecionar</option>
                 </select>
                 <span asp-validation-for="IdMarca" class="text-danger"></span>
@@ -39,7 +39,7 @@
             <!-- Modelo -->
             <div class="col-md-6">
                 <label asp-for="IdModelo" class="form-label fw-semibold">Modelo ( Obrigatório )</label>
-                <select asp-for="IdModelo" class="form-control" asp-items="ViewBag.IdModelo">
+                <select asp-for="IdModelo" id="modeloId" class="form-control" disabled>
                     <option value="">Selecionar</option>
                 </select>
                 <span asp-validation-for="IdModelo" class="text-danger"></span>
@@ -160,7 +160,59 @@
                         reader.readAsDataURL(files[i]);
                     }
                 });
+		</script>
+    <script>
+        (function () {
+            const marcaSelect = document.getElementById('marcaId');
+            const modeloSelect = document.getElementById('modeloId');
+
+            function setModelos(list) {
+                modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                list.forEach(m => {
+                    const id = m.idModelo ?? m.IdModelo;
+                    const nome = m.nome ?? m.Nome;
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.textContent = nome;
+                    modeloSelect.appendChild(opt);
+                });
+                modeloSelect.disabled = list.length === 0;
+            }
+
+            marcaSelect.addEventListener('change', function () {
+                const marcaId = this.value;
+                if (!marcaId) {
+                    // sem marca => desactiva modelo e limpa opções
+                    modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                    modeloSelect.disabled = true;
+                    return;
+                }
+
+                // fetch modelos da API
+                fetch(`/Veiculos/GetModelos?marcaId=${encodeURIComponent(marcaId)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setModelos(data || []);
+                    })
+                    .catch(() => {
+                        modeloSelect.innerHTML = '<option value="">Modelo</option>';
+                        modeloSelect.disabled = true;
+                    });
+            });
+
+            // Ao carregar a página, se houver uma marca já selecionada (ex.: após submit),
+            // disparar a mudança para popular modelos.
+            document.addEventListener('DOMContentLoaded', function () {
+                if (marcaSelect.value) {
+                    // força disparo de change para popular modelos
+                    marcaSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        })();
+    </script>
+        
+        
             
-        </script>
+        
    }
 }
