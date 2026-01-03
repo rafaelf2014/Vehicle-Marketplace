@@ -595,37 +595,6 @@ namespace CliCarProject.Controllers
         }
 
        
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> DeleteSelected(int[] ids)
-        //{
-        //    if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
-
-        //    try
-        //    {
-        //        var anunciosParaApagar = await _context.Anuncios
-        //            .Where(a => ids.Contains(a.IdAnuncio) && a.Estado == "Ativo")
-        //            .ToListAsync();
-
-        //        foreach (var anuncio in anunciosParaApagar)
-        //        {
-        //            // Verifica se realmente não tem reservas antes de apagar
-        //            var temReserva = await _context.VisitaReservas.AnyAsync(r => r.IdAnuncio == anuncio.IdAnuncio);
-        //            if (!temReserva)
-        //            {
-        //                anuncio.Estado = "Inativo";
-        //            }
-        //        }
-        //        await _context.SaveChangesAsync();
-        //        TempData["Success"] = "Anúncios eliminados com sucesso.";
-        //    }
-        //    catch (Exception)
-        //    {
-        //        TempData["Error"] = "Erro ao eliminar anúncios.";
-        //    }
-        //    return RedirectToAction(nameof(Index));
-        //}
-
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CancelarReserva(int idReserva)
