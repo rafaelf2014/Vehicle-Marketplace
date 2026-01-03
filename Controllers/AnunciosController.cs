@@ -262,6 +262,11 @@ namespace CliCarProject.Controllers
                 return Unauthorized();
             }
 
+            if (anuncio.Preco <= 0 || anuncio.Preco > 100000000)
+            {
+                ModelState.AddModelError("Preco", "O preço deve ser um valor positivo e válido.");
+            }
+
             anuncio.IdVendedor = userId; //Atribui o Id do vendedor ao anúncio
 
             anuncio.DataCriacao = DateTime.Now;
@@ -278,7 +283,7 @@ namespace CliCarProject.Controllers
                     {
                         Console.WriteLine($"Campo: {entry.Key} → ERRO: {error.ErrorMessage}");
                     }
-                }   //Percorre os modelsState e imprime os erros no console
+                }   
 
                 // Recarregar dropdowns
                 ViewData["IdVeiculo"] = new SelectList(
