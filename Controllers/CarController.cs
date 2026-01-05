@@ -42,13 +42,18 @@ namespace CliCarProject.Controllers
 
 
             query = query.Where(a =>
-                  a.Estado == "Ativo" ||
-                  // Se estiver Inativo, mostra se tiver reserva "Reservada", "Confirmada" ou "Pendente"
+                  (a.Estado == "Ativo" ||
+                  a.Estado == "Reservado" ||
+                  // Se estiver com reserva, mostra se tiver reserva "Reservada", "Confirmada" ou "Pendente"
                   a.VisitaReservas.Any(v =>
                       v.Estado.Contains("Reservada") ||
                       v.Estado.Contains("Confirmada") ||
                       v.Estado.Contains("Pendente")
-                  )
+                  )) &&
+                  // Exclui explicitamente anúncios Inativo, Indisponivel e Vendido
+                  a.Estado != "Inativo" &&
+                  a.Estado != "Indisponivel" &&
+                  a.Estado != "Vendido"
               );
 
             if (ocultarReservados)

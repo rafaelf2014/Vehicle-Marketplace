@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CliCarProject.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class setupfinal : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -127,6 +127,21 @@ namespace CliCarProject.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__TipoAcao__D8411B34A8D3749C", x => x.ID_TipoAcao);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserBlocks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    BlockedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserBlocks", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -579,17 +594,11 @@ namespace CliCarProject.Migrations
                     DataExpiracao = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Estado = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true, defaultValue: "Pendente"),
                     ID_Anuncio = table.Column<int>(type: "int", nullable: false),
-                    ID_Comprador = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    AnuncioIdAnuncio = table.Column<int>(type: "int", nullable: true)
+                    ID_Comprador = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__VisitaRe__12CAD9F4E4121AE5", x => x.ID_Reserva);
-                    table.ForeignKey(
-                        name: "FK_VisitaReserva_Anuncio_AnuncioIdAnuncio",
-                        column: x => x.AnuncioIdAnuncio,
-                        principalTable: "Anuncio",
-                        principalColumn: "ID_Anuncio");
                     table.ForeignKey(
                         name: "FK_VisitaReserva_Anuncio_ID_Anuncio",
                         column: x => x.ID_Anuncio,
@@ -710,6 +719,12 @@ namespace CliCarProject.Migrations
                 column: "ID_Marca");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserBlocks_UserId",
+                table: "UserBlocks",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Veiculo_ID_Classe",
                 table: "Veiculo",
                 column: "ID_Classe");
@@ -743,11 +758,6 @@ namespace CliCarProject.Migrations
                 name: "IX_Venda_IdComprador",
                 table: "Venda",
                 column: "IdComprador");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VisitaReserva_AnuncioIdAnuncio",
-                table: "VisitaReserva",
-                column: "AnuncioIdAnuncio");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VisitaReserva_ID_Anuncio",
@@ -801,6 +811,9 @@ namespace CliCarProject.Migrations
 
             migrationBuilder.DropTable(
                 name: "SitePageView");
+
+            migrationBuilder.DropTable(
+                name: "UserBlocks");
 
             migrationBuilder.DropTable(
                 name: "Venda");
