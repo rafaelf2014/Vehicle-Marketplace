@@ -144,7 +144,7 @@
                             <label class="text-muted small mb-1">Morada</label>
                             <div class="border rounded-3 px-3 py-2 bg-light">
                                 <span class="fw-semibold">
-                                    @(comprador?.Morada ?? "-")
+                                    @(vendedor?.Morada ?? comprador?.Morada ?? "-")
                                 </span>
                             </div>
                         </div>
@@ -258,6 +258,13 @@
                                    placeholder="12345678 (sem hífen)" />
                         </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Morada</label>
+                            <input name="Morada"
+                                   class="form-control"
+                                   value="@(vendedor?.Morada ?? comprador?.Morada ?? string.Empty)" />
+                        </div>
+
                         @if (User.IsInRole("Vendedor"))
                         {
                             <div class="col-md-6">
@@ -268,16 +275,6 @@
                                        maxlength="9"
                                        inputmode="numeric"
                                        pattern="\d*" />
-                            </div>
-                        }
-
-                        @if (User.IsInRole("Comprador"))
-                        {
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Morada</label>
-                                <input name="Morada"
-                                       class="form-control"
-                                       value="@comprador?.Morada" />
                             </div>
                         }
                     </div>

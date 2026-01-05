@@ -19,5 +19,7 @@ public partial class Vendedor
 
     public string? Tipo { get; set; }
 
+    public string? Morada { get; set; }
+
     public virtual IdentityUser IdUtilizadorNavigation { get; set; } = null!;
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CliCarProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260103110645_final")]
-    partial class final
+    [Migration("20260105173002_AddMoradaToVendedor")]
+    partial class AddMoradaToVendedor
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -607,6 +607,10 @@ namespace CliCarProject.Migrations
                         .IsUnicode(false)
                         .HasColumnType("char(9)")
                         .IsFixedLength();
+
+                    b.Property<string>("Morada")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Nif")
                         .HasMaxLength(9)

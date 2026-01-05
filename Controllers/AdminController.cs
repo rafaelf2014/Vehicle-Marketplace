@@ -347,6 +347,9 @@ namespace CliCarProject.Controllers
         {
             var veiculo = await _context.Veiculos
                 .Include(v => v.Anuncios)
+                .Include(v => v.IdMarcaNavigation)
+                .Include(v => v.IdModeloNavigation)
+                .Include(v => v.IdVendedorNavigation)
                 .FirstOrDefaultAsync(v => v.IdVeiculo == id);
 
             if (veiculo == null)
@@ -358,6 +361,51 @@ namespace CliCarProject.Controllers
             veiculo.Disponivel = false;
             await _context.SaveChangesAsync();
 
+            // ------- Histórico: Remoção de viatura -------
+            var tipoAcaoGestao = await _context.TipoAcaos
+                .FirstOrDefaultAsync(t => t.Nome == "Gestão de conteúdo");
+            if (tipoAcaoGestao == null)
+            {
+                tipoAcaoGestao = new TipoAcao
+                {
+                    Nome = "Gestão de conteúdo"
+                };
+                _context.TipoAcaos.Add(tipoAcaoGestao);
+                await _context.SaveChangesAsync();
+            }
+
+            var acaoRemocaoViatura = await _context.Acaos
+                .FirstOrDefaultAsync(a => a.Nome == "Remoção de viatura");
+            if (acaoRemocaoViatura == null)
+            {
+                acaoRemocaoViatura = new Acao
+                {
+                    IdTipoAcao = tipoAcaoGestao.IdTipoAcao,
+                    Nome = "Remoção de viatura",
+                    Descricao = "Viatura marcada como indisponível por administrador",
+                    TipoAlvo = "Viatura"
+                };
+                _context.Acaos.Add(acaoRemocaoViatura);
+                await _context.SaveChangesAsync();
+            }
+
+            var adminId = _userManager.GetUserId(User);
+            var veiculoInfo = $"{veiculo.IdMarcaNavigation?.Nome ?? "Marca desconhecida"} {veiculo.IdModeloNavigation?.Nome ?? "Modelo desconhecido"} ({veiculo.Ano})";
+            var proprietario = veiculo.IdVendedorNavigation?.UserName ?? "Desconhecido";
+
+            var historicoRemocaoViatura = new HistoricoAco
+            {
+                IdAcao = acaoRemocaoViatura.IdAcao,
+                IdUtilizador = adminId!,
+                IdAlvo = id,
+                TipoAlvo = "Viatura",
+                Razao = $"Viatura removida: {veiculoInfo}. Proprietário: {proprietario}",
+                DataHora = DateTime.UtcNow
+            };
+
+            _context.HistoricoAcoes.Add(historicoRemocaoViatura);
+            await _context.SaveChangesAsync();
+
             TempData["AdminSuccess"] = "Viatura marcada como indisponível.";
             return RedirectToAction(nameof(Veiculos));
         }
@@ -367,7 +415,14 @@ namespace CliCarProject.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeactivateAnuncio(int id)
         {
-            var anuncio = await _context.Anuncios.FirstOrDefaultAsync(a => a.IdAnuncio == id);
+            var anuncio = await _context.Anuncios
+                .Include(a => a.IdVendedorNavigation)
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdMarcaNavigation)
+                .Include(a => a.IdVeiculoNavigation)
+                    .ThenInclude(v => v.IdModeloNavigation)
+                .FirstOrDefaultAsync(a => a.IdAnuncio == id);
+
             if (anuncio == null)
             {
                 TempData["AdminError"] = "Anúncio não encontrado.";
@@ -377,6 +432,55 @@ namespace CliCarProject.Controllers
             anuncio.Estado = "Inativo";
             anuncio.DataAtualizacao = DateTime.UtcNow;
 
+            await _context.SaveChangesAsync();
+
+            // ------- Histórico: Remoção de anúncio -------
+            var tipoAcaoGestao = await _context.TipoAcaos
+                .FirstOrDefaultAsync(t => t.Nome == "Gestão de conteúdo");
+            if (tipoAcaoGestao == null)
+            {
+                tipoAcaoGestao = new TipoAcao
+                {
+                    Nome = "Gestão de conteúdo"
+                };
+                _context.TipoAcaos.Add(tipoAcaoGestao);
+                await _context.SaveChangesAsync();
+            }
+
+            var acaoRemocaoAnuncio = await _context.Acaos
+                .FirstOrDefaultAsync(a => a.Nome == "Remoção de anúncio");
+            if (acaoRemocaoAnuncio == null)
+            {
+                acaoRemocaoAnuncio = new Acao
+                {
+                    IdTipoAcao = tipoAcaoGestao.IdTipoAcao,
+                    Nome = "Remoção de anúncio",
+                    Descricao = "Anúncio desativado por administrador",
+                    TipoAlvo = "Anúncio"
+                };
+                _context.Acaos.Add(acaoRemocaoAnuncio);
+                await _context.SaveChangesAsync();
+            }
+
+            var adminId = _userManager.GetUserId(User);
+            var veiculoInfo = "Viatura não especificada";
+            if (anuncio.IdVeiculoNavigation != null)
+            {
+                veiculoInfo = $"{anuncio.IdVeiculoNavigation.IdMarcaNavigation?.Nome ?? "Marca desconhecida"} {anuncio.IdVeiculoNavigation.IdModeloNavigation?.Nome ?? "Modelo desconhecido"}";
+            }
+            var criador = anuncio.IdVendedorNavigation?.UserName ?? "Desconhecido";
+
+            var historicoRemocaoAnuncio = new HistoricoAco
+            {
+                IdAcao = acaoRemocaoAnuncio.IdAcao,
+                IdUtilizador = adminId!,
+                IdAlvo = id,
+                TipoAlvo = "Anúncio",
+                Razao = $"Anúncio removido: {anuncio.Titulo ?? "Sem título"}. Veículo: {veiculoInfo}. Criador: {criador}",
+                DataHora = DateTime.UtcNow
+            };
+
+            _context.HistoricoAcoes.Add(historicoRemocaoAnuncio);
             await _context.SaveChangesAsync();
 
             TempData["AdminSuccess"] = "Anúncio marcado como inativo.";

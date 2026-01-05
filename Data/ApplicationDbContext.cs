@@ -432,6 +432,8 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
                 .HasMaxLength(1)
                 .IsUnicode(false)
                 .IsFixedLength();
+            entity.Property(e => e.Morada)
+                .HasMaxLength(100);
 
             entity.HasOne(d => d.IdUtilizadorNavigation).WithOne()
                 .HasForeignKey<Vendedor>(d => d.IdUtilizador)

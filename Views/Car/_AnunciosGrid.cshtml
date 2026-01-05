@@ -96,19 +96,19 @@
     }
 </style>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-
-    @if (!Model.Any())
-    {
-        <div class="col-12 text-center py-5">
-            <div class="py-5 bg-light rounded-3">
-                <i class="bi bi-search display-1 text-muted mb-3"></i>
-                <h3 class="text-muted fw-bold">Nenhum carro encontrado</h3>
-                <p class="text-secondary">Tenta ajustar os filtros para ver mais resultados.</p>
-            </div>
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <div class="py-5 bg-light rounded-3">
+            <i class="bi bi-search display-1 text-muted mb-3 d-block"></i>
+            <h3 class="text-muted fw-bold">Nenhum carro encontrado</h3>
+            <p class="text-secondary">Tenta ajustar os filtros para ver mais resultados.</p>
         </div>
-    }
-
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     @foreach (var item in Model)
     {
         var veiculo = item.IdVeiculoNavigation;
@@ -220,7 +220,8 @@
             </div>
         </div>
     }
-</div>
+    </div>
+}
 
 <nav aria-label="Pagination" class="mt-5 mb-4">
     @{

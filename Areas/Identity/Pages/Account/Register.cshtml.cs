@@ -164,10 +164,6 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                     ModelState.Remove("Input.NIF");
                     ModelState.Remove("Input.TypeSeller");
                 }
-                else if (string.Equals(role, "Vendedor", StringComparison.OrdinalIgnoreCase))
-                {
-                    ModelState.Remove("Input.Morada");
-                }
             }
 
             if (!ModelState.IsValid)
@@ -234,7 +230,8 @@ namespace CliCarProject.Areas.Identity.Pages.Account
                     Contacto = Input.PhoneNumber,
                     CodigoPostal = Input.CodigoPostal,
                     Nif = Input.NIF,
-                    Tipo = Input.TypeSeller
+                    Tipo = Input.TypeSeller,
+                    Morada = Input.Morada
                 };
                 
                 _dbContext.Vendedors.Add(vendedor);

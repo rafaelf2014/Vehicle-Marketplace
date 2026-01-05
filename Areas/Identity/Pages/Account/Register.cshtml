@@ -95,6 +95,11 @@
 
 <template id="vendedor-template">
     <div class="form-floating mb-3">
+        <input asp-for="Input.Morada" class="form-control" placeholder="morada" />
+        <label asp-for="Input.Morada"></label>
+        <span asp-validation-for="Input.Morada" class="text-danger small"></span>
+    </div>
+    <div class="form-floating mb-3">
         <input asp-for="Input.NIF" class="form-control" placeholder="nif" />
         <label asp-for="Input.NIF"></label>
         <span asp-validation-for="Input.NIF" class="text-danger small"></span>

@@ -605,6 +605,10 @@ namespace CliCarProject.Migrations
                         .HasColumnType("char(9)")
                         .IsFixedLength();
 
+                    b.Property<string>("Morada")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Nif")
                         .HasMaxLength(9)
                         .IsUnicode(false)
