@@ -13,6 +13,7 @@ using CliCarProject.Services;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace CliCarProject.Controllers
 {
@@ -109,13 +110,37 @@ namespace CliCarProject.Controllers
         [HttpPost]
         [Authorize(Roles = "Vendedor")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Veiculo veiculo, List<IFormFile> Imagens)
+        public async Task<IActionResult> Create(Veiculo veiculo, List<IFormFile> Imagens,int? modeloId, int? marcaId)
         {
             if (ModelState.IsValid)
             {
                 veiculo.IdVendedor = _userManager.GetUserId(User);
                 _context.Add(veiculo);
                 await _context.SaveChangesAsync();
+
+                if (modeloId.HasValue && !marcaId.HasValue)
+                {
+                    var modelo = _context.Modelos.Find(modeloId.Value);
+                    if (modelo != null)
+                        marcaId = modelo.IdMarca;
+                }
+
+                if (modeloId.HasValue && marcaId.HasValue)
+                {
+                    var modelo = _context.Modelos.Find(modeloId.Value);
+                    if (modelo != null && modelo.IdMarca != marcaId.Value)
+                        modeloId = null;
+                }
+
+                if(veiculo.Quilometragem < 0)
+                {
+                    ModelState.AddModelError("Quilometragem","Quilometragem não pode ser negativa");
+                }
+
+                if(veiculo.Ano < 1886 || veiculo.Ano > DateTime.Now.Year + 1)
+                {
+                    ModelState.AddModelError("Ano", "Ano inválido");
+                }
 
                 if (Imagens != null && Imagens.Count > 0)
                 {
@@ -140,6 +165,16 @@ namespace CliCarProject.Controllers
             return View(veiculo);
         }
 
+        [HttpGet]
+        public IActionResult GetModelos(int marcaId)
+        {
+            var modelos = _context.Modelos
+                .Where(m => m.IdMarca == marcaId)
+                .Select(m => new { idModelo = m.IdModelo, nome = m.Nome })
+                .ToList();
+
+            return Json(modelos);
+        }
         public async Task<IActionResult> Edit(int? id)
         {
             var userId = _userManager.GetUserId(User);

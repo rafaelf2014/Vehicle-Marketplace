@@ -262,6 +262,11 @@ namespace CliCarProject.Controllers
                 return Unauthorized();
             }
 
+            if (anuncio.Preco <= 0 || anuncio.Preco > 100000000)
+            {
+                ModelState.AddModelError("Preco", "O preço deve ser um valor positivo e válido.");
+            }
+
             anuncio.IdVendedor = userId; //Atribui o Id do vendedor ao anúncio
 
             anuncio.DataCriacao = DateTime.Now;
@@ -278,7 +283,7 @@ namespace CliCarProject.Controllers
                     {
                         Console.WriteLine($"Campo: {entry.Key} → ERRO: {error.ErrorMessage}");
                     }
-                }   //Percorre os modelsState e imprime os erros no console
+                }   
 
                 // Recarregar dropdowns
                 ViewData["IdVeiculo"] = new SelectList(
@@ -590,37 +595,6 @@ namespace CliCarProject.Controllers
         }
 
        
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> DeleteSelected(int[] ids)
-        //{
-        //    if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
-
-        //    try
-        //    {
-        //        var anunciosParaApagar = await _context.Anuncios
-        //            .Where(a => ids.Contains(a.IdAnuncio) && a.Estado == "Ativo")
-        //            .ToListAsync();
-
-        //        foreach (var anuncio in anunciosParaApagar)
-        //        {
-        //            // Verifica se realmente não tem reservas antes de apagar
-        //            var temReserva = await _context.VisitaReservas.AnyAsync(r => r.IdAnuncio == anuncio.IdAnuncio);
-        //            if (!temReserva)
-        //            {
-        //                anuncio.Estado = "Inativo";
-        //            }
-        //        }
-        //        await _context.SaveChangesAsync();
-        //        TempData["Success"] = "Anúncios eliminados com sucesso.";
-        //    }
-        //    catch (Exception)
-        //    {
-        //        TempData["Error"] = "Erro ao eliminar anúncios.";
-        //    }
-        //    return RedirectToAction(nameof(Index));
-        //}
-
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CancelarReserva(int idReserva)

@@ -36,7 +36,7 @@
                                 <select asp-for="IdVeiculo" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdVeiculo">
                                     <option value="">-- Selecione um dos seus veículos --</option>
                                 </select>
-                                <label asp-for="IdVeiculo" class="fw-semibold"></label>
+                                <label asp-for="IdVeiculo">Veiculo</label>
                                 <span asp-validation-for="IdVeiculo" class="text-danger small"></span>
                             </div>
                         </div>
@@ -82,7 +82,7 @@
                                 <select asp-for="IdLocalizacao" class="form-select border-0 bg-light rounded-3" asp-items="ViewBag.IdLocalizacao">
                                     <option value="">-- Escolha o Distrito --</option>
                                 </select>
-                                <label asp-for="IdLocalizacao"></label>
+                                <label asp-for="IdLocalizacao">Localização</label>
                                 <span asp-validation-for="IdLocalizacao" class="text-danger small"></span>
                             </div>
                         </div>

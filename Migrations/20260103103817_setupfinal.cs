@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CliCarProject.Migrations
 {
     /// <inheritdoc />
+<<<<<<<< HEAD:Migrations/20260103103817_setupfinal.cs
     public partial class setupfinal : Migration
+========
+    public partial class final : Migration
+>>>>>>>> origin/SilvaLukas-Branch:Migrations/20260103110645_final.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
