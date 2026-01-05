@@ -5,8 +5,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using CliCarProject.Middleware;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar encoding UTF-8 para toda a aplicação
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -45,6 +49,14 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+// Configurar codificação UTF-8 para Web
+builder.Services.AddWebEncoders(options =>
+{
+    options.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(
+        System.Text.Unicode.UnicodeRanges.All
+    );
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
